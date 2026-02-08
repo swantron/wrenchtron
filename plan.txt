@@ -1,0 +1,75 @@
+This is the official **Wrenchtron System Architecture**. We’re going for a "Serverless Triad" (Hosting, Functions, and Storage) to keep your monthly bill at **$0.00** while ensuring the site doesn't crash if you decide to share it on Reddit or a car forum.
+
+---
+
+## 1. High-Level Architecture
+
+The goal is to move the heavy lifting (image processing) away from the client and keep the database "lean."
+
+### The Components:
+
+* **Frontend (Next.js + Tailwind):** Hosted on **Firebase Hosting**. This is your UI—big buttons, high contrast, and PWA-enabled so it feels like an app.
+* **Database (Firestore):** Stores the metadata (mileage, oil type, VIN, and the *path* to the receipt image).
+* **Storage (Cloud Storage):** The "Bucket" for your high-res receipt JPEGs.
+* **Auth (Firebase Auth):** Since it’s your personal tool, you can just enable "Google Login" to keep it simple and secure.
+
+---
+
+## 2. The Data Flow (The "Oil Change" Lifecycle)
+
+1. **Capture:** You take a photo of the receipt on your phone at `wrenchtron.com/log`.
+2. **Compression:** A client-side JS library (like `browser-image-compression`) shrinks the 5MB photo to ~200KB before it even leaves your phone.
+3. **The Handshake:** Your app asks Firebase for a **Temporary Upload URL**.
+4. **The Storage:** The photo is uploaded directly to the GCS bucket.
+5. **The Record:** A new document is created in Firestore:
+```json
+{
+  "date": "2026-02-07",
+  "vehicle": "Swan-Truck",
+  "mileage": 45000,
+  "receipt_path": "receipts/user123/img_882.jpg"
+}
+
+```
+
+
+
+---
+
+## 3. Implementation Roadmap
+
+### Phase 1: The "Foundation" (Local & GCP Setup)
+
+* [ ] **Repo Setup:** Initialize a Next.js project.
+* [ ] **GCP Project:** Create a project in the Google Cloud Console named `wrenchtron`.
+* [ ] **Firebase Link:** Run `firebase init` in your CLI to link the repo to the GCP project.
+* [ ] **Domain:** In Squarespace, point your DNS A-records to the Firebase Hosting IPs.
+
+### Phase 2: The "Vault" (Storage & DB)
+
+* [ ] **Firestore Rules:** Set up security rules so only *you* can read/write your data.
+* [ ] **Storage Bucket:** Enable the "Standard" storage tier (choose `us-central1` or your closest region for the free tier).
+* [ ] **Schema Design:** Define your vehicle objects vs. your maintenance log objects.
+
+### Phase 3: The "Grease" (The Frontend)
+
+* [ ] **Dashboard:** Build a "Vehicle Card" showing days/miles since the last change.
+* [ ] **The Form:** Build the entry form with a file input for the receipt.
+* [ ] **PWA Manifest:** Add a `manifest.json` so you can "Install" Wrenchtron as an app on your Android home screen.
+
+---
+
+## 4. Cost Management (The "Cheap-tron" Guardrails)
+
+To ensure this stays free:
+
+* **Region Lock:** Keep everything in `us-east1`, `us-west1`, or `us-central1` to stay in the GCP Always Free tier.
+* **Lifecycle Rules:** Set a rule in Cloud Storage to automatically move receipts to "Archive" (Coldline) storage after 365 days—it’s even cheaper.
+
+---
+
+## 5. Next Step for You
+
+To get the engine turning, you need to initialize the project structure.
+
+**Would you like me to generate a `docker-compose.yml` for local development or the initial `firebase.json` configuration to get your hosting and firestore rules ready?**
