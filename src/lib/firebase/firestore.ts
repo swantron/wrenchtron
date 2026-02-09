@@ -59,15 +59,23 @@ export async function getVehicle(userId: string, vehicleId: string) {
 
 export function subscribeToVehicles(
   userId: string,
-  callback: (vehicles: Vehicle[]) => void
+  callback: (vehicles: Vehicle[]) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(vehiclesCollection(userId), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snapshot) => {
-    const vehicles = snapshot.docs.map(
-      (d) => ({ id: d.id, ...d.data() }) as Vehicle
-    );
-    callback(vehicles);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const vehicles = snapshot.docs.map(
+        (d) => ({ id: d.id, ...d.data() }) as Vehicle
+      );
+      callback(vehicles);
+    },
+    (error) => {
+      console.error("Firestore vehicles subscription error:", error);
+      onError?.(error);
+    }
+  );
 }
 
 // ---- Maintenance Log CRUD ----
@@ -150,16 +158,24 @@ export async function getMaintenanceLog(
 export function subscribeToMaintenanceLogs(
   userId: string,
   vehicleId: string,
-  callback: (logs: MaintenanceLog[]) => void
+  callback: (logs: MaintenanceLog[]) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(
     maintenanceCollection(userId, vehicleId),
     orderBy("date", "desc")
   );
-  return onSnapshot(q, (snapshot) => {
-    const logs = snapshot.docs.map(
-      (d) => ({ id: d.id, ...d.data() }) as MaintenanceLog
-    );
-    callback(logs);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const logs = snapshot.docs.map(
+        (d) => ({ id: d.id, ...d.data() }) as MaintenanceLog
+      );
+      callback(logs);
+    },
+    (error) => {
+      console.error("Firestore maintenance logs subscription error:", error);
+      onError?.(error);
+    }
+  );
 }
