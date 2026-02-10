@@ -27,11 +27,23 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
   }, [user, vehicle.id]);
 
   useEffect(() => {
-    if (vehicle.photoPath) {
-      getReceiptURL(vehicle.photoPath).then(setPhotoUrl).catch(console.error);
-    } else {
-      setPhotoUrl(null);
-    }
+    let active = true;
+    const loadPhoto = async () => {
+      if (vehicle.photoPath) {
+        try {
+          const url = await getReceiptURL(vehicle.photoPath);
+          if (active) setPhotoUrl(url);
+        } catch (error) {
+          console.error("Failed to load vehicle photo:", error);
+        }
+      } else {
+        if (active) setPhotoUrl(null);
+      }
+    };
+    loadPhoto();
+    return () => {
+      active = false;
+    };
   }, [vehicle.photoPath]);
 
   const summary = computeSummary(logs, vehicle.currentMileage);
