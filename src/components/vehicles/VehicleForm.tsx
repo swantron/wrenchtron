@@ -79,6 +79,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
       if (drivetrain) data.drivetrain = drivetrain;
       if (vin) data.vin = vin;
       if (licensePlate) data.licensePlate = licensePlate;
+      if (photoPath) data.photoPath = photoPath;
 
       if (vehicle?.id) {
         await updateVehicle(user.uid, vehicle.id, data);

@@ -10,6 +10,7 @@ import {
   computeSummary,
 } from "./MaintenanceSummary";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 
@@ -23,9 +24,9 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
     const unsub = subscribeToMaintenanceLogs(user.uid, vehicle.id, setLogs);
 
     if (vehicle.photoPath) {
-      import("@/lib/firebase/storage").then(({ getReceiptURL }) => {
-        getReceiptURL(vehicle.photoPath!).then(setPhotoUrl).catch(console.error);
-      });
+      getReceiptURL(vehicle.photoPath).then(setPhotoUrl).catch(console.error);
+    } else {
+      setPhotoUrl(null);
     }
 
     return unsub;

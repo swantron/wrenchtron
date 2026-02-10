@@ -8,6 +8,7 @@ import { getVehicle, deleteVehicle, subscribeToMaintenanceLogs } from "@/lib/fir
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { getReceiptURL } from "@/lib/firebase/storage";
 import { LogList } from "@/components/maintenance/LogList";
 import { MaintenanceSummary, computeSummary } from "@/components/dashboard/MaintenanceSummary";
 
@@ -40,9 +41,9 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
       setLoading(false);
 
       if (v?.photoPath) {
-        import("@/lib/firebase/storage").then(({ getReceiptURL }) => {
-          getReceiptURL(v.photoPath!).then(setPhotoUrl).catch(console.error);
-        });
+        getReceiptURL(v.photoPath).then(setPhotoUrl).catch(console.error);
+      } else {
+        setPhotoUrl(null);
       }
     });
 
