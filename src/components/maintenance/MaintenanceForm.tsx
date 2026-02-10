@@ -63,16 +63,19 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
       const costCents = cost ? Math.round(parseFloat(cost) * 100) : 0;
       const details = maintenanceType === "oil_change" ? oilDetails : {};
 
-      await addMaintenanceLog(user.uid, vehicleId, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const logData: any = {
         maintenanceType,
         date: Timestamp.fromDate(new Date(date + "T00:00:00")),
         mileage: parseInt(mileage),
         cost: costCents,
-        shop: shop || undefined,
-        notes: notes || undefined,
         receiptPaths,
         details,
-      });
+      };
+      if (shop) logData.shop = shop;
+      if (notes) logData.notes = notes;
+
+      await addMaintenanceLog(user.uid, vehicleId, logData);
 
       router.push(`/vehicles/detail?id=${vehicleId}`);
     } catch (err) {
