@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { getVehicle, deleteVehicle } from "@/lib/firebase/firestore";
+import { getVehicle, deleteVehicle, subscribeToMaintenanceLogs } from "@/lib/firebase/firestore";
 import type { Vehicle } from "@/types/firestore";
+import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LogList } from "@/components/maintenance/LogList";
+import { MaintenanceSummary, computeSummary } from "@/components/dashboard/MaintenanceSummary";
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <dt className="text-sm text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">{label}</dt>
+      <dd className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
         {value}
       </dd>
     </div>
@@ -24,16 +26,25 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
   const { user } = useAuth();
   const router = useRouter();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user || !vehicleId) return;
+
+    // Fetch vehicle
     getVehicle(user.uid, vehicleId).then((v) => {
       setVehicle(v);
       setLoading(false);
     });
+
+    // Subscribe to logs for summary
+    const unsub = subscribeToMaintenanceLogs(user.uid, vehicleId, setLogs);
+    return unsub;
   }, [user, vehicleId]);
+
+  const summary = vehicle ? computeSummary(logs, vehicle.currentMileage) : null;
 
   const handleDelete = async () => {
     if (!user || !vehicleId) return;
@@ -98,38 +109,52 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <DetailItem
-          label="Mileage"
-          value={`${vehicle.currentMileage.toLocaleString()} mi`}
-        />
-        {vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
-        {vehicle.transmission && (
-          <DetailItem label="Transmission" value={vehicle.transmission} />
-        )}
-        {vehicle.drivetrain && (
-          <DetailItem label="Drivetrain" value={vehicle.drivetrain} />
-        )}
-        {vehicle.vin && <DetailItem label="VIN" value={vehicle.vin} />}
-        {vehicle.licensePlate && (
-          <DetailItem label="License Plate" value={vehicle.licensePlate} />
-        )}
-      </div>
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        {/* Left: Stats & Status */}
+        <div className="space-y-6 lg:col-span-1">
+          {summary && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Service Status
+              </h3>
+              <MaintenanceSummary summary={summary} />
+            </div>
+          )}
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Maintenance History
-          </h2>
-          <Link
-            href={`/maintenance/new?vehicleId=${vehicleId}`}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Log Maintenance
-          </Link>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Vehicle Specs
+            </h3>
+            <dl className="space-y-4">
+              <DetailItem
+                label="Current Mileage"
+                value={`${vehicle.currentMileage.toLocaleString()} mi`}
+              />
+              {vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
+              {vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}
+              {vehicle.drivetrain && <DetailItem label="Drivetrain" value={vehicle.drivetrain} />}
+              {vehicle.vin && <DetailItem label="VIN" value={vehicle.vin} />}
+              {vehicle.licensePlate && <DetailItem label="License Plate" value={vehicle.licensePlate} />}
+            </dl>
+          </div>
         </div>
-        <div className="mt-4">
-          <LogList vehicleId={vehicleId} />
+
+        {/* Right: History */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Maintenance History
+            </h2>
+            <Link
+              href={`/maintenance/new?vehicleId=${vehicleId}`}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+            >
+              Log Service
+            </Link>
+          </div>
+          <div className="mt-6">
+            <LogList vehicleId={vehicleId} />
+          </div>
         </div>
       </div>
     </div>

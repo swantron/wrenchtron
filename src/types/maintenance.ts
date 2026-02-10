@@ -31,13 +31,17 @@ export interface TireDetails {
   brand?: string;
   model?: string;
   size?: string;
+  treadDepth?: string; // e.g. "8/32"
+  pressure?: number;    // PSI
 }
 
 export interface BrakeDetails {
-  position?: string;
+  position?: string;    // Front, Rear, All
   brand?: string;
-  padType?: string;
+  padType?: string;     // Ceramic, Semi-metallic, etc.
+  padThickness?: string; // e.g. "10mm"
   rotorReplaced?: boolean;
+  fluidFlushed?: boolean;
 }
 
 export interface GenericDetails {

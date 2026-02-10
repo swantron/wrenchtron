@@ -6,8 +6,15 @@ import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { addMaintenanceLog } from "@/lib/firebase/firestore";
 import { OilChangeFields } from "./OilChangeFields";
+import { TireFields } from "./TireFields";
+import { BrakeFields } from "./BrakeFields";
 import { ReceiptUpload } from "./ReceiptUpload";
-import type { MaintenanceType, OilChangeDetails } from "@/types/maintenance";
+import type {
+  MaintenanceType,
+  OilChangeDetails,
+  TireDetails,
+  BrakeDetails,
+} from "@/types/maintenance";
 
 const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
   { value: "oil_change", label: "Oil Change" },
@@ -46,6 +53,8 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
   const [notes, setNotes] = useState("");
   const [receiptPaths, setReceiptPaths] = useState<string[]>([]);
   const [oilDetails, setOilDetails] = useState<OilChangeDetails>({});
+  const [tireDetails, setTireDetails] = useState<TireDetails>({});
+  const [brakeDetails, setBrakeDetails] = useState<BrakeDetails>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +70,21 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
 
     try {
       const costCents = cost ? Math.round(parseFloat(cost) * 100) : 0;
-      const details = maintenanceType === "oil_change" ? oilDetails : {};
+      let details = {};
+
+      if (maintenanceType === "oil_change") {
+        details = oilDetails;
+      } else if (
+        maintenanceType === "tire_rotation" ||
+        maintenanceType === "tire_replacement"
+      ) {
+        details = tireDetails;
+      } else if (
+        maintenanceType === "brake_pads" ||
+        maintenanceType === "brake_rotors"
+      ) {
+        details = brakeDetails;
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const logData: any = {
@@ -182,13 +205,33 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
       </div>
 
       {maintenanceType === "oil_change" && (
-        <div>
-          <h3 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/20">
+          <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
             Oil Change Details
           </h3>
           <OilChangeFields details={oilDetails} onChange={setOilDetails} />
         </div>
       )}
+
+      {(maintenanceType === "tire_rotation" ||
+        maintenanceType === "tire_replacement") && (
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/20">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+              Tire Service Details
+            </h3>
+            <TireFields details={tireDetails} onChange={setTireDetails} />
+          </div>
+        )}
+
+      {(maintenanceType === "brake_pads" ||
+        maintenanceType === "brake_rotors") && (
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/20">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+              Brake Service Details
+            </h3>
+            <BrakeFields details={brakeDetails} onChange={setBrakeDetails} />
+          </div>
+        )}
 
       {user && (
         <ReceiptUpload
