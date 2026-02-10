@@ -286,6 +286,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           vehicleId={vehicle?.id}
           currentPhotoPath={photoPath}
           onUpload={setPhotoPath}
+          onFileSelect={setPendingFile}
         />
       )}
 

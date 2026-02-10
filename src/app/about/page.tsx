@@ -13,7 +13,7 @@ export default function AboutPage() {
                             About Wrenchtron
                         </h1>
                         <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-                            Wrenchtron was built on the principle of the "Serverless Triad":
+                            Wrenchtron was built on the principle of the &quot;Serverless Triad&quot;:
                             Hosting, Functions, and Storage. This architecture ensures the
                             app stays fast, secure, and—most importantly—costs $0.00 to run.
                         </p>
@@ -35,8 +35,8 @@ export default function AboutPage() {
                                 </h3>
                                 <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-gray-600 dark:text-gray-400">
                                     <li>Open Safari and go to wrenchtron.com</li>
-                                    <li>Tap the "Share" icon (square with arrow)</li>
-                                    <li>Scroll down and tap "Add to Home Screen"</li>
+                                    <li>Tap the &quot;Share&quot; icon (square with arrow)</li>
+                                    <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
                                 </ol>
                             </div>
                             <div>
@@ -46,7 +46,7 @@ export default function AboutPage() {
                                 <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-gray-600 dark:text-gray-400">
                                     <li>Open Chrome and go to wrenchtron.com</li>
                                     <li>Tap the three dots (menu)</li>
-                                    <li>Tap "Add to Home Screen" or "Install App"</li>
+                                    <li>Tap &quot;Add to Home Screen&quot; or &quot;Install App&quot;</li>
                                 </ol>
                             </div>
                         </div>

@@ -8,7 +8,7 @@ interface TireFieldsProps {
 }
 
 export function TireFields({ details, onChange }: TireFieldsProps) {
-    const update = (field: keyof TireDetails, value: any) => {
+    const update = (field: keyof TireDetails, value: TireDetails[keyof TireDetails]) => {
         onChange({ ...details, [field]: value });
     };
 
@@ -40,8 +40,8 @@ export function TireFields({ details, onChange }: TireFieldsProps) {
                             type="button"
                             onClick={() => togglePosition(pos.id)}
                             className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${(details.positions || []).includes(pos.id)
-                                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
                                 }`}
                         >
                             {pos.label}

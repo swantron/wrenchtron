@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { MaintenanceSummary } from "@/components/dashboard/MaintenanceSummary";
-import { LogList } from "@/components/maintenance/LogList";
 import type { MaintenanceType } from "@/types/maintenance";
 
 // Mock data for the Legendary Supra

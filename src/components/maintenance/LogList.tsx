@@ -2,7 +2,13 @@
 
 import { useMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import type { MaintenanceLog, MaintenanceType } from "@/types/maintenance";
+import type {
+  MaintenanceLog,
+  MaintenanceType,
+  OilChangeDetails,
+  TireDetails,
+  BrakeDetails,
+} from "@/types/maintenance";
 
 const typeLabels: Record<MaintenanceType, string> = {
   oil_change: "Oil Change",
@@ -33,7 +39,7 @@ function formatCost(cents: number): string {
 }
 
 function LogDetails({ log }: { log: MaintenanceLog }) {
-  const details = log.details as any;
+  const details = log.details as OilChangeDetails & TireDetails & BrakeDetails;
   if (!details || Object.keys(details).length === 0) return null;
 
   return (
@@ -118,7 +124,7 @@ function LogItem({ log }: { log: MaintenanceLog }) {
       {(log.shop || log.notes) && (
         <div className="mt-3 space-y-1 text-sm text-gray-500 dark:text-gray-400">
           {log.shop && <p>Shop: {log.shop}</p>}
-          {log.notes && <p className="italic">"{log.notes}"</p>}
+          {log.notes && <p className="italic">&quot;{log.notes}&quot;</p>}
         </div>
       )}
       {log.receiptPaths.length > 0 && (

@@ -8,7 +8,7 @@ interface BrakeFieldsProps {
 }
 
 export function BrakeFields({ details, onChange }: BrakeFieldsProps) {
-    const update = (field: keyof BrakeDetails, value: any) => {
+    const update = (field: keyof BrakeDetails, value: BrakeDetails[keyof BrakeDetails]) => {
         onChange({ ...details, [field]: value });
     };
 
