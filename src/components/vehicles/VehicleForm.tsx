@@ -58,21 +58,22 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
     setError("");
 
     try {
-      const data = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data: any = {
         name,
         type,
         year: parseInt(year),
         make,
         model,
-        trim: trim || undefined,
-        engine: engine || undefined,
-        transmission: transmission || undefined,
-        drivetrain: drivetrain || undefined,
-        vin: vin || undefined,
-        licensePlate: licensePlate || undefined,
         currentMileage: parseInt(currentMileage),
         isActive: true,
       };
+      if (trim) data.trim = trim;
+      if (engine) data.engine = engine;
+      if (transmission) data.transmission = transmission;
+      if (drivetrain) data.drivetrain = drivetrain;
+      if (vin) data.vin = vin;
+      if (licensePlate) data.licensePlate = licensePlate;
 
       if (vehicle?.id) {
         await updateVehicle(user.uid, vehicle.id, data);
