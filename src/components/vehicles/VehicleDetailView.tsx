@@ -9,6 +9,7 @@ import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
+import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 import { MaintenanceSummary, computeSummary } from "@/components/dashboard/MaintenanceSummary";
 
@@ -39,18 +40,20 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
     getVehicle(user.uid, vehicleId).then((v) => {
       setVehicle(v);
       setLoading(false);
-
-      if (v?.photoPath) {
-        getReceiptURL(v.photoPath).then(setPhotoUrl).catch(console.error);
-      } else {
-        setPhotoUrl(null);
-      }
     });
 
     // Subscribe to logs for summary
     const unsub = subscribeToMaintenanceLogs(user.uid, vehicleId, setLogs);
     return unsub;
   }, [user, vehicleId]);
+
+  useEffect(() => {
+    if (vehicle?.photoPath) {
+      getReceiptURL(vehicle.photoPath).then(setPhotoUrl).catch(console.error);
+    } else {
+      setPhotoUrl(null);
+    }
+  }, [vehicle?.photoPath]);
 
   const summary = vehicle ? computeSummary(logs, vehicle.currentMileage) : null;
 
@@ -118,8 +121,14 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
       </div>
 
       {photoUrl && (
-        <div className="mt-6 aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-lg">
-          <img src={photoUrl} alt={vehicle.name} className="h-full w-full object-cover" />
+        <div className="relative mt-6 aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-lg">
+          <NextImage
+            src={photoUrl}
+            alt={vehicle.name}
+            fill
+            className="object-cover"
+            priority
+          />
         </div>
       )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import NextImage from "next/image";
 import { compressImage } from "@/lib/image/compress";
 import { uploadVehiclePhoto, getReceiptURL } from "@/lib/firebase/storage";
 
@@ -68,7 +69,12 @@ export function VehiclePhotoUpload({
             >
                 {previewUrl ? (
                     <>
-                        <img src={previewUrl} alt="Vehicle preview" className="h-full w-full object-cover" />
+                        <NextImage
+                            src={previewUrl}
+                            alt="Vehicle preview"
+                            fill
+                            className="object-cover"
+                        />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                             <span className="font-medium text-white">Change Photo</span>
                         </div>

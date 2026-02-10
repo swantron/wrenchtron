@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { AppShell } from "@/components/layout/AppShell";
 import { MaintenanceSummary } from "@/components/dashboard/MaintenanceSummary";
 import type { MaintenanceType } from "@/types/maintenance";
@@ -54,11 +55,13 @@ export default function DemoPage() {
                     </Link>
                 </div>
 
-                <div className="aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-xl">
-                    <img
+                <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-xl">
+                    <NextImage
                         src={MOCK_VEHICLE.photoUrl}
                         alt={MOCK_VEHICLE.name}
-                        className="h-full w-full object-cover"
+                        fill
+                        className="object-cover"
+                        priority
                     />
                 </div>
 

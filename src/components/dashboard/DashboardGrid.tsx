@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useVehicles } from "@/hooks/useVehicles";
@@ -22,15 +23,16 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
   useEffect(() => {
     if (!user || !vehicle.id) return;
     const unsub = subscribeToMaintenanceLogs(user.uid, vehicle.id, setLogs);
+    return unsub;
+  }, [user, vehicle.id]);
 
+  useEffect(() => {
     if (vehicle.photoPath) {
       getReceiptURL(vehicle.photoPath).then(setPhotoUrl).catch(console.error);
     } else {
       setPhotoUrl(null);
     }
-
-    return unsub;
-  }, [user, vehicle.id, vehicle.photoPath]);
+  }, [vehicle.photoPath]);
 
   const summary = computeSummary(logs, vehicle.currentMileage);
 
@@ -38,9 +40,14 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
     <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
       <Link href={`/vehicles/detail?id=${vehicle.id}`} className="block">
         {/* Vehicle Image / Placeholder */}
-        <div className="aspect-video w-full bg-gray-100 dark:bg-gray-900">
+        <div className="relative aspect-video w-full bg-gray-100 dark:bg-gray-900">
           {photoUrl ? (
-            <img src={photoUrl} alt={vehicle.name} className="h-full w-full object-cover" />
+            <NextImage
+              src={photoUrl}
+              alt={vehicle.name}
+              fill
+              className="object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-gray-400">
               <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
