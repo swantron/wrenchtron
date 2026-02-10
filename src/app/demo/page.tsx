@@ -8,54 +8,56 @@ import type { MaintenanceType } from "@/types/maintenance";
 
 // Mock data for the Legendary Supra
 const MOCK_VEHICLE = {
-    id: "demo-supra",
-    name: "Legendary Supra",
-    year: 1990,
-    make: "Toyota",
-    model: "Supra Turbo",
-    currentMileage: 84200,
-    engine: "3.0L Inline-6 (7M-GTE)",
-    transmission: "5-Speed Manual",
-    drivetrain: "RWD",
-    photoUrl: "https://images.unsplash.com/photo-1626307411219-c81ca032918a?auto=format&fit=crop&q=80&w=2000",
+    id: "demo-f150",
+    name: "F-150 Tremor",
+    year: 2023,
+    make: "Ford",
+    model: "F-150 Tremor",
+    currentMileage: 12450,
+    engine: "3.5L V6 EcoBoost",
+    transmission: "10-Speed Automatic",
+    drivetrain: "4x4 with Hi-Lock",
+    photoUrl: "/images/demo/f150_hero.png",
 };
 
 const MOCK_SUMMARY = {
     status: "green" as const,
-    lastService: "Oil Change",
+    lastService: "Oil & Filter",
     lastServiceType: "oil_change" as MaintenanceType,
-    lastServiceMileage: 84000,
-    daysSinceLastService: 12,
-    milesSinceLastService: 200,
+    lastServiceMileage: 12000,
+    daysSinceLastService: 14,
+    milesSinceLastService: 450,
 };
 
 export default function DemoPage() {
     return (
         <AppShell>
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+                {/* Header Section */}
+                <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
                                 {MOCK_VEHICLE.name}
                             </h1>
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                                 Demo Mode
                             </span>
                         </div>
-                        <p className="mt-1 text-lg text-gray-600 dark:text-gray-400">
+                        <p className="mt-2 text-xl text-gray-600 dark:text-gray-400">
                             {MOCK_VEHICLE.year} {MOCK_VEHICLE.make} {MOCK_VEHICLE.model}
                         </p>
                     </div>
                     <Link
                         href="/login"
-                        className="rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-white shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl active:scale-95"
+                        className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-xl transition-all hover:bg-blue-700 hover:shadow-2xl active:scale-95 sm:w-auto"
                     >
                         Start Your Own Fleet
                     </Link>
                 </div>
 
-                <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-xl">
+                {/* Hero Banner */}
+                <div className="relative aspect-[3/1] w-full overflow-hidden rounded-3xl shadow-2xl">
                     <NextImage
                         src={MOCK_VEHICLE.photoUrl}
                         alt={MOCK_VEHICLE.name}
@@ -63,101 +65,103 @@ export default function DemoPage() {
                         className="object-cover"
                         priority
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 </div>
 
-                <div className="mt-8 grid gap-8 lg:grid-cols-3">
-                    {/* Left: Summary & Specs */}
-                    <div className="space-y-6 lg:col-span-1">
-                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <div className="mt-16 grid gap-10 lg:grid-cols-3">
+                    {/* Left Column: Summary & Specs */}
+                    <div className="space-y-8 lg:col-span-1">
+                        <section>
+                            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                                 Service Status
-                            </h3>
-                            <MaintenanceSummary summary={MOCK_SUMMARY} />
-                        </div>
+                            </h2>
+                            <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                                <MaintenanceSummary summary={MOCK_SUMMARY} />
+                            </div>
+                        </section>
 
-                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        <section>
+                            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                                 Vehicle Specs
-                            </h3>
-                            <dl className="space-y-4">
-                                <div>
-                                    <dt className="text-xs font-medium uppercase text-gray-500">Mileage</dt>
-                                    <dd className="font-semibold text-gray-900 dark:text-white">84,200 mi</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-xs font-medium uppercase text-gray-500">Engine</dt>
-                                    <dd className="font-semibold text-gray-900 dark:text-white">{MOCK_VEHICLE.engine}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-xs font-medium uppercase text-gray-500">Transmission</dt>
-                                    <dd className="font-semibold text-gray-900 dark:text-white">{MOCK_VEHICLE.transmission}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-xs font-medium uppercase text-gray-500">Drivetrain</dt>
-                                    <dd className="font-semibold text-gray-900 dark:text-white">{MOCK_VEHICLE.drivetrain}</dd>
-                                </div>
-                            </dl>
-                        </div>
+                            </h2>
+                            <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                                <dl className="grid grid-cols-1 gap-y-6">
+                                    <div className="border-b border-gray-50 pb-4 dark:border-gray-700/50">
+                                        <dt className="text-xs font-semibold text-gray-400 uppercase">Mileage</dt>
+                                        <dd className="mt-1 text-lg font-bold text-gray-900 dark:text-white">12,450 mi</dd>
+                                    </div>
+                                    <div className="border-b border-gray-50 pb-4 dark:border-gray-700/50">
+                                        <dt className="text-xs font-semibold text-gray-400 uppercase">Engine</dt>
+                                        <dd className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{MOCK_VEHICLE.engine}</dd>
+                                    </div>
+                                    <div className="border-b border-gray-50 pb-4 dark:border-gray-700/50">
+                                        <dt className="text-xs font-semibold text-gray-400 uppercase">Transmission</dt>
+                                        <dd className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{MOCK_VEHICLE.transmission}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs font-semibold text-gray-400 uppercase">Drivetrain</dt>
+                                        <dd className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{MOCK_VEHICLE.drivetrain}</dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        </section>
                     </div>
 
-                    {/* Right: History */}
+                    {/* Right Column: History */}
                     <div className="lg:col-span-2">
-                        <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
+                        <h2 className="mb-10 text-3xl font-extrabold text-gray-900 dark:text-white">
                             Maintenance History
                         </h2>
 
-                        {/* Hardcoded Sample History for Demo */}
-                        <div className="space-y-4">
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                        <div className="space-y-6">
+                            <div className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
                                 <div className="flex items-start justify-between">
-                                    <div>
-                                        <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    <div className="space-y-3">
+                                        <span className="inline-flex rounded-lg bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 uppercase dark:bg-blue-900/50 dark:text-blue-300">
                                             Oil Change
                                         </span>
-                                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                            12 days ago &middot; 84,000 mi
-                                        </p>
+                                        <div>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">Full Synthetic 5W-30 & Filter</p>
+                                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                14 days ago &middot; 12,000 mi &middot; Motorcraft Premium Filter
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">$74.50</span>
-                                </div>
-                                <div className="mt-4 border-t border-gray-50 pt-4 dark:border-gray-700/50">
-                                    <p className="text-xs text-gray-500">Oil: <span className="text-gray-700 dark:text-gray-300 font-medium">Castrol Edge 10W-30 High Mileage</span></p>
-                                    <p className="mt-1 text-xs text-gray-500">Filter: <span className="text-gray-700 dark:text-gray-300 font-medium">OEM Toyota</span></p>
+                                    <span className="text-xl font-black text-gray-900 dark:text-white">$89.95</span>
                                 </div>
                             </div>
 
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                            <div className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
                                 <div className="flex items-start justify-between">
-                                    <div>
-                                        <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            Brake Pads
+                                    <div className="space-y-3">
+                                        <span className="inline-flex rounded-lg bg-orange-100 px-3 py-1 text-xs font-bold text-orange-800 uppercase dark:bg-orange-900/50 dark:text-orange-300">
+                                            Off-Road Inspection
                                         </span>
-                                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                            3 months ago &middot; 82,500 mi
-                                        </p>
+                                        <div>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">Suspension & Skid Plate Torque Check</p>
+                                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                3 months ago &middot; 8,500 mi &middot; Following trail run
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">$145.00</span>
-                                </div>
-                                <div className="mt-4 border-t border-gray-50 pt-4 dark:border-gray-700/50">
-                                    <p className="text-xs text-gray-500">Position: <span className="text-gray-700 dark:text-gray-300 font-medium capitalize">Front</span></p>
-                                    <p className="mt-1 text-xs text-gray-500">Pads: <span className="text-gray-700 dark:text-gray-300 font-medium">Akebono Ceramic</span></p>
+                                    <span className="text-xl font-black text-gray-900 dark:text-white">$0.00</span>
                                 </div>
                             </div>
 
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                            <div className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
                                 <div className="flex items-start justify-between">
-                                    <div>
-                                        <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            Tire Replacement
+                                    <div className="space-y-3">
+                                        <span className="inline-flex rounded-lg bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 uppercase dark:bg-blue-900/50 dark:text-blue-300">
+                                            Tire Rotation
                                         </span>
-                                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                            6 months ago &middot; 80,200 mi
-                                        </p>
+                                        <div>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">5-Tire Rotation (including Spare)</p>
+                                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                6 months ago &middot; 5,200 mi &middot; General Grabber A/TX
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">$880.00</span>
-                                </div>
-                                <div className="mt-4 border-t border-gray-50 pt-4 dark:border-gray-700/50">
-                                    <p className="text-xs text-gray-500">Brand: <span className="text-gray-700 dark:text-gray-300 font-medium">Michelin Pilot Sport 4S</span></p>
+                                    <span className="text-xl font-black text-gray-900 dark:text-white">$35.00</span>
                                 </div>
                             </div>
                         </div>
