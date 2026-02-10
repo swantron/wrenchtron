@@ -44,12 +44,20 @@ function LandingPage() {
           Track oil changes, tire rotations, brake jobs, and more.
           Know exactly when your next service is due.
         </p>
-        <Link
-          href="/login"
-          className="mt-8 rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-700"
-        >
-          Get Started
-        </Link>
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+          <Link
+            href="/login"
+            className="rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white transition-all hover:bg-blue-700 active:scale-95"
+          >
+            Get Started
+          </Link>
+          <Link
+            href="/demo"
+            className="rounded-lg border border-gray-300 bg-white px-8 py-3 text-base font-semibold text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 active:scale-95"
+          >
+            View Demo
+          </Link>
+        </div>
       </main>
     </div>
   );

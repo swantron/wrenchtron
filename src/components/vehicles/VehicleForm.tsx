@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { addVehicle, updateVehicle } from "@/lib/firebase/firestore";
+import { uploadVehiclePhoto } from "@/lib/firebase/storage";
+import { compressImage } from "@/lib/image/compress";
 import type { Vehicle, VehicleType } from "@/types/firestore";
+import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "car", label: "Car" },
@@ -44,6 +47,8 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [currentMileage, setCurrentMileage] = useState(
     vehicle?.currentMileage?.toString() ?? ""
   );
+  const [photoPath, setPhotoPath] = useState(vehicle?.photoPath ?? "");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +85,18 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         router.push(`/vehicles/detail?id=${vehicle.id}`);
       } else {
         const ref = await addVehicle(user.uid, data);
+
+        // If we have a pending photo, upload it now that we have a vehicleId
+        if (pendingFile) {
+          try {
+            const compressed = await compressImage(pendingFile);
+            const path = await uploadVehiclePhoto(user.uid, ref.id, compressed);
+            await updateVehicle(user.uid, ref.id, { photoPath: path });
+          } catch (err) {
+            console.error("Deferred photo upload failed:", err);
+          }
+        }
+
         router.push(`/vehicles/detail?id=${ref.id}`);
       }
     } catch (err) {
@@ -262,6 +279,15 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           />
         </div>
       </div>
+
+      {user && (
+        <VehiclePhotoUpload
+          userId={user.uid}
+          vehicleId={vehicle?.id}
+          currentPhotoPath={photoPath}
+          onUpload={setPhotoPath}
+        />
+      )}
 
       <div className="flex gap-3">
         <button

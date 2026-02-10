@@ -27,6 +27,7 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
   const router = useRouter();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
@@ -37,6 +38,12 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
     getVehicle(user.uid, vehicleId).then((v) => {
       setVehicle(v);
       setLoading(false);
+
+      if (v?.photoPath) {
+        import("@/lib/firebase/storage").then(({ getReceiptURL }) => {
+          getReceiptURL(v.photoPath!).then(setPhotoUrl).catch(console.error);
+        });
+      }
     });
 
     // Subscribe to logs for summary
@@ -108,6 +115,12 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
           </button>
         </div>
       </div>
+
+      {photoUrl && (
+        <div className="mt-6 aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-lg">
+          <img src={photoUrl} alt={vehicle.name} className="h-full w-full object-cover" />
+        </div>
+      )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         {/* Left: Stats & Status */}
