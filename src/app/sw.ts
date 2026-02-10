@@ -20,10 +20,6 @@ const serwist = new Serwist({
       matcher: /^https:\/\/(firestore|identitytoolkit|securetoken|www)\.googleapis\.com\/.*/i,
       handler: new NetworkOnly(),
     },
-    {
-      matcher: /^https:\/\/.*\.(firebaseio|firebaseapp)\.com\/.*/i,
-      handler: new NetworkOnly(),
-    },
     ...defaultCache,
   ],
 });
