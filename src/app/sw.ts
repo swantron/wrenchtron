@@ -17,13 +17,11 @@ const serwist = new Serwist({
   navigationPreload: true,
   runtimeCaching: [
     {
-      matcher: ({ url }) =>
-        url.hostname === "firestore.googleapis.com" ||
-        url.hostname === "www.googleapis.com" ||
-        url.hostname === "securetoken.googleapis.com" ||
-        url.hostname === "identitytoolkit.googleapis.com" ||
-        url.hostname.endsWith(".firebaseio.com") ||
-        url.hostname.endsWith(".firebaseapp.com"),
+      matcher: /^https:\/\/(firestore|identitytoolkit|securetoken|www)\.googleapis\.com\/.*/i,
+      handler: new NetworkOnly(),
+    },
+    {
+      matcher: /^https:\/\/.*\.(firebaseio|firebaseapp)\.com\/.*/i,
       handler: new NetworkOnly(),
     },
     ...defaultCache,
