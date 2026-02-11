@@ -104,35 +104,55 @@ function LogDetails({ log }: { log: MaintenanceLog }) {
 
 function LogItem({ log }: { log: MaintenanceLog }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/30">
       <div className="flex items-start justify-between">
-        <div>
-          <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            {typeLabels[log.maintenanceType] || log.maintenanceType}
-          </span>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            {formatDate(log.date)} &middot; {log.mileage.toLocaleString()} mi
+        <div className="flex gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+              {typeLabels[log.maintenanceType] || log.maintenanceType}
+            </h4>
+            <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <span className="font-semibold">{formatDate(log.date)}</span>
+              <span>&middot;</span>
+              <span className="font-medium text-gray-900 dark:text-white tabular-nums">{log.mileage.toLocaleString()} mi</span>
+              {log.shop && (
+                <>
+                  <span>&middot;</span>
+                  <span>{log.shop}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xl font-black text-gray-900 dark:text-white tabular-nums">
+            {formatCost(log.cost)}
           </p>
         </div>
-        <span className="text-sm font-medium text-gray-900 dark:text-white">
-          {formatCost(log.cost)}
-        </span>
       </div>
 
       <LogDetails log={log} />
 
-      {(log.shop || log.notes) && (
-        <div className="mt-3 space-y-1 text-sm text-gray-500 dark:text-gray-400">
-          {log.shop && <p>Shop: {log.shop}</p>}
-          {log.notes && <p className="italic">&quot;{log.notes}&quot;</p>}
+      {log.notes && (
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-900/50">
+          <p className="text-sm font-medium italic text-gray-600 dark:text-gray-400">
+            &ldquo;{log.notes}&rdquo;
+          </p>
         </div>
       )}
+
       {log.receiptPaths.length > 0 && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.486 8.486L20.5 13" />
+        <p className="mt-4 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.486 8.486L20.5 13" />
           </svg>
-          {log.receiptPaths.length} receipt(s)
+          {log.receiptPaths.length} Attachment(s)
         </p>
       )}
     </div>

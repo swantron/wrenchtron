@@ -66,8 +66,8 @@ export function computeSummary(
   const lastDate = latest.date?.toDate?.();
   const daysSince = lastDate
     ? Math.floor(
-        (Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-      )
+      (Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+    )
     : null;
   const milesSince = currentMileage - latest.mileage;
 
@@ -84,8 +84,10 @@ export function MaintenanceSummary({ summary }: { summary: SummaryData }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[summary.status]}`}
+          className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${statusColors[summary.status]} ${summary.status !== "green" ? "animate-pulse" : ""
+            }`}
         >
+          {summary.status !== "green" && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
           {statusLabels[summary.status]}
         </span>
       </div>

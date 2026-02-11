@@ -49,7 +49,7 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
   const summary = computeSummary(logs, vehicle.currentMileage);
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+    <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500/50">
       <Link href={`/vehicles/detail?id=${vehicle.id}`} className="block">
         {/* Vehicle Image / Placeholder */}
         <div className="relative aspect-video w-full bg-gray-100 dark:bg-gray-900">

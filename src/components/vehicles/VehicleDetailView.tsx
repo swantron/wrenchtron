@@ -133,7 +133,7 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
       </div>
 
       {photoUrl && (
-        <div className="relative mt-6 aspect-[21/9] w-full overflow-hidden rounded-2xl shadow-lg">
+        <div className="relative mt-6 aspect-[3/1] w-full overflow-hidden rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
           <NextImage
             src={photoUrl}
             alt={vehicle.name}
