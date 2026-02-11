@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 // --- Demo data types ---
 
@@ -17,6 +18,7 @@ interface DemoVehicle {
   transmission?: string;
   drivetrain?: string;
   currentMileage: number;
+  image: string;
 }
 
 interface DemoLog {
@@ -45,16 +47,32 @@ const demoVehicles: DemoVehicle[] = [
     transmission: "4L60-E 4-Speed Auto",
     drivetrain: "4WD",
     currentMileage: 187432,
+    image: "/images/demo/yukon.jpg",
   },
   {
     id: "mower",
-    name: "Honda Mower",
+    name: "John Deere Mower",
     type: "other",
-    year: 2019,
-    make: "Honda",
-    model: "HRX217VKA",
-    engine: "GCV200 190cc",
+    year: 2008,
+    make: "John Deere",
+    model: "JS36",
+    engine: "Kawasaki 190cc",
     currentMileage: 312,
+    image: "/images/demo/mower.jpg",
+  },
+  {
+    id: "rzr",
+    name: "The RZR",
+    type: "atv",
+    year: 2017,
+    make: "Polaris",
+    model: "RZR 900",
+    trim: "4-Seater",
+    engine: "875cc ProStar Twin",
+    transmission: "Automatic PVT",
+    drivetrain: "AWD / 2WD",
+    currentMileage: 4820,
+    image: "/images/demo/rzr.jpg",
   },
 ];
 
@@ -157,13 +175,13 @@ const demoLogs: Record<string, DemoLog[]> = {
       maintenanceType: "oil_change",
       date: "2025-11-02",
       mileage: 312,
-      cost: 1200,
+      cost: 1000,
       shop: "Home",
       notes: "End of season change before winterizing.",
       details: {
         oilType: "conventional",
         oilWeight: "10W-30",
-        oilBrand: "Honda",
+        oilBrand: "John Deere TY22029",
         oilQuantity: 0.47,
       },
     },
@@ -174,7 +192,8 @@ const demoLogs: Record<string, DemoLog[]> = {
       mileage: 312,
       cost: 0,
       shop: "Home",
-      notes: "Winterized: drained fuel, added stabilizer to tank. Cleaned underside of deck. Stored in shed with cover.",
+      notes:
+        "Winterized: drained fuel, added stabilizer to tank. Cleaned underside of deck. Stored in shed with cover.",
       details: {},
     },
     {
@@ -195,13 +214,14 @@ const demoLogs: Record<string, DemoLog[]> = {
       maintenanceType: "oil_change",
       date: "2025-04-10",
       mileage: 258,
-      cost: 1200,
+      cost: 1000,
       shop: "Home",
-      notes: "Spring start-up oil change. Oil was dark from sitting all winter.",
+      notes:
+        "Spring start-up oil change. Oil was dark from sitting all winter.",
       details: {
         oilType: "conventional",
         oilWeight: "10W-30",
-        oilBrand: "Honda",
+        oilBrand: "John Deere TY22029",
         oilQuantity: 0.47,
       },
     },
@@ -222,7 +242,8 @@ const demoLogs: Record<string, DemoLog[]> = {
       mileage: 240,
       cost: 500,
       shop: "Home",
-      notes: "Winterized: drained fuel, stabilizer, cleaned deck, sharpened blade on bench grinder.",
+      notes:
+        "Winterized: drained fuel, stabilizer, cleaned deck, sharpened blade on bench grinder.",
       details: {},
     },
     {
@@ -236,6 +257,105 @@ const demoLogs: Record<string, DemoLog[]> = {
       details: {
         brand: "NGK",
         partNumber: "BPR6ES",
+      },
+    },
+  ],
+  rzr: [
+    {
+      id: "r1",
+      maintenanceType: "oil_change",
+      date: "2025-10-20",
+      mileage: 4820,
+      cost: 4500,
+      shop: "Home / Garage",
+      notes: "Post-season change. Engine oil and filter.",
+      details: {
+        oilType: "synthetic",
+        oilWeight: "5W-50",
+        oilBrand: "Polaris PS-4",
+        oilQuantity: 2.5,
+        filterBrand: "Polaris",
+        filterPartNumber: "2521421",
+      },
+    },
+    {
+      id: "r2",
+      maintenanceType: "air_filter",
+      date: "2025-10-20",
+      mileage: 4820,
+      cost: 3200,
+      shop: "Home / Garage",
+      notes: "Dual-stage filter was packed with dust after trail season.",
+      details: {},
+    },
+    {
+      id: "r3",
+      maintenanceType: "oil_change",
+      date: "2025-06-01",
+      mileage: 4200,
+      cost: 4500,
+      shop: "Home / Garage",
+      notes: "Mid-season change. Lots of trail miles this spring.",
+      details: {
+        oilType: "synthetic",
+        oilWeight: "5W-50",
+        oilBrand: "Polaris PS-4",
+        oilQuantity: 2.5,
+        filterBrand: "Polaris",
+        filterPartNumber: "2521421",
+      },
+    },
+    {
+      id: "r4",
+      maintenanceType: "brake_pads",
+      date: "2025-05-10",
+      mileage: 3950,
+      cost: 6500,
+      shop: "Home / Garage",
+      notes: "Front pads were glazed from mud riding. Rears still OK.",
+      details: {
+        position: "Front",
+        brand: "EPI",
+        padType: "Semi-metallic",
+      },
+    },
+    {
+      id: "r5",
+      maintenanceType: "spark_plugs",
+      date: "2025-03-15",
+      mileage: 3600,
+      cost: 1600,
+      shop: "Home / Garage",
+      notes: "Both plugs replaced. Start of riding season.",
+      details: {
+        brand: "NGK",
+        partNumber: "CR7E",
+      },
+    },
+    {
+      id: "r6",
+      maintenanceType: "transmission_fluid",
+      date: "2024-10-28",
+      mileage: 3100,
+      cost: 5500,
+      shop: "Home / Garage",
+      notes: "Front diff, rear diff, and transmission fluid change.",
+      details: {},
+    },
+    {
+      id: "r7",
+      maintenanceType: "oil_change",
+      date: "2024-04-01",
+      mileage: 2500,
+      cost: 4500,
+      shop: "Home / Garage",
+      details: {
+        oilType: "synthetic",
+        oilWeight: "5W-50",
+        oilBrand: "Polaris PS-4",
+        oilQuantity: 2.5,
+        filterBrand: "Polaris",
+        filterPartNumber: "2521421",
       },
     },
   ],
@@ -277,17 +397,25 @@ function getStatus(days: number) {
   if (days <= 90)
     return {
       label: "Up to date",
-      color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      color:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     };
   if (days <= 180)
     return {
       label: "Due soon",
-      color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+      color:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
     };
   return {
     label: "Overdue",
     color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   };
+}
+
+function unitFor(type: string): string {
+  if (type === "other") return "hrs";
+  if (type === "atv") return "mi";
+  return "mi";
 }
 
 // --- Components ---
@@ -308,44 +436,51 @@ function VehicleCard({
       ? getStatus(days)
       : { label: "No history", color: "bg-red-100 text-red-800" };
   const milesSince = latest ? vehicle.currentMileage - latest.mileage : null;
-  const unit = vehicle.type === "other" ? "hrs" : "mi";
+  const unit = unitFor(vehicle.type);
 
   return (
     <button
       onClick={onClick}
-      className="block w-full rounded-lg border border-gray-200 bg-white p-5 text-left shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+      className="block w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
     >
-      <div>
-        <h3 className="font-semibold text-gray-900 dark:text-white">
-          {vehicle.name}
-        </h3>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-          {vehicle.year} {vehicle.make} {vehicle.model}
-        </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {vehicle.currentMileage.toLocaleString()} {unit}
-        </p>
+      <div className="relative aspect-[16/9] w-full">
+        <Image
+          src={vehicle.image}
+          alt={vehicle.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, 33vw"
+        />
       </div>
-      <div className="mt-4 space-y-2">
-        <span
-          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${status.color}`}
-        >
-          {status.label}
-        </span>
+      <div className="p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              {vehicle.name}
+            </h3>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {vehicle.currentMileage.toLocaleString()} {unit}
+            </p>
+          </div>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.color}`}
+          >
+            {status.label}
+          </span>
+        </div>
         {latest && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
             <p>
               Last:{" "}
               <span className="font-medium text-gray-900 dark:text-white">
                 {typeLabels[latest.maintenanceType] || latest.maintenanceType}
               </span>
+              {" \u00B7 "}
+              {days} days ago
             </p>
-            {days !== null && <p>{days} days ago</p>}
-            {milesSince !== null && milesSince > 0 && (
-              <p>
-                {milesSince.toLocaleString()} {unit} since
-              </p>
-            )}
           </div>
         )}
       </div>
@@ -461,7 +596,7 @@ function VehicleDetail({
   logs: DemoLog[];
   onBack: () => void;
 }) {
-  const unit = vehicle.type === "other" ? "hrs" : "mi";
+  const unit = unitFor(vehicle.type);
 
   return (
     <div>
@@ -482,57 +617,73 @@ function VehicleDetail({
             d="M15.75 19.5 8.25 12l7.5-7.5"
           />
         </svg>
-        Back to vehicles
+        Back to fleet
       </button>
 
-      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          {vehicle.name}
-        </h2>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
-          {vehicle.year} {vehicle.make} {vehicle.model}
-          {vehicle.trim ? ` ${vehicle.trim}` : ""}
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">
-              {vehicle.type === "other" ? "Hours" : "Mileage"}
-            </span>
-            <p className="font-medium text-gray-900 dark:text-white">
-              {vehicle.currentMileage.toLocaleString()} {unit}
-            </p>
-          </div>
-          {vehicle.engine && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Engine</span>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {vehicle.engine}
-              </p>
-            </div>
-          )}
-          {vehicle.transmission && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Trans</span>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {vehicle.transmission}
-              </p>
-            </div>
-          )}
-          {vehicle.drivetrain && (
+      <div className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="relative aspect-[21/9] w-full">
+          <Image
+            src={vehicle.image}
+            alt={vehicle.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 896px"
+            priority
+          />
+        </div>
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            {vehicle.name}
+          </h2>
+          <p className="mt-1 text-gray-600 dark:text-gray-400">
+            {vehicle.year} {vehicle.make} {vehicle.model}
+            {vehicle.trim ? ` ${vehicle.trim}` : ""}
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
             <div>
               <span className="text-gray-500 dark:text-gray-400">
-                Drivetrain
+                {vehicle.type === "other" ? "Hours" : "Mileage"}
               </span>
               <p className="font-medium text-gray-900 dark:text-white">
-                {vehicle.drivetrain}
+                {vehicle.currentMileage.toLocaleString()} {unit}
               </p>
             </div>
-          )}
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Services</span>
-            <p className="font-medium text-gray-900 dark:text-white">
-              {logs.length}
-            </p>
+            {vehicle.engine && (
+              <div>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Engine
+                </span>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {vehicle.engine}
+                </p>
+              </div>
+            )}
+            {vehicle.transmission && (
+              <div>
+                <span className="text-gray-500 dark:text-gray-400">Trans</span>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {vehicle.transmission}
+                </p>
+              </div>
+            )}
+            {vehicle.drivetrain && (
+              <div>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Drivetrain
+                </span>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {vehicle.drivetrain}
+                </p>
+              </div>
+            )}
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">
+                Services
+              </span>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {logs.length}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -562,7 +713,10 @@ export default function DemoPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <header className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
+          <Link
+            href="/"
+            className="text-xl font-bold text-gray-900 dark:text-white"
+          >
             Wrenchtron
             <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
               Demo
@@ -588,13 +742,13 @@ export default function DemoPage() {
           <>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Your Vehicles
+                Your Fleet
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Tap a vehicle to see its full maintenance history.
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {demoVehicles.map((v) => (
                 <VehicleCard
                   key={v.id}
@@ -607,7 +761,7 @@ export default function DemoPage() {
             <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center dark:border-gray-700 dark:bg-gray-800">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 This is a demo with sample data. Sign up to track your own
-                vehicles, lawn equipment, and more.
+                vehicles, lawn equipment, UTVs, and more.
               </p>
               <Link
                 href="/login"
