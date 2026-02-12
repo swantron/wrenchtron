@@ -32,7 +32,9 @@ export default function LoginPage() {
           <p className="text-lg font-bold text-gray-900 dark:text-white">Sign In</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Access your fleet diagnostics</p>
         </div>
-        <LoginButton />
+        <div className="flex justify-center">
+          <LoginButton />
+        </div>
       </div>
 
       <div className="mt-12 text-center">
