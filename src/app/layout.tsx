@@ -5,7 +5,6 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 export const metadata: Metadata = {
   title: "Wrenchtron",
   description: "Vehicle maintenance tracker",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -27,6 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
