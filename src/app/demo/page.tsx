@@ -229,7 +229,7 @@ function ServiceProgressBar({ current, last, interval }: { current: number; last
   return (
     <div className="mt-4">
       <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-        <span>Service Interval</span>
+        <span>Next Service</span>
         <span>{Math.round(progress)}%</span>
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700/50">

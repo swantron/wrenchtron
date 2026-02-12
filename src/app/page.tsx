@@ -98,7 +98,7 @@ export default function HomePage() {
               Dashboard
             </h1>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-              Fleet Intelligence Overview
+              My Garage
             </p>
           </div>
         </div>

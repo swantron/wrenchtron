@@ -16,7 +16,7 @@ export default function VehiclesPage() {
                 Vehicles
               </h1>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                Your Machine Manifest
+                Garage
               </p>
             </div>
             <Link
