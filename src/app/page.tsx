@@ -46,8 +46,8 @@ function LandingPage() {
           <span className="text-blue-600">reimagined.</span>
         </h2>
         <p className="mt-8 max-w-xl text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
-          High-resolution maintenance tracking for serious machines.
-          Manage your fleet with predictive diagnostics and cinematic telemetry.
+          Keep track of every oil change, tire rotation, and brake job.
+          Know exactly when your next service is due.
         </p>
         <div className="mt-12 flex flex-col gap-4 sm:flex-row">
           <Link
