@@ -67,18 +67,20 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 md:hidden">
-      <div className="flex justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/80 pb-6 pt-2 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/80 md:hidden">
+      <div className="flex justify-around px-4">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${pathname === item.href
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-600 dark:text-gray-400"
+            className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-black uppercase tracking-widest transition-all ${pathname === item.href
+              ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
+              : "text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300"
               }`}
           >
-            {item.icon}
+            <div className={`p-1 ${pathname === item.href ? "scale-110" : "scale-100"} transition-transform`}>
+              {item.icon}
+            </div>
             {item.label}
           </Link>
         ))}

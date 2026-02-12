@@ -5,14 +5,14 @@ import { AppShell } from "@/components/layout/AppShell";
 export default function AboutPage() {
     return (
         <AppShell>
-            <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-                <div className="space-y-12">
+            <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
+                <div className="space-y-20">
                     {/* Legend section */}
                     <section>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-                            About Wrenchtron
+                        <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white sm:text-6xl">
+                            About <span className="text-blue-600">Wrenchtron</span>
                         </h1>
-                        <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+                        <p className="mt-8 text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
                             Wrenchtron was built on the principle of the &quot;Serverless Triad&quot;:
                             Hosting, Functions, and Storage. This architecture ensures the
                             app stays fast, secure, and—most importantly—costs $0.00 to run.
