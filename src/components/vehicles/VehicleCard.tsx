@@ -4,16 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
+import { VEHICLE_TYPE_LABELS, formatMileage } from "@/lib/vehicleUtils";
 
-const typeLabels: Record<string, string> = {
-  car: "Car",
-  truck: "Truck",
-  motorcycle: "Motorcycle",
-  atv: "ATV",
-  suv: "SUV",
-  van: "Van",
-  other: "Other",
-};
+
 
 function VehiclePhoto({ photoPath }: { photoPath: string }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -77,11 +70,13 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             </p>
           </div>
           <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-            {typeLabels[vehicle.type] || vehicle.type}
+            {VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}
           </span>
         </div>
         <div className="mt-3 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <span>{vehicle.currentMileage.toLocaleString()} mi</span>
+          {formatMileage(vehicle.currentMileage, vehicle.type) && (
+            <span>{formatMileage(vehicle.currentMileage, vehicle.type)} mi</span>
+          )}
           {vehicle.engine && <span>{vehicle.engine}</span>}
         </div>
         {!vehicle.isActive && (

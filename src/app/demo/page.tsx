@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
+import { tracksMileage } from "@/lib/vehicleUtils";
+import type { VehicleType } from "@/types/firestore";
 
 interface DemoVehicle {
   id: string;
   name: string;
-  type: string;
+  type: VehicleType;
   year: number;
   make: string;
   model: string;
@@ -82,6 +84,38 @@ const demoVehicles: DemoVehicle[] = [
     intervalMileage: 50,
     nextServiceMileage: 4850,
     image: "/images/demo/rzr.jpg",
+  },
+  {
+    id: "mower",
+    name: "The Lawn King",
+    type: "mower",
+    year: 2021,
+    make: "John Deere",
+    model: "X350",
+    trim: "42\" Deck",
+    engine: "18.5 HP V-Twin",
+    transmission: "Hydrostatic",
+    drivetrain: "RWD",
+    currentMileage: 999999, // Placeholder - mowers don't track mileage
+    intervalMileage: 50, // Hours-based interval (simulated)
+    nextServiceMileage: 999999,
+    image: "/images/demo/mower.jpg",
+  },
+  {
+    id: "snowblower",
+    name: "The Blizzard Buster",
+    type: "snowblower",
+    year: 2019,
+    make: "Ariens",
+    model: "Deluxe 28",
+    trim: "SHO",
+    engine: "306cc Ariens AX",
+    transmission: "Auto-Turn",
+    drivetrain: "Track Drive",
+    currentMileage: 999999, // Placeholder - snowblowers don't track mileage
+    intervalMileage: 25, // Seasonal interval (simulated)
+    nextServiceMileage: 999999,
+    image: "/images/demo/snowblower.jpg",
   },
 ];
 
@@ -162,6 +196,63 @@ const demoLogs: Record<string, DemoLog[]> = {
         filterBrand: "Polaris",
         filterPartNumber: "2521421",
       },
+    },
+  ],
+  mower: [
+    {
+      id: "m1",
+      maintenanceType: "oil_change",
+      date: "2025-09-15",
+      mileage: 0,
+      cost: 2500,
+      shop: "Home / Garage",
+      notes: "End of season oil change. Blade sharpened.",
+      details: {
+        oilType: "conventional",
+        oilWeight: "10W-30",
+        oilBrand: "John Deere",
+        oilQuantity: 1.5,
+      },
+    },
+    {
+      id: "m2",
+      maintenanceType: "air_filter",
+      date: "2025-04-10",
+      mileage: 0,
+      cost: 1200,
+      shop: "Home / Garage",
+      notes: "Pre-season maintenance. New air filter and spark plug.",
+      details: {
+        filterBrand: "John Deere",
+        filterPartNumber: "GY21057",
+      },
+    },
+  ],
+  snowblower: [
+    {
+      id: "s1",
+      maintenanceType: "oil_change",
+      date: "2025-11-01",
+      mileage: 0,
+      cost: 1800,
+      shop: "Home / Garage",
+      notes: "Pre-winter service. Fresh oil and spark plug.",
+      details: {
+        oilType: "synthetic",
+        oilWeight: "5W-30",
+        oilBrand: "Ariens",
+        oilQuantity: 0.6,
+      },
+    },
+    {
+      id: "s2",
+      maintenanceType: "inspection",
+      date: "2025-03-15",
+      mileage: 0,
+      cost: 0,
+      shop: "Home / Garage",
+      notes: "Post-season inspection. Greased auger bearings.",
+      details: {},
     },
   ],
 };
@@ -286,10 +377,17 @@ function VehicleCard({
       <div className="p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">
-              {vehicle.currentMileage.toLocaleString()}
-              <span className="ml-1 text-xs font-bold text-gray-400 uppercase tracking-tighter">mi</span>
-            </p>
+            {tracksMileage(vehicle.type) && (
+              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">
+                {vehicle.currentMileage.toLocaleString()}
+                <span className="ml-1 text-xs font-bold text-gray-400 uppercase tracking-tighter">mi</span>
+              </p>
+            )}
+            {!tracksMileage(vehicle.type) && (
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                {vehicle.type === "mower" ? "🚜 Lawn Equipment" : vehicle.type === "snowblower" ? "❄️ Winter Equipment" : "Equipment"}
+              </p>
+            )}
           </div>
           <span
             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${status.color} ${status.isAnimating ? "animate-pulse" : ""
@@ -345,8 +443,12 @@ function LogItem({ log }: { log: DemoLog }) {
             </h4>
             <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <span className="font-semibold">{new Date(log.date + "T00:00:00").toLocaleDateString()}</span>
-              <span>&middot;</span>
-              <span className="font-medium text-gray-900 dark:text-white tabular-nums">{log.mileage.toLocaleString()} mi</span>
+              {log.mileage > 0 && (
+                <>
+                  <span>&middot;</span>
+                  <span className="font-medium text-gray-900 dark:text-white tabular-nums">{log.mileage.toLocaleString()} mi</span>
+                </>
+              )}
               {log.shop && (
                 <>
                   <span>&middot;</span>
@@ -440,10 +542,17 @@ function VehicleDetail({
         </div>
 
         <div className="grid grid-cols-1 divide-y divide-gray-100 dark:divide-gray-700/50 md:grid-cols-4 md:divide-x md:divide-y-0">
-          <div className="p-8">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mileage</p>
-            <p className="mt-1 text-2xl font-black text-gray-900 dark:text-white tabular-nums">{vehicle.currentMileage.toLocaleString()} mi</p>
-          </div>
+          {tracksMileage(vehicle.type) ? (
+            <div className="p-8">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mileage</p>
+              <p className="mt-1 text-2xl font-black text-gray-900 dark:text-white tabular-nums">{vehicle.currentMileage.toLocaleString()} mi</p>
+            </div>
+          ) : (
+            <div className="p-8">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</p>
+              <p className="mt-1 text-2xl font-black text-gray-900 dark:text-white">{vehicle.type === "mower" ? "🚜 Mower" : "❄️ Snowblower"}</p>
+            </div>
+          )}
           <div className="p-8">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Engine</p>
             <p className="mt-1 text-2xl font-black text-gray-900 dark:text-white truncate">{vehicle.engine}</p>

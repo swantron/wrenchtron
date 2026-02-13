@@ -7,6 +7,9 @@ export type VehicleType =
   | "atv"
   | "suv"
   | "van"
+  | "mower"
+  | "snowblower"
+  | "boat"
   | "other";
 
 export interface Vehicle {

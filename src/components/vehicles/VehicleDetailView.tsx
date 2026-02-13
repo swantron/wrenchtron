@@ -9,6 +9,7 @@ import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
+import { formatMileage } from "@/lib/vehicleUtils";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 import { MaintenanceSummary, computeSummary } from "@/components/dashboard/MaintenanceSummary";
@@ -161,10 +162,12 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
               Vehicle Specs
             </h3>
             <dl className="space-y-4">
-              <DetailItem
-                label="Current Mileage"
-                value={`${vehicle.currentMileage.toLocaleString()} mi`}
-              />
+              {formatMileage(vehicle.currentMileage, vehicle.type) && (
+                <DetailItem
+                  label="Current Mileage"
+                  value={`${formatMileage(vehicle.currentMileage, vehicle.type)} mi`}
+                />
+              )}
               {vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
               {vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}
               {vehicle.drivetrain && <DetailItem label="Drivetrain" value={vehicle.drivetrain} />}

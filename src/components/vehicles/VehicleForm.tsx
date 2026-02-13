@@ -8,6 +8,7 @@ import { uploadVehiclePhoto } from "@/lib/firebase/storage";
 import { compressImage } from "@/lib/image/compress";
 import type { Vehicle, VehicleType } from "@/types/firestore";
 import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
+import { tracksMileage } from "@/lib/vehicleUtils";
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "car", label: "Car" },
@@ -15,6 +16,9 @@ const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "suv", label: "SUV" },
   { value: "van", label: "Van" },
   { value: "motorcycle", label: "Motorcycle" },
+  { value: "mower", label: "Mower" },
+  { value: "snowblower", label: "Snowblower" },
+  { value: "boat", label: "Boat" },
   { value: "atv", label: "ATV" },
   { value: "other", label: "Other" },
 ];
@@ -54,7 +58,9 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
     e.preventDefault();
     if (!user) return;
 
-    if (!name || !year || !make || !model || !currentMileage) {
+    // Mileage is only required for vehicles that track mileage
+    const requiresMileage = tracksMileage(type);
+    if (!name || !year || !make || !model || (requiresMileage && !currentMileage)) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -70,7 +76,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         year: parseInt(year),
         make,
         model,
-        currentMileage: parseInt(currentMileage),
+        currentMileage: currentMileage ? parseInt(currentMileage) : 999999,
         isActive: true,
       };
       if (trim) data.trim = trim;
@@ -203,19 +209,31 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Current Mileage *
-          </label>
-          <input
-            type="number"
-            value={currentMileage}
-            onChange={(e) => setCurrentMileage(e.target.value)}
-            min="0"
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            required
-          />
-        </div>
+        {tracksMileage(type) && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Current Mileage *
+            </label>
+            <input
+              type="number"
+              value={currentMileage}
+              onChange={(e) => setCurrentMileage(e.target.value)}
+              min="0"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              required
+            />
+          </div>
+        )}
+
+        {!tracksMileage(type) && (
+          <div className="sm:col-span-2">
+            <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                💡 {type === "mower" ? "Mowers" : type === "snowblower" ? "Snowblowers" : "This equipment"} typically don&apos;t track mileage. You can track maintenance by date and service type instead.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
