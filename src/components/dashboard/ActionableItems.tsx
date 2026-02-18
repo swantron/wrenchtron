@@ -26,10 +26,10 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                     <div
                         key={item.id}
                         className={`relative overflow-hidden rounded-xl border p-4 shadow-sm transition-all hover:shadow-md ${item.status === "overdue"
-                                ? "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/10"
-                                : item.status === "due_soon"
-                                    ? "border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-900/10"
-                                    : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                            ? "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/10"
+                            : item.status === "due_soon"
+                                ? "border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-900/10"
+                                : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
                             }`}
                     >
                         <div className="flex items-start justify-between">
@@ -39,14 +39,19 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                                 </h3>
                                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
                                     {item.vehicleName}
+                                    {item.isProjected && (
+                                        <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/30 dark:text-blue-400">
+                                            Est
+                                        </span>
+                                    )}
                                 </p>
                             </div>
                             <div
                                 className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide ${item.status === "overdue"
-                                        ? "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                        : item.status === "due_soon"
-                                            ? "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                            : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                                    ? "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                    : item.status === "due_soon"
+                                        ? "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                        : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
                                     }`}
                             >
                                 {item.status.replace("_", " ")}
@@ -56,17 +61,17 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                         <div className="mt-4">
                             <p
                                 className={`text-sm font-medium ${item.status === "overdue"
-                                        ? "text-red-700 dark:text-red-300"
-                                        : item.status === "due_soon"
-                                            ? "text-yellow-700 dark:text-yellow-300"
-                                            : "text-gray-600 dark:text-gray-400"
+                                    ? "text-red-700 dark:text-red-300"
+                                    : item.status === "due_soon"
+                                        ? "text-yellow-700 dark:text-yellow-300"
+                                        : "text-gray-600 dark:text-gray-400"
                                     }`}
                             >
                                 {item.reason}
                             </p>
-                            {item.dueDate && (
+                            {(item.dueDate || item.projectedDate) && (
                                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Target Date: {item.dueDate.toLocaleDateString()}
+                                    Target Date: {(item.dueDate || item.projectedDate)!.toLocaleDateString()}
                                 </p>
                             )}
                         </div>
@@ -78,10 +83,10 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                                     .toLowerCase()
                                     .replace(/ /g, "_")}`}
                                 className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${item.status === "overdue"
-                                        ? "bg-red-600 text-white hover:bg-red-700"
-                                        : item.status === "due_soon"
-                                            ? "bg-yellow-600 text-white hover:bg-yellow-700"
-                                            : "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900"
+                                    ? "bg-red-600 text-white hover:bg-red-700"
+                                    : item.status === "due_soon"
+                                        ? "bg-yellow-600 text-white hover:bg-yellow-700"
+                                        : "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900"
                                     }`}
                             >
                                 Log Service

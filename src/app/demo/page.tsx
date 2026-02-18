@@ -4,7 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { tracksMileage } from "@/lib/vehicleUtils";
-import type { VehicleType } from "@/types/firestore";
+import type { Vehicle, VehicleType, ServiceInterval } from "@/types/firestore";
+import { ActionableItems } from "@/components/dashboard/ActionableItems";
+import { TimelineView } from "@/components/dashboard/TimelineView";
+import { calculateActionItems, ActionItem } from "@/utils/maintenance";
+import { Timestamp } from "firebase/firestore";
+import type { MaintenanceLog, MaintenanceType } from "@/types/maintenance";
 
 interface DemoVehicle {
   id: string;
@@ -20,6 +25,7 @@ interface DemoVehicle {
   currentMileage: number;
   intervalMileage: number;
   nextServiceMileage: number;
+  estimatedAnnualMileage?: number;
   image: string;
 }
 
@@ -51,6 +57,7 @@ const demoVehicles: DemoVehicle[] = [
     currentMileage: 12450,
     intervalMileage: 5000,
     nextServiceMileage: 15000,
+    estimatedAnnualMileage: 15000,
     image: "/images/demo/f150_hero.png",
   },
   {
@@ -67,6 +74,7 @@ const demoVehicles: DemoVehicle[] = [
     currentMileage: 187432,
     intervalMileage: 3000,
     nextServiceMileage: 190000,
+    estimatedAnnualMileage: 5000, // Driven less frequently
     image: "/images/demo/yukon.jpg",
   },
   {
@@ -83,6 +91,7 @@ const demoVehicles: DemoVehicle[] = [
     currentMileage: 4820,
     intervalMileage: 50,
     nextServiceMileage: 4850,
+    estimatedAnnualMileage: 1000,
     image: "/images/demo/rzr.jpg",
   },
   {
@@ -612,14 +621,132 @@ function VehicleDetail({
   );
 }
 
+// --- Conversion Helpers ---
+
+function getDemoActionItems(): ActionItem[] {
+  // Convert Demo Data to App Data types
+  const vehicles: Vehicle[] = demoVehicles.map((dv) => {
+    const isMileageVehicle = tracksMileage(dv.type);
+
+    const intervals: ServiceInterval[] = [
+      {
+        id: "demo-summer",
+        name: "Summer Prep",
+        type: "seasonal",
+        season: "spring",
+        notes: "Prepare for heat",
+      },
+      {
+        id: "demo-winter",
+        name: "Winterize",
+        type: "seasonal",
+        season: "fall",
+        notes: "Prepare for cold",
+      },
+    ];
+
+    if (isMileageVehicle) {
+      intervals.push(
+        {
+          id: "demo-oil",
+          name: "Oil Change",
+          type: "composite",
+          mileageInterval: dv.intervalMileage,
+          timeIntervalMonths: 6,
+          notes: "Regular oil change",
+        },
+        {
+          id: "demo-tire",
+          name: "Tire Rotation",
+          type: "mileage",
+          mileageInterval: 6000,
+          notes: "Rotate tires",
+        },
+        {
+          id: "demo-brake",
+          name: "Brake Pads",
+          type: "mileage",
+          mileageInterval: 40000,
+          notes: "Check pads",
+        }
+      );
+    } else {
+      // Non-mileage (Hours or Season based)
+      // For demo, we'll just use Time for Oil Change to avoid the 999999 issue
+      intervals.push({
+        id: "demo-oil",
+        name: "Oil Change",
+        type: "time",
+        timeIntervalMonths: 12, // Annual
+        notes: "Annual oil change",
+      });
+    }
+
+    return {
+      id: dv.id,
+      name: dv.name,
+      type: dv.type,
+      year: dv.year,
+      make: dv.make,
+      model: dv.model,
+      trim: dv.trim,
+      currentMileage: dv.currentMileage,
+      isActive: true,
+      createdAt: Timestamp.now(), // Fake
+      updatedAt: Timestamp.now(), // Fake
+      serviceIntervals: intervals,
+      estimatedAnnualMileage: dv.estimatedAnnualMileage,
+    };
+  });
+
+  let allItems: ActionItem[] = [];
+
+  vehicles.forEach((vehicle) => {
+    // Convert logs
+    const dLogs = demoLogs[vehicle.id!] || [];
+    const logs: MaintenanceLog[] = dLogs.map((dl) => ({
+      id: dl.id,
+      maintenanceType: dl.maintenanceType as MaintenanceType,
+      date: Timestamp.fromDate(new Date(dl.date)),
+      mileage: dl.mileage,
+      cost: dl.cost,
+      shop: dl.shop,
+      notes: dl.notes,
+      details: dl.details,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      receiptPaths: [],
+    }));
+
+    const vehicleItems = calculateActionItems(vehicle, logs);
+    allItems = [...allItems, ...vehicleItems];
+  });
+
+  // Global Sort
+  const statusRank = { overdue: 0, due_soon: 1, upcoming: 2 };
+  allItems.sort((a, b) => {
+    if (statusRank[a.status] !== statusRank[b.status]) {
+      return statusRank[a.status] - statusRank[b.status];
+    }
+    const aDays = a.remainingDays ?? 9999;
+    const bDays = b.remainingDays ?? 9999;
+    return aDays - bDays;
+  });
+
+  return allItems;
+}
+
 // --- Page ---
 
 export default function DemoPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline">("overview");
 
   const selected = selectedId
     ? demoVehicles.find((v) => v.id === selectedId)
     : null;
+
+  const actionItems = getDemoActionItems();
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-gray-950">
@@ -655,6 +782,40 @@ export default function DemoPage() {
           />
         ) : (
           <>
+            <div className="mb-12">
+              {/* Tabs */}
+              <div className="mb-8 flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/50 sm:w-fit">
+                <button
+                  onClick={() => setActiveTab("overview")}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "overview"
+                    ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    }`}
+                >
+                  Overview
+                </button>
+                <button
+                  onClick={() => setActiveTab("timeline")}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "timeline"
+                    ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    }`}
+                >
+                  Timeline
+                </button>
+              </div>
+
+              {activeTab === "overview" ? (
+                <>
+                  {actionItems.length > 0 ? (
+                    <ActionableItems items={actionItems} />
+                  ) : null}
+                </>
+              ) : (
+                <TimelineView items={actionItems} />
+              )}
+            </div>
+
             <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">

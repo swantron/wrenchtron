@@ -12,6 +12,27 @@ export interface ActionItem {
     dueMileage?: number;
     remainingMiles?: number;
     remainingDays?: number;
+    // Projection details
+    isProjected?: boolean;
+    projectedDate?: Date;
+    projectedMileage?: number;
+}
+
+const DEFAULT_ANNUAL_MILEAGE = 0; // Default to 0 if not set, meaning no projection
+
+export function calculateProjectedMileage(vehicle: Vehicle): number {
+    if (!vehicle.estimatedAnnualMileage || vehicle.estimatedAnnualMileage <= 0) {
+        return vehicle.currentMileage;
+    }
+
+    const lastUpdateDate = vehicle.updatedAt.toDate();
+    const now = new Date();
+    const daysSinceUpdate = Math.max(0, (now.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    const dailyRate = vehicle.estimatedAnnualMileage / 365;
+    const projectedGrowth = Math.floor(dailyRate * daysSinceUpdate);
+
+    return vehicle.currentMileage + projectedGrowth;
 }
 
 export function calculateActionItems(
@@ -43,11 +64,31 @@ export function calculateActionItems(
         let dueMileage: number | undefined;
         let remainingMiles: number | undefined;
         let remainingDays: number | undefined;
+        let projectedDate: Date | undefined;
+        let isProjected = false;
+
+        // Current status (Projected or Actual)
+        const currentMileage = calculateProjectedMileage(vehicle);
+        if (currentMileage > vehicle.currentMileage) {
+            isProjected = true;
+        }
 
         // --- Mileage Logic ---
         if (interval.mileageInterval) {
+            // When is it due?
             dueMileage = lastMileage + interval.mileageInterval;
-            remainingMiles = dueMileage - vehicle.currentMileage;
+            remainingMiles = dueMileage - currentMileage;
+
+            // Estimate DATE it will be due based on daily rate
+            if (vehicle.estimatedAnnualMileage && vehicle.estimatedAnnualMileage > 0) {
+                const dailyRate = vehicle.estimatedAnnualMileage / 365;
+                // Days until we hit the due mileage
+                // Note: remainingMiles might be negative (overdue)
+                const daysUntilDue = remainingMiles / dailyRate;
+
+                const now = new Date();
+                projectedDate = new Date(now.getTime() + (daysUntilDue * 24 * 60 * 60 * 1000));
+            }
         }
 
         // --- Time Logic ---
@@ -154,7 +195,10 @@ export function calculateActionItems(
             dueMileage,
             dueDate,
             remainingMiles,
-            remainingDays
+            remainingDays,
+            isProjected,
+            projectedDate,
+            projectedMileage: isProjected ? currentMileage : undefined
         });
     }
 

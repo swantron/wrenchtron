@@ -26,6 +26,7 @@ export interface Vehicle {
   vin?: string;
   licensePlate?: string;
   currentMileage: number;
+  estimatedAnnualMileage?: number; // For predictive maintenance
   photoPath?: string;
   isActive: boolean;
   createdAt: Timestamp;

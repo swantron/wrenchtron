@@ -51,6 +51,9 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [currentMileage, setCurrentMileage] = useState(
     vehicle?.currentMileage?.toString() ?? ""
   );
+  const [estimatedAnnualMileage, setEstimatedAnnualMileage] = useState(
+    vehicle?.estimatedAnnualMileage?.toString() ?? ""
+  );
   const [photoPath, setPhotoPath] = useState(vehicle?.photoPath ?? "");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
@@ -77,6 +80,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         make,
         model,
         currentMileage: currentMileage ? parseInt(currentMileage) : 999999,
+        estimatedAnnualMileage: estimatedAnnualMileage ? parseInt(estimatedAnnualMileage) : undefined,
         isActive: true,
       };
       if (trim) data.trim = trim;
@@ -222,6 +226,27 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               required
             />
+          </div>
+        )}
+
+        {tracksMileage(type) && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Estimated Annual Mileage
+            </label>
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <input
+                type="number"
+                value={estimatedAnnualMileage}
+                onChange={(e) => setEstimatedAnnualMileage(e.target.value)}
+                min="0"
+                placeholder="e.g. 12000"
+                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Used to predict upcoming maintenance dates based on your driving habits.
+            </p>
           </div>
         )}
 

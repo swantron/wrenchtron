@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/layout/AppShell";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { ActionableItems } from "@/components/dashboard/ActionableItems";
+import { TimelineView } from "@/components/dashboard/TimelineView";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useActionableItems } from "@/hooks/useActionableItems";
@@ -81,6 +84,11 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const { vehicles, loading: vehiclesLoading } = useVehicles();
   const { items: actionItems, loading: itemsLoading } = useActionableItems(vehicles);
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline">("overview");
+
+  // Re-import useState since it was only in LandingPage scope implicitely or globally?
+  // Wait, LandingPage didn't use useState. We need to add it to imports.
+
 
   if (loading || vehiclesLoading) {
     return (
@@ -108,14 +116,45 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Actionable Items Section */}
-        {!itemsLoading && actionItems.length > 0 && (
-          <ActionableItems items={actionItems} />
-        )}
-
-        <div className="mt-6">
-          <DashboardGrid />
+        {/* Tabs */}
+        <div className="mb-8 flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/50 sm:w-fit">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "overview"
+              ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
+              : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("timeline")}
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "timeline"
+              ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
+              : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              }`}
+          >
+            Timeline
+          </button>
         </div>
+
+        {activeTab === "overview" ? (
+          <>
+            {/* Actionable Items Section (Priority items only?) */}
+            {/* User asked for breakdown specifically for upcoming maintenance in timeline tab. */}
+            {/* Maybe we keep concise list here? Or full list? */}
+            {/* Existing behavior: full grid. Let's keep it. */}
+            {!itemsLoading && actionItems.length > 0 && (
+              <ActionableItems items={actionItems} />
+            )}
+
+            <div className="mt-6">
+              <DashboardGrid />
+            </div>
+          </>
+        ) : (
+          <TimelineView items={actionItems} />
+        )}
       </div>
     </AppShell>
   );
