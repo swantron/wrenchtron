@@ -626,26 +626,60 @@ function VehicleDetail({
 function getDemoActionItems(): ActionItem[] {
   // Convert Demo Data to App Data types
   const vehicles: Vehicle[] = demoVehicles.map((dv) => {
-    const isMileageVehicle = tracksMileage(dv.type);
 
-    const intervals: ServiceInterval[] = [
-      {
-        id: "demo-summer",
-        name: "Summer Prep",
-        type: "seasonal",
-        season: "spring",
-        notes: "Prepare for heat",
-      },
-      {
-        id: "demo-winter",
-        name: "Winterize",
-        type: "seasonal",
-        season: "fall",
-        notes: "Prepare for cold",
-      },
-    ];
 
-    if (isMileageVehicle) {
+    const intervals: ServiceInterval[] = [];
+
+    if (dv.type === "mower") {
+      intervals.push(
+        {
+          id: "demo-mower-oil",
+          name: "Oil Change",
+          type: "seasonal",
+          season: "spring",
+          notes: "Annual oil change before mowing season",
+        },
+        {
+          id: "demo-mower-blades",
+          name: "Blade Sharpening",
+          type: "seasonal",
+          season: "spring",
+          notes: "Sharpen or replace blades",
+        },
+        {
+          id: "demo-mower-winter",
+          name: "Winterize",
+          type: "seasonal",
+          season: "fall",
+          notes: "Stabilize fuel, remove battery",
+        }
+      );
+    } else if (dv.type === "snowblower") {
+      intervals.push(
+        {
+          id: "demo-snow-oil",
+          name: "Oil Change",
+          type: "seasonal",
+          season: "fall",
+          notes: "Annual oil change before winter",
+        },
+        {
+          id: "demo-snow-auger",
+          name: "Auger/Belt Check",
+          type: "seasonal",
+          season: "fall",
+          notes: "Check auger, belts, and shear pins",
+        },
+        {
+          id: "demo-snow-summer",
+          name: "Summerize",
+          type: "seasonal",
+          season: "spring",
+          notes: "Stabilize fuel, drain carb",
+        }
+      );
+    } else {
+      // Cars/Trucks/SUVs/ATVs
       intervals.push(
         {
           id: "demo-oil",
@@ -663,23 +697,18 @@ function getDemoActionItems(): ActionItem[] {
           notes: "Rotate tires",
         },
         {
-          id: "demo-brake",
-          name: "Brake Pads",
+          id: "demo-air-filter",
+          name: "Engine Air Filter",
           type: "mileage",
-          mileageInterval: 40000,
-          notes: "Check pads",
+          mileageInterval: 30000,
+          notes: "Replace engine air filter",
         }
       );
-    } else {
-      // Non-mileage (Hours or Season based)
-      // For demo, we'll just use Time for Oil Change to avoid the 999999 issue
-      intervals.push({
-        id: "demo-oil",
-        name: "Oil Change",
-        type: "time",
-        timeIntervalMonths: 12, // Annual
-        notes: "Annual oil change",
-      });
+
+      // Remove specific items for ATV if needed, but generic "Car" logic fits most road/offroad vehicles better than Mower logic
+      if (dv.type === "atv") {
+        // Maybe remove tire rotation for ATV if it's not standard, but let's keep it simple for now or customize
+      }
     }
 
     return {

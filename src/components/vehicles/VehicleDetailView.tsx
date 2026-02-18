@@ -12,7 +12,9 @@ import { getReceiptURL } from "@/lib/firebase/storage";
 import { formatMileage } from "@/lib/vehicleUtils";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
+
 import { MaintenanceSummary, computeSummary } from "@/components/dashboard/MaintenanceSummary";
+import { ServiceIntervalManager } from "@/components/vehicles/ServiceIntervalManager";
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
@@ -195,6 +197,10 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="mt-12 border-t border-gray-100 pt-12 dark:border-gray-800">
+        <ServiceIntervalManager vehicle={vehicle} />
+      </div>
+    </div >
   );
 }

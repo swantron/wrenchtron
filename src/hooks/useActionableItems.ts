@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Vehicle } from "@/types/firestore";
+import { Vehicle, VehicleType } from "@/types/firestore";
 import { MaintenanceLog } from "@/types/maintenance";
 import { subscribeToMaintenanceLogs } from "@/lib/firebase/firestore";
 import { ActionItem, calculateActionItems } from "@/utils/maintenance";
@@ -7,7 +7,7 @@ import { useAuth } from "./useAuth";
 
 import { ServiceInterval } from "@/types/firestore";
 
-const DEFAULT_SERVICE_INTERVALS: ServiceInterval[] = [
+const DEFAULT_CAR_INTERVALS: ServiceInterval[] = [
     {
         id: "default-oil",
         name: "Oil Change",
@@ -24,20 +24,78 @@ const DEFAULT_SERVICE_INTERVALS: ServiceInterval[] = [
         notes: "Rotate tires to ensure even wear",
     },
     {
-        id: "default-winter",
-        name: "Winterize",
-        type: "seasonal",
-        season: "fall", // Nov
-        notes: "Check antifreeze, battery, tires for winter",
-    },
-    {
-        id: "default-summer",
-        name: "Summer Prep",
-        type: "seasonal",
-        season: "spring", // May
-        notes: "Check A/C, coolant, summer tires",
+        id: "default-air-filter",
+        name: "Engine Air Filter",
+        type: "mileage",
+        mileageInterval: 30000,
+        notes: "Replace engine air filter",
     },
 ];
+
+const DEFAULT_MOWER_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-mower-oil",
+        name: "Oil Change",
+        type: "seasonal",
+        season: "spring",
+        notes: "Annual oil change before mowing season",
+    },
+    {
+        id: "default-mower-blades",
+        name: "Blade Sharpening",
+        type: "seasonal",
+        season: "spring",
+        notes: "Sharpen or replace blades",
+    },
+    {
+        id: "default-mower-winter",
+        name: "Winterize",
+        type: "seasonal",
+        season: "fall",
+        notes: "Stabilize fuel, remove battery",
+    },
+];
+
+const DEFAULT_SNOWBLOWER_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-snow-oil",
+        name: "Oil Change",
+        type: "seasonal",
+        season: "fall",
+        notes: "Annual oil change before winter",
+    },
+    {
+        id: "default-snow-auger",
+        name: "Auger/Belt Check",
+        type: "seasonal",
+        season: "fall",
+        notes: "Check auger, belts, and shear pins",
+    },
+    {
+        id: "default-snow-summer",
+        name: "Summerize",
+        type: "seasonal",
+        season: "spring",
+        notes: "Stabilize fuel, drain carb",
+    },
+];
+
+function getDefaultIntervals(type: VehicleType): ServiceInterval[] {
+    switch (type) {
+        case "mower":
+            return DEFAULT_MOWER_INTERVALS;
+        case "snowblower":
+            return DEFAULT_SNOWBLOWER_INTERVALS;
+        case "car":
+        case "truck":
+        case "suv":
+        case "van":
+        case "motorcycle":
+            return DEFAULT_CAR_INTERVALS;
+        default:
+            return DEFAULT_CAR_INTERVALS;
+    }
+}
 
 export function useActionableItems(vehicles: Vehicle[]) {
     const { user } = useAuth();
@@ -68,7 +126,7 @@ export function useActionableItems(vehicles: Vehicle[]) {
                     ...vehicle,
                     serviceIntervals: (vehicle.serviceIntervals && vehicle.serviceIntervals.length > 0)
                         ? vehicle.serviceIntervals
-                        : DEFAULT_SERVICE_INTERVALS
+                        : getDefaultIntervals(vehicle.type)
                 };
                 const vehicleItems = calculateActionItems(vehicleWithDefaults, logs);
                 allItems = [...allItems, ...vehicleItems];
