@@ -30,4 +30,22 @@ export interface Vehicle {
   isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  serviceIntervals?: ServiceInterval[];
+}
+
+export type IntervalType = "mileage" | "time" | "seasonal" | "composite";
+
+export interface ServiceInterval {
+  id: string;
+  name: string;
+  type: IntervalType;
+
+  // Triggers
+  mileageInterval?: number;
+  timeIntervalMonths?: number;
+  season?: "spring" | "fall" | "summer" | "winter";
+  month?: number; // 1-12
+
+  // Notes
+  notes?: string;
 }

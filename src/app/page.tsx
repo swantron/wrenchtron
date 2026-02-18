@@ -3,7 +3,10 @@
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/layout/AppShell";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
+import { ActionableItems } from "@/components/dashboard/ActionableItems";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useVehicles } from "@/hooks/useVehicles";
+import { useActionableItems } from "@/hooks/useActionableItems";
 import Link from "next/link";
 
 function LandingPage() {
@@ -76,8 +79,10 @@ function LandingPage() {
 
 export default function HomePage() {
   const { user, loading } = useAuth();
+  const { vehicles, loading: vehiclesLoading } = useVehicles();
+  const { items: actionItems, loading: itemsLoading } = useActionableItems(vehicles);
 
-  if (loading) {
+  if (loading || vehiclesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <LoadingSpinner />
@@ -102,6 +107,12 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+
+        {/* Actionable Items Section */}
+        {!itemsLoading && actionItems.length > 0 && (
+          <ActionableItems items={actionItems} />
+        )}
+
         <div className="mt-6">
           <DashboardGrid />
         </div>
