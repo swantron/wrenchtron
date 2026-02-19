@@ -10,7 +10,7 @@ export function VehicleList() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex justify-center items-center h-64">
         <LoadingSpinner />
       </div>
     );
@@ -18,15 +18,10 @@ export function VehicleList() {
 
   if (vehicles.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-gray-500 dark:text-gray-400">
-          No vehicles yet. Add your first vehicle to get started.
-        </p>
-        <Link
-          href="/vehicles/new"
-          className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Add Vehicle
+      <div className="text-center py-10">
+        <p className="text-lg text-gray-600 mb-4">No vehicles found.</p>
+        <Link href="/vehicles/new" className="text-blue-600 hover:underline">
+          Add a new vehicle
         </Link>
       </div>
     );

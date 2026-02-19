@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
-import { addMaintenanceLog } from "@/lib/firebase/firestore";
+import { addMaintenanceLog, updateMaintenanceLog } from "@/lib/firebase/firestore";
 import { tracksMileage } from "@/lib/vehicleUtils";
 import { OilChangeFields } from "./OilChangeFields";
 import { TireFields } from "./TireFields";
@@ -12,6 +12,7 @@ import { BrakeFields } from "./BrakeFields";
 import { ReceiptUpload } from "./ReceiptUpload";
 import type { VehicleType } from "@/types/firestore";
 import type {
+  MaintenanceLog,
   MaintenanceType,
   OilChangeDetails,
   TireDetails,
@@ -40,9 +41,10 @@ interface MaintenanceFormProps {
   vehicleId: string;
   vehicleType?: VehicleType;
   initialType?: MaintenanceType;
+  initialData?: MaintenanceLog;
 }
 
-export function MaintenanceForm({ vehicleId, vehicleType, initialType }: MaintenanceFormProps) {
+export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialData }: MaintenanceFormProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -51,16 +53,16 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType }: Mainten
   const requiresMileage = tracksMileage(vehicleType ?? "car");
 
   const [maintenanceType, setMaintenanceType] =
-    useState<MaintenanceType>(initialType ?? "oil_change");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [mileage, setMileage] = useState("");
-  const [cost, setCost] = useState("");
-  const [shop, setShop] = useState("");
-  const [notes, setNotes] = useState("");
-  const [receiptPaths, setReceiptPaths] = useState<string[]>([]);
-  const [oilDetails, setOilDetails] = useState<OilChangeDetails>({});
-  const [tireDetails, setTireDetails] = useState<TireDetails>({});
-  const [brakeDetails, setBrakeDetails] = useState<BrakeDetails>({});
+    useState<MaintenanceType>(initialData?.maintenanceType ?? initialType ?? "oil_change");
+  const [date, setDate] = useState(initialData?.date ? (initialData.date as any).toDate().toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
+  const [mileage, setMileage] = useState(initialData?.mileage.toString() ?? "");
+  const [cost, setCost] = useState(initialData?.cost ? (initialData.cost / 100).toString() : "");
+  const [shop, setShop] = useState(initialData?.shop ?? "");
+  const [notes, setNotes] = useState(initialData?.notes ?? "");
+  const [receiptPaths, setReceiptPaths] = useState<string[]>(initialData?.receiptPaths ?? []);
+  const [oilDetails, setOilDetails] = useState<OilChangeDetails>(initialData?.details as OilChangeDetails ?? {});
+  const [tireDetails, setTireDetails] = useState<TireDetails>(initialData?.details as TireDetails ?? {});
+  const [brakeDetails, setBrakeDetails] = useState<BrakeDetails>(initialData?.details as BrakeDetails ?? {});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +106,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType }: Mainten
       if (shop) logData.shop = shop;
       if (notes) logData.notes = notes;
 
-      await addMaintenanceLog(user.uid, vehicleId, logData);
+      if (initialData?.id) {
+        await updateMaintenanceLog(user.uid, vehicleId, initialData.id, logData);
+      } else {
+        await addMaintenanceLog(user.uid, vehicleId, logData);
+      }
 
       router.push(`/vehicles/detail?id=${vehicleId}`);
     } catch (err) {
@@ -259,7 +265,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType }: Mainten
           disabled={saving}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Log Maintenance"}
+          {saving ? "Saving..." : initialData?.id ? "Update Log" : "Log Maintenance"}
         </button>
         <button
           type="button"

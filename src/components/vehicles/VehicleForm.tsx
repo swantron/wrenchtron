@@ -340,7 +340,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           disabled={saving}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {saving ? "Saving..." : vehicle?.id ? "Update Vehicle" : "Add Vehicle"}
+          {saving ? "Saving..." : vehicle?.id ? "Update Machine" : "Add to Garage"}
         </button>
         <button
           type="button"

@@ -13,6 +13,7 @@ const INTERVAL_TYPES: { value: IntervalType; label: string }[] = [
     { value: "time", label: "Time Based" },
     { value: "seasonal", label: "Seasonal" },
     { value: "composite", label: "Mileage or Time (Whichever first)" },
+    { value: "month", label: "Specific Month" },
 ];
 
 const SEASONS = [
@@ -20,6 +21,21 @@ const SEASONS = [
     { value: "summer", label: "Summer" },
     { value: "fall", label: "Fall" },
     { value: "winter", label: "Winter" },
+];
+
+const MONTHS = [
+    { value: 0, label: "January" },
+    { value: 1, label: "February" },
+    { value: 2, label: "March" },
+    { value: 3, label: "April" },
+    { value: 4, label: "May" },
+    { value: 5, label: "June" },
+    { value: 6, label: "July" },
+    { value: 7, label: "August" },
+    { value: 8, label: "September" },
+    { value: 9, label: "October" },
+    { value: 10, label: "November" },
+    { value: 11, label: "December" },
 ];
 
 const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
@@ -53,6 +69,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
     const [mileageInterval, setMileageInterval] = useState<string>("");
     const [timeIntervalMonths, setTimeIntervalMonths] = useState<string>("");
     const [season, setSeason] = useState<"spring" | "fall" | "summer" | "winter">("spring");
+    const [specificMonth, setSpecificMonth] = useState<number>(new Date().getMonth());
     const [notes, setNotes] = useState("");
 
     const handleAdd = async (e: React.FormEvent) => {
@@ -83,6 +100,10 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
 
         if (type === "seasonal") {
             newInterval.season = season;
+        }
+
+        if (type === "month") {
+            newInterval.specificMonth = specificMonth;
         }
 
         const updatedIntervals = [...(vehicle.serviceIntervals || []), newInterval];
@@ -127,6 +148,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
         setMileageInterval("");
         setTimeIntervalMonths("");
         setSeason("spring");
+        setSpecificMonth(new Date().getMonth());
         setNotes("");
         setError("");
     };
@@ -266,6 +288,25 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                             </div>
                         )}
 
+                        {type === "month" && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    Month
+                                </label>
+                                <select
+                                    value={specificMonth}
+                                    onChange={(e) => setSpecificMonth(parseInt(e.target.value))}
+                                    className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                                >
+                                    {MONTHS.map((m) => (
+                                        <option key={m.value} value={m.value}>
+                                            {m.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div className="md:col-span-2">
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Notes (Optional)
@@ -338,6 +379,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                                 {interval.type === "composite" &&
                                     `Every ${interval.mileageInterval?.toLocaleString()} mi or ${interval.timeIntervalMonths} mo`}
                                 {interval.type === "seasonal" && `Every ${interval.season}`}
+                                {interval.type === "month" && `Every ${MONTHS.find(m => m.value === interval.specificMonth)?.label}`}
                             </div>
 
                             {interval.notes && (

@@ -25,7 +25,7 @@ const navItems = [
   },
   {
     href: "/vehicles",
-    label: "Vehicles",
+    label: "Garage",
     icon: (
       <svg
         className="h-6 w-6"

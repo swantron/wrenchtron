@@ -128,7 +128,7 @@ export function DashboardGrid() {
           />
         </svg>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          No vehicles yet
+          Garage is empty
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Add your first vehicle to start tracking maintenance.
@@ -137,7 +137,7 @@ export function DashboardGrid() {
           href="/vehicles/new"
           className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Add Vehicle
+          Add to Garage
         </Link>
       </div>
     );

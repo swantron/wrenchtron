@@ -35,7 +35,7 @@ export interface Vehicle {
   serviceIntervals?: ServiceInterval[];
 }
 
-export type IntervalType = "mileage" | "time" | "seasonal" | "composite";
+export type IntervalType = "mileage" | "time" | "seasonal" | "composite" | "month";
 
 export interface ServiceInterval {
   id: string;
@@ -56,4 +56,5 @@ export interface ServiceInterval {
   isComponentBased?: boolean;
   componentInstallationType?: MaintenanceType;
   totalLifeMileage?: number;
+  specificMonth?: number; // 0-11 (Jan-Dec)
 }

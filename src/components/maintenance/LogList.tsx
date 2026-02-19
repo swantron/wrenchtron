@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import { useAuth } from "@/hooks/useAuth";
 import { deleteMaintenanceLog } from "@/lib/firebase/firestore";
@@ -178,9 +179,11 @@ function ReceiptGallery({ paths }: { paths: string[] }) {
 
 function LogItem({
   log,
+  vehicleId,
   onDelete,
 }: {
   log: MaintenanceLog;
+  vehicleId: string;
   onDelete: (logId: string) => Promise<void>;
 }) {
   const [deleting, setDeleting] = useState(false);
@@ -227,6 +230,15 @@ function LogItem({
           </div>
         </div>
         <div className="flex items-start gap-3">
+          <Link
+            href={`/maintenance/edit?vehicleId=${vehicleId}&logId=${log.id}`}
+            className="rounded-lg p-1.5 text-gray-300 opacity-0 transition-all hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100 dark:text-gray-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+            title="Edit log"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </Link>
           <p className="text-xl font-black text-gray-900 dark:text-white tabular-nums">
             {formatCost(log.cost)}
           </p>
@@ -291,6 +303,7 @@ export function LogList({ vehicleId }: { vehicleId: string }) {
         <LogItem
           key={log.id}
           log={log}
+          vehicleId={vehicleId}
           onDelete={handleDelete}
         />
       ))}

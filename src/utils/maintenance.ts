@@ -141,6 +141,31 @@ export function calculateActionItems(
             isTimeDueSoon = remainingDays < 30;
         }
 
+        // --- Specific Month Logic ---
+        if (interval.type === "month" && interval.specificMonth !== undefined) {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const targetMonth = interval.specificMonth; // 0-11
+
+            let targetDate = new Date(currentYear, targetMonth, 1);
+
+            // If the month has passed this year, move to next year
+            if (now.getMonth() > targetMonth) {
+                targetDate.setFullYear(currentYear + 1);
+            }
+
+            dueDate = targetDate;
+            const diffTime = targetDate.getTime() - now.getTime();
+            remainingDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+            if (now.getMonth() === targetMonth) {
+                isTimeDueSoon = true;
+                remainingDays = 0;
+            } else if (remainingDays < 30) {
+                isTimeDueSoon = true;
+            }
+        }
+
         // --- Seasonal Logic ---
         if (interval.season) {
             const now = new Date();
