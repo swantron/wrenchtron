@@ -686,6 +686,7 @@ function getDemoActionItems(): ActionItem[] {
           id: "demo-oil",
           name: "Oil Change",
           type: "composite",
+          targetMaintenanceType: "oil_change",
           mileageInterval: dv.intervalMileage,
           timeIntervalMonths: 6,
           notes: "Regular oil change",
@@ -694,13 +695,26 @@ function getDemoActionItems(): ActionItem[] {
           id: "demo-tire",
           name: "Tire Rotation",
           type: "mileage",
+          targetMaintenanceType: "tire_rotation",
           mileageInterval: 6000,
+          isOptional: true,
           notes: "Rotate tires",
+        },
+        {
+          id: "demo-tire-replace",
+          name: "Tire Replacement",
+          type: "mileage",
+          targetMaintenanceType: "tire_replacement",
+          isComponentBased: true,
+          componentInstallationType: "tire_replacement",
+          totalLifeMileage: 60000,
+          notes: "Full set of tires",
         },
         {
           id: "demo-air-filter",
           name: "Engine Air Filter",
           type: "mileage",
+          targetMaintenanceType: "air_filter",
           mileageInterval: 30000,
           notes: "Replace engine air filter",
         }
@@ -710,6 +724,18 @@ function getDemoActionItems(): ActionItem[] {
       if (dv.type === "atv") {
         // Maybe remove tire rotation for ATV if it's not standard, but let's keep it simple for now or customize
       }
+    }
+
+    if (dv.type === "mower" || dv.type === "snowblower") {
+      intervals.push({
+        id: `demo-${dv.id}-plugs`,
+        name: "Spark Plugs",
+        type: "time",
+        targetMaintenanceType: "spark_plugs",
+        timeIntervalMonths: 36,
+        isOptional: false,
+        notes: "Replace spark plugs every 3 years",
+      });
     }
 
     return {

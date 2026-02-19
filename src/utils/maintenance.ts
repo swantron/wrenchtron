@@ -16,6 +16,7 @@ export interface ActionItem {
     isProjected?: boolean;
     projectedDate?: Date;
     projectedMileage?: number;
+    isOptional?: boolean;
 }
 
 // Default annual mileage constant (unused)
@@ -76,36 +77,68 @@ export function calculateActionItems(
             isProjected = true;
         }
 
-        // --- Mileage Logic ---
+        // --- Component Life Logic (e.g. Tire Replacement) ---
+        let baseMileage = lastMileage;
+        let baseDate = lastDate;
+
+        if (interval.isComponentBased && interval.componentInstallationType) {
+            // Find MOST RECENT installation log
+            const installationLog = logs
+                .filter(log => log.maintenanceType === interval.componentInstallationType)
+                .sort((a, b) => b.date.toMillis() - a.date.toMillis())[0];
+
+            if (installationLog) {
+                baseMileage = installationLog.mileage;
+                baseDate = installationLog.date.toDate();
+            }
+        }
+
+        // --- Result Calculation ---
+        let isMileageOverdue = false;
+        let isTimeOverdue = false;
+        let isMileageDueSoon = false;
+        let isTimeDueSoon = false;
+
+        // Mileage Trigger
         if (interval.mileageInterval) {
-            // When is it due?
             dueMileage = lastMileage + interval.mileageInterval;
             remainingMiles = dueMileage - currentMileage;
+            isMileageOverdue = remainingMiles < 0;
+            isMileageDueSoon = remainingMiles < 500;
 
-            // Estimate DATE it will be due based on daily rate
+            // Projection
             if (vehicle.estimatedAnnualMileage && vehicle.estimatedAnnualMileage > 0) {
                 const dailyRate = vehicle.estimatedAnnualMileage / 365;
-                // Days until we hit the due mileage
-                // Note: remainingMiles might be negative (overdue)
                 const now = new Date();
                 const daysUntilDue = remainingMiles / dailyRate;
-
-                // Cap the projected date to not be in the distant past if no logs exist
                 const projectedTime = now.getTime() + (daysUntilDue * 24 * 60 * 60 * 1000);
                 const minDate = lastLog ? lastDate : now;
-
                 projectedDate = new Date(Math.max(minDate.getTime(), projectedTime));
             }
         }
 
-        // --- Time Logic ---
-        if (interval.timeIntervalMonths) {
-            dueDate = new Date(lastDate);
-            dueDate.setMonth(dueDate.getMonth() + interval.timeIntervalMonths);
+        // Total Life Mileage (Component-based)
+        if (interval.totalLifeMileage) {
+            const lifeDueMileage = baseMileage + interval.totalLifeMileage;
+            const lifeRemainingMiles = lifeDueMileage - currentMileage;
+            if (lifeRemainingMiles < 0) {
+                isMileageOverdue = true;
+                remainingMiles = Math.min(remainingMiles ?? Infinity, lifeRemainingMiles);
+            } else if (lifeRemainingMiles < 1000) {
+                isMileageDueSoon = true;
+                remainingMiles = Math.min(remainingMiles ?? Infinity, lifeRemainingMiles);
+            }
+        }
 
+        // Time Trigger
+        if (interval.timeIntervalMonths) {
+            dueDate = new Date(baseDate);
+            dueDate.setMonth(dueDate.getMonth() + interval.timeIntervalMonths);
             const now = new Date();
             const diffTime = dueDate.getTime() - now.getTime();
             remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            isTimeOverdue = remainingDays < 0;
+            isTimeDueSoon = remainingDays < 30;
         }
 
         // --- Seasonal Logic ---
@@ -114,25 +147,21 @@ export function calculateActionItems(
             const month = now.getMonth(); // 0-11
 
             // Season definitions ( Northern Hemisphere )
-            // Spring: March (2) - May (4)
-            // Summer: June (5) - Aug (7)
-            // Fall: Sept (8) - Nov (10)
-            // Winter: Dec (11) - Feb (1)
-
             let isSeason = false;
             if (interval.season === "spring" && month >= 2 && month <= 4) isSeason = true;
             if (interval.season === "summer" && month >= 5 && month <= 7) isSeason = true;
             if (interval.season === "fall" && month >= 8 && month <= 10) isSeason = true;
             if (interval.season === "winter" && (month === 11 || month <= 1)) isSeason = true;
 
+            const optionalPrefix = interval.isOptional ? "(Optional) " : "";
+
             if (isSeason) {
-                // Check if done in the last 6 months (to avoid nagging if already done this season)
+                // Check if done in the last 6 months
                 const sixMonthsAgo = new Date();
                 sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
                 if (lastDate < sixMonthsAgo) {
                     status = "due_soon";
-                    reason = `It is ${interval.season}, time for ${interval.name}.`;
-                    // Force add this item
+                    reason = `${optionalPrefix}It is ${interval.season}, time for ${interval.name}.`;
                     items.push({
                         id: `${vehicle.id}-${interval.id}`,
                         vehicleId: vehicle.id || "",
@@ -143,49 +172,44 @@ export function calculateActionItems(
                         dueMileage,
                         dueDate,
                         remainingMiles,
-                        remainingDays
+                        remainingDays,
+                        isOptional: interval.isOptional
                     });
                     continue; // Move to next interval
                 }
             }
         }
 
-        // --- Result Calculation ---
-        // If both mileage and time are set, take the one that is SOONER (or Overdue)
-
-        const isMileageOverdue = remainingMiles !== undefined && remainingMiles < 0;
-        const isTimeOverdue = remainingDays !== undefined && remainingDays < 0;
-
-        const isMileageDueSoon = remainingMiles !== undefined && remainingMiles < 500;
-        const isTimeDueSoon = remainingDays !== undefined && remainingDays < 30;
+        const optionalPrefix = interval.isOptional ? "(Optional) " : "";
 
         if (isMileageOverdue || isTimeOverdue) {
             status = "overdue";
             if (isMileageOverdue && isTimeOverdue) {
-                reason = `Overdue by ${Math.abs(remainingMiles!)} miles and ${Math.abs(remainingDays!)} days`;
+                reason = `${optionalPrefix}Overdue by ${Math.abs(remainingMiles!)} miles and ${Math.abs(remainingDays!)} days`;
             } else if (isMileageOverdue) {
-                reason = `Overdue by ${Math.abs(remainingMiles!)} miles`;
+                reason = `${optionalPrefix}Overdue by ${Math.abs(remainingMiles!)} miles`;
             } else {
-                reason = `Overdue by ${Math.abs(remainingDays!)} days`;
+                reason = `${optionalPrefix}Overdue by ${Math.abs(remainingDays!)} days`;
             }
         } else if (isMileageDueSoon || isTimeDueSoon) {
             status = "due_soon";
             if (isMileageDueSoon) {
-                reason = `Due in ${remainingMiles} miles`;
+                reason = `${optionalPrefix}Due in ${remainingMiles} miles`;
             } else {
-                reason = `Due in ${remainingDays} days`;
+                reason = `${optionalPrefix}Due in ${remainingDays} days`;
             }
         } else {
-            // Upcoming
             status = "upcoming";
             if (remainingMiles !== undefined && remainingDays !== undefined) {
-                reason = `Due in ${remainingMiles} miles or ${remainingDays} days`;
+                reason = `${optionalPrefix}Due in ${remainingMiles} miles or ${remainingDays} days`;
             } else if (remainingMiles !== undefined) {
-                reason = `Due in ${remainingMiles} miles`;
+                reason = `${optionalPrefix}Due in ${remainingMiles} miles`;
             } else if (remainingDays !== undefined) {
-                reason = `Due in ${remainingDays} days`;
+                reason = `${optionalPrefix}Due in ${remainingDays} days`;
             }
         }
+
+        console.log(`[Maintenance Debug] ${vehicle.name} - ${interval.name}: optional=${interval.isOptional}, prefix="${optionalPrefix}", reason="${reason}"`);
 
         // Only add if it's not "far out" or if we want to show everything. 
         // Let's show everything for now but sorting will handle priority.
@@ -205,7 +229,8 @@ export function calculateActionItems(
             remainingDays,
             isProjected,
             projectedDate,
-            projectedMileage: isProjected ? currentMileage : undefined
+            projectedMileage: isProjected ? currentMileage : undefined,
+            isOptional: interval.isOptional
         });
     }
 

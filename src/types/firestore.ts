@@ -50,4 +50,10 @@ export interface ServiceInterval {
 
   // Notes
   notes?: string;
+
+  // Refinement fields
+  isOptional?: boolean;
+  isComponentBased?: boolean;
+  componentInstallationType?: MaintenanceType;
+  totalLifeMileage?: number;
 }
