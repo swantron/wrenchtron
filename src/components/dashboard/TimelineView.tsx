@@ -90,7 +90,7 @@ export function TimelineView({ items }: TimelineViewProps) {
 
     return (
         <div className="relative space-y-8 pl-8 before:absolute before:inset-y-0 before:left-3.5 before:w-0.5 before:bg-gray-200 dark:before:bg-gray-800">
-            {groups.map((group, groupIdx) => (
+            {groups.map((group) => (
                 <div key={group.title} className="relative">
                     <div className={`absolute -left-[2.1rem] flex h-7 w-7 items-center justify-center rounded-full border-4 border-[#fafafa] dark:border-gray-950 ${group.isOverdue ? "bg-red-500" : "bg-blue-500"
                         }`}>

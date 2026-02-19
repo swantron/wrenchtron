@@ -18,7 +18,7 @@ export interface ActionItem {
     projectedMileage?: number;
 }
 
-const DEFAULT_ANNUAL_MILEAGE = 0; // Default to 0 if not set, meaning no projection
+// Default annual mileage constant (unused)
 
 export function calculateProjectedMileage(vehicle: Vehicle): number {
     if (!vehicle.estimatedAnnualMileage || vehicle.estimatedAnnualMileage <= 0) {
@@ -58,7 +58,7 @@ export function calculateActionItems(
         }).sort((a, b) => b.date.toMillis() - a.date.toMillis());
 
         const lastLog = relevantLogs[0];
-        const lastDate = lastLog ? lastLog.date.toDate() : new Date(0); // Epoch if no logs
+        const lastDate = lastLog ? lastLog.date.toDate() : vehicle.createdAt.toDate();
         const lastMileage = lastLog ? lastLog.mileage : 0;
 
         let status: ActionItem["status"] = "upcoming";
@@ -87,10 +87,14 @@ export function calculateActionItems(
                 const dailyRate = vehicle.estimatedAnnualMileage / 365;
                 // Days until we hit the due mileage
                 // Note: remainingMiles might be negative (overdue)
+                const now = new Date();
                 const daysUntilDue = remainingMiles / dailyRate;
 
-                const now = new Date();
-                projectedDate = new Date(now.getTime() + (daysUntilDue * 24 * 60 * 60 * 1000));
+                // Cap the projected date to not be in the distant past if no logs exist
+                const projectedTime = now.getTime() + (daysUntilDue * 24 * 60 * 60 * 1000);
+                const minDate = lastLog ? lastDate : now;
+
+                projectedDate = new Date(Math.max(minDate.getTime(), projectedTime));
             }
         }
 

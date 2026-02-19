@@ -10,6 +10,7 @@ import { TimelineView } from "@/components/dashboard/TimelineView";
 import { calculateActionItems, ActionItem } from "@/utils/maintenance";
 import { Timestamp } from "firebase/firestore";
 import type { MaintenanceLog, MaintenanceType } from "@/types/maintenance";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 interface DemoVehicle {
   id: string;
@@ -791,6 +792,7 @@ export default function DemoPage() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <span className="hidden text-xs font-bold text-gray-400 uppercase tracking-widest md:block">Ready to scale?</span>
             <Link
               href="/login"

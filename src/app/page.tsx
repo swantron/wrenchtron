@@ -11,6 +11,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useActionableItems } from "@/hooks/useActionableItems";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 function LandingPage() {
   return (
@@ -20,12 +21,15 @@ function LandingPage() {
           <h1 className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white">
             Wrenchtron
           </h1>
-          <Link
-            href="/login"
-            className="rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
-          >
-            Sign In
-          </Link>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link
+              href="/login"
+              className="rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+            >
+              Sign In
+            </Link>
+          </div>
         </div>
       </header>
 

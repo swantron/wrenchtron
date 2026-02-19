@@ -19,19 +19,23 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

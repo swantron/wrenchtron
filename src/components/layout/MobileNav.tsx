@@ -63,12 +63,14 @@ const navItems = [
   },
 ];
 
+import { ThemeToggle } from "./ThemeToggle";
+
 export function MobileNav() {
   const pathname = usePathname();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/80 pb-6 pt-2 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/80 md:hidden">
-      <div className="flex justify-around px-4">
+      <div className="flex items-center justify-around px-4">
         {navItems.map((item) => (
           <Link
             key={item.href}
@@ -84,6 +86,10 @@ export function MobileNav() {
             {item.label}
           </Link>
         ))}
+        <div className="flex flex-1 flex-col items-center justify-center py-2">
+          <ThemeToggle />
+          <span className="mt-1 text-[10px] font-black uppercase tracking-widest text-gray-400">Theme</span>
+        </div>
       </div>
     </nav>
   );
