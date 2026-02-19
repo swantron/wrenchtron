@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
+import { useAuth } from "@/hooks/useAuth";
+import { deleteMaintenanceLog } from "@/lib/firebase/firestore";
+import { getReceiptURL } from "@/lib/firebase/storage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type {
   MaintenanceLog,
@@ -102,7 +106,95 @@ function LogDetails({ log }: { log: MaintenanceLog }) {
   );
 }
 
-function LogItem({ log }: { log: MaintenanceLog }) {
+function ReceiptGallery({ paths }: { paths: string[] }) {
+  const [open, setOpen] = useState(false);
+  const [urls, setUrls] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleToggle = async () => {
+    if (!open && urls.length === 0) {
+      setLoading(true);
+      const resolved = await Promise.all(
+        paths.map((p) => getReceiptURL(p).catch(() => null))
+      );
+      setUrls(resolved.filter(Boolean) as string[]);
+      setLoading(false);
+    }
+    setOpen((o) => !o);
+  };
+
+  return (
+    <div className="mt-4">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.486 8.486L20.5 13" />
+        </svg>
+        {paths.length} Attachment{paths.length !== 1 ? "s" : ""}
+        <svg
+          className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="mt-3">
+          {loading ? (
+            <LoadingSpinner size="sm" />
+          ) : urls.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {urls.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Receipt ${i + 1}`}
+                    className="aspect-square w-full object-cover transition-opacity hover:opacity-80"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">Could not load attachments.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LogItem({
+  log,
+  onDelete,
+}: {
+  log: MaintenanceLog;
+  onDelete: (logId: string) => Promise<void>;
+}) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this maintenance log? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await onDelete(log.id!);
+    } catch {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/30">
       <div className="flex items-start justify-between">
@@ -117,10 +209,14 @@ function LogItem({ log }: { log: MaintenanceLog }) {
             <h4 className="text-lg font-bold text-gray-900 dark:text-white">
               {typeLabels[log.maintenanceType] || log.maintenanceType}
             </h4>
-            <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <span className="font-semibold">{formatDate(log.date)}</span>
-              <span>&middot;</span>
-              <span className="font-medium text-gray-900 dark:text-white tabular-nums">{log.mileage.toLocaleString()} mi</span>
+              {log.mileage > 0 && (
+                <>
+                  <span>&middot;</span>
+                  <span className="font-medium text-gray-900 dark:text-white tabular-nums">{log.mileage.toLocaleString()} mi</span>
+                </>
+              )}
               {log.shop && (
                 <>
                   <span>&middot;</span>
@@ -130,10 +226,20 @@ function LogItem({ log }: { log: MaintenanceLog }) {
             </div>
           </div>
         </div>
-        <div className="text-right">
+        <div className="flex items-start gap-3">
           <p className="text-xl font-black text-gray-900 dark:text-white tabular-nums">
             {formatCost(log.cost)}
           </p>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="rounded-lg p-1.5 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 disabled:opacity-50 dark:text-gray-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            title="Delete log"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -148,19 +254,20 @@ function LogItem({ log }: { log: MaintenanceLog }) {
       )}
 
       {log.receiptPaths.length > 0 && (
-        <p className="mt-4 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.486 8.486L20.5 13" />
-          </svg>
-          {log.receiptPaths.length} Attachment(s)
-        </p>
+        <ReceiptGallery paths={log.receiptPaths} />
       )}
     </div>
   );
 }
 
 export function LogList({ vehicleId }: { vehicleId: string }) {
+  const { user } = useAuth();
   const { logs, loading } = useMaintenanceLogs(vehicleId);
+
+  const handleDelete = async (logId: string) => {
+    if (!user) return;
+    await deleteMaintenanceLog(user.uid, vehicleId, logId);
+  };
 
   if (loading) {
     return (
@@ -181,7 +288,11 @@ export function LogList({ vehicleId }: { vehicleId: string }) {
   return (
     <div className="space-y-3">
       {logs.map((log) => (
-        <LogItem key={log.id} log={log} />
+        <LogItem
+          key={log.id}
+          log={log}
+          onDelete={handleDelete}
+        />
       ))}
     </div>
   );

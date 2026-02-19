@@ -48,9 +48,12 @@ export function calculateActionItems(
     for (const interval of vehicle.serviceIntervals) {
         // Find the latest log that matches this service interval
         const relevantLogs = logs.filter(log => {
+            if (interval.targetMaintenanceType) {
+                return log.maintenanceType === interval.targetMaintenanceType;
+            }
+            // Fall back to name-based matching
             const normalizedName = interval.name.toLowerCase();
-            // Check for exact type match (if applied) or string match in notes/type
-            const type = log.maintenanceType.replace("_", " ");
+            const type = log.maintenanceType.replace(/_/g, " ");
             return type === normalizedName || (log.notes && log.notes.toLowerCase().includes(normalizedName));
         }).sort((a, b) => b.date.toMillis() - a.date.toMillis());
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Vehicle, ServiceInterval, IntervalType } from "@/types/firestore";
+import type { MaintenanceType } from "@/types/maintenance";
 import { updateVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -21,14 +22,34 @@ const SEASONS = [
     { value: "winter", label: "Winter" },
 ];
 
+const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
+    { value: "oil_change", label: "Oil Change" },
+    { value: "tire_rotation", label: "Tire Rotation" },
+    { value: "tire_replacement", label: "Tire Replacement" },
+    { value: "brake_pads", label: "Brake Pads" },
+    { value: "brake_rotors", label: "Brake Rotors" },
+    { value: "air_filter", label: "Air Filter" },
+    { value: "cabin_filter", label: "Cabin Filter" },
+    { value: "spark_plugs", label: "Spark Plugs" },
+    { value: "transmission_fluid", label: "Transmission Fluid" },
+    { value: "coolant_flush", label: "Coolant Flush" },
+    { value: "battery", label: "Battery" },
+    { value: "wiper_blades", label: "Wiper Blades" },
+    { value: "alignment", label: "Alignment" },
+    { value: "inspection", label: "Inspection" },
+    { value: "other", label: "Other" },
+];
+
 export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps) {
     const { user } = useAuth();
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
     // Form State
     const [name, setName] = useState("");
     const [type, setType] = useState<IntervalType>("mileage");
+    const [targetMaintenanceType, setTargetMaintenanceType] = useState<MaintenanceType | "">("");
     const [mileageInterval, setMileageInterval] = useState<string>("");
     const [timeIntervalMonths, setTimeIntervalMonths] = useState<string>("");
     const [season, setSeason] = useState<"spring" | "fall" | "summer" | "winter">("spring");
@@ -39,6 +60,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
         if (!user || !vehicle.id) return;
 
         setLoading(true);
+        setError("");
 
         const newInterval: ServiceInterval = {
             id: crypto.randomUUID(),
@@ -46,6 +68,10 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             type,
             notes: notes || undefined,
         };
+
+        if (targetMaintenanceType) {
+            newInterval.targetMaintenanceType = targetMaintenanceType;
+        }
 
         if (type === "mileage" || type === "composite") {
             newInterval.mileageInterval = parseInt(mileageInterval);
@@ -67,9 +93,9 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             });
             setIsAdding(false);
             resetForm();
-        } catch (error) {
-            console.error("Error adding interval:", error);
-            alert("Failed to add service goal.");
+        } catch (err) {
+            console.error("Error adding interval:", err);
+            setError("Failed to add service goal. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -79,6 +105,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
         if (!user || !vehicle.id) return;
         if (!confirm("Are you sure you want to remove this goal?")) return;
 
+        setError("");
         const updatedIntervals = (vehicle.serviceIntervals || []).filter(
             (i) => i.id !== intervalId
         );
@@ -87,19 +114,21 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             await updateVehicle(user.uid, vehicle.id, {
                 serviceIntervals: updatedIntervals,
             });
-        } catch (error) {
-            console.error("Error removing interval:", error);
-            alert("Failed to remove service goal.");
+        } catch (err) {
+            console.error("Error removing interval:", err);
+            setError("Failed to remove service goal. Please try again.");
         }
     };
 
     const resetForm = () => {
         setName("");
         setType("mileage");
+        setTargetMaintenanceType("");
         setMileageInterval("");
         setTimeIntervalMonths("");
         setSeason("spring");
         setNotes("");
+        setError("");
     };
 
     return (
@@ -109,12 +138,18 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                     Maintenance Goals
                 </h3>
                 <button
-                    onClick={() => setIsAdding(!isAdding)}
+                    onClick={() => { setIsAdding(!isAdding); setError(""); }}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
                 >
                     {isAdding ? "Cancel" : "Add Goal"}
                 </button>
             </div>
+
+            {error && (
+                <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+                    {error}
+                </div>
+            )}
 
             {isAdding && (
                 <form onSubmit={handleAdd} className="rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800/50">
@@ -145,6 +180,24 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                                 {INTERVAL_TYPES.map((t) => (
                                     <option key={t.value} value={t.value}>
                                         {t.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Matches Log Type <span className="normal-case font-normal">(optional — improves tracking accuracy)</span>
+                            </label>
+                            <select
+                                value={targetMaintenanceType}
+                                onChange={(e) => setTargetMaintenanceType(e.target.value as MaintenanceType | "")}
+                                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                            >
+                                <option value="">— None (use name matching) —</option>
+                                {MAINTENANCE_TYPES.map((mt) => (
+                                    <option key={mt.value} value={mt.value}>
+                                        {mt.label}
                                     </option>
                                 ))}
                             </select>
@@ -230,7 +283,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                     <div className="mt-6 flex justify-end gap-3">
                         <button
                             type="button"
-                            onClick={() => setIsAdding(false)}
+                            onClick={() => { setIsAdding(false); resetForm(); }}
                             className="rounded-lg px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                         >
                             Cancel
@@ -272,6 +325,12 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                             <h4 className="mt-3 text-lg font-bold text-gray-900 dark:text-white">
                                 {interval.name}
                             </h4>
+
+                            {interval.targetMaintenanceType && (
+                                <p className="mt-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                                    Tracks: {MAINTENANCE_TYPES.find(m => m.value === interval.targetMaintenanceType)?.label}
+                                </p>
+                            )}
 
                             <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                                 {interval.type === "mileage" && `Every ${interval.mileageInterval?.toLocaleString()} miles`}

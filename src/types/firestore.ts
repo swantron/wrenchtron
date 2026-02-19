@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase/firestore";
+import type { MaintenanceType } from "@/types/maintenance";
 
 export type VehicleType =
   | "car"
@@ -40,12 +41,12 @@ export interface ServiceInterval {
   id: string;
   name: string;
   type: IntervalType;
+  targetMaintenanceType?: MaintenanceType; // Used to match against log entries
 
   // Triggers
   mileageInterval?: number;
   timeIntervalMonths?: number;
   season?: "spring" | "fall" | "summer" | "winter";
-  month?: number; // 1-12
 
   // Notes
   notes?: string;

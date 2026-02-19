@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { addMaintenanceLog } from "@/lib/firebase/firestore";
+import { tracksMileage } from "@/lib/vehicleUtils";
 import { OilChangeFields } from "./OilChangeFields";
 import { TireFields } from "./TireFields";
 import { BrakeFields } from "./BrakeFields";
 import { ReceiptUpload } from "./ReceiptUpload";
+import type { VehicleType } from "@/types/firestore";
 import type {
   MaintenanceType,
   OilChangeDetails,
@@ -36,16 +38,20 @@ const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
 
 interface MaintenanceFormProps {
   vehicleId: string;
+  vehicleType?: VehicleType;
+  initialType?: MaintenanceType;
 }
 
-export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
+export function MaintenanceForm({ vehicleId, vehicleType, initialType }: MaintenanceFormProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const requiresMileage = tracksMileage(vehicleType ?? "car");
+
   const [maintenanceType, setMaintenanceType] =
-    useState<MaintenanceType>("oil_change");
+    useState<MaintenanceType>(initialType ?? "oil_change");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [mileage, setMileage] = useState("");
   const [cost, setCost] = useState("");
@@ -60,8 +66,8 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
     e.preventDefault();
     if (!user) return;
 
-    if (!date || !mileage) {
-      setError("Please fill in date and mileage.");
+    if (!date || (requiresMileage && !mileage)) {
+      setError(requiresMileage ? "Please fill in date and mileage." : "Please fill in the date.");
       return;
     }
 
@@ -90,7 +96,7 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
       const logData: any = {
         maintenanceType,
         date: Timestamp.fromDate(new Date(date + "T00:00:00")),
-        mileage: parseInt(mileage),
+        mileage: mileage ? parseInt(mileage) : 0,
         cost: costCents,
         receiptPaths,
         details,
@@ -149,19 +155,21 @@ export function MaintenanceForm({ vehicleId }: MaintenanceFormProps) {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Mileage *
-          </label>
-          <input
-            type="number"
-            value={mileage}
-            onChange={(e) => setMileage(e.target.value)}
-            min="0"
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            required
-          />
-        </div>
+        {requiresMileage && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Mileage *
+            </label>
+            <input
+              type="number"
+              value={mileage}
+              onChange={(e) => setMileage(e.target.value)}
+              min="0"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              required
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
