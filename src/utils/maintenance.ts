@@ -99,8 +99,11 @@ export function calculateActionItems(
         let isMileageDueSoon = false;
         let isTimeDueSoon = false;
 
+        const usesMileage = interval.type === "mileage" || interval.type === "composite";
+        const usesTime = interval.type === "time" || interval.type === "composite";
+
         // Mileage Trigger
-        if (interval.mileageInterval) {
+        if (usesMileage && interval.mileageInterval) {
             dueMileage = lastMileage + interval.mileageInterval;
             remainingMiles = dueMileage - currentMileage;
             isMileageOverdue = remainingMiles < 0;
@@ -118,7 +121,7 @@ export function calculateActionItems(
         }
 
         // Total Life Mileage (Component-based)
-        if (interval.totalLifeMileage) {
+        if (usesMileage && interval.totalLifeMileage) {
             const lifeDueMileage = baseMileage + interval.totalLifeMileage;
             const lifeRemainingMiles = lifeDueMileage - currentMileage;
             if (lifeRemainingMiles < 0) {
@@ -131,7 +134,7 @@ export function calculateActionItems(
         }
 
         // Time Trigger
-        if (interval.timeIntervalMonths) {
+        if (usesTime && interval.timeIntervalMonths) {
             dueDate = new Date(baseDate);
             dueDate.setMonth(dueDate.getMonth() + interval.timeIntervalMonths);
             const now = new Date();
