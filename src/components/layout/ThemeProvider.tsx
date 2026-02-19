@@ -21,6 +21,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         const initialTheme = savedTheme || systemTheme;
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTheme(initialTheme);
         document.documentElement.classList.toggle("dark", initialTheme === "dark");
         setMounted(true);
@@ -32,6 +33,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("theme", newTheme);
         document.documentElement.classList.toggle("dark", newTheme === "dark");
     };
+
+    if (!mounted) {
+        return <div style={{ visibility: "hidden" }}>{children}</div>;
+    }
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>

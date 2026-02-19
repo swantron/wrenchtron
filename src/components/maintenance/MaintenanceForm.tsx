@@ -54,7 +54,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
 
   const [maintenanceType, setMaintenanceType] =
     useState<MaintenanceType>(initialData?.maintenanceType ?? initialType ?? "oil_change");
-  const [date, setDate] = useState(initialData?.date ? (initialData.date as any).toDate().toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(initialData?.date ? (initialData.date as Timestamp).toDate().toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
   const [mileage, setMileage] = useState(initialData?.mileage.toString() ?? "");
   const [cost, setCost] = useState(initialData?.cost ? (initialData.cost / 100).toString() : "");
   const [shop, setShop] = useState(initialData?.shop ?? "");
@@ -103,6 +103,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         receiptPaths,
         details,
       };
+
       if (shop) logData.shop = shop;
       if (notes) logData.notes = notes;
 

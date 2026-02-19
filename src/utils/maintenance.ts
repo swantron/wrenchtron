@@ -146,8 +146,7 @@ export function calculateActionItems(
             const now = new Date();
             const currentYear = now.getFullYear();
             const targetMonth = interval.specificMonth; // 0-11
-
-            let targetDate = new Date(currentYear, targetMonth, 1);
+            const targetDate = new Date(currentYear, targetMonth, 1); // Set to the 1st of the target month
 
             // If the month has passed this year, move to next year
             if (now.getMonth() > targetMonth) {
