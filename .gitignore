@@ -27,6 +27,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lint_output.txt
 
 # env files (keep .env.local.example committed as a template)
 .env
