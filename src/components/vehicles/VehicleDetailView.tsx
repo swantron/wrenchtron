@@ -9,7 +9,7 @@ import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
-import { formatMileage } from "@/lib/vehicleUtils";
+import { formatMileage } from "@/utils/vehicleUtils";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 

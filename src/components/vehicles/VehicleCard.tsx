@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
-import { VEHICLE_TYPE_LABELS, formatMileage } from "@/lib/vehicleUtils";
+import { VEHICLE_TYPE_LABELS, formatMileage } from "@/utils/vehicleUtils";
 
 
 

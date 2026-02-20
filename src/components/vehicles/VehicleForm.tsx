@@ -8,7 +8,7 @@ import { uploadVehiclePhoto } from "@/lib/firebase/storage";
 import { compressImage } from "@/lib/image/compress";
 import type { Vehicle, VehicleType } from "@/types/firestore";
 import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
-import { tracksMileage } from "@/lib/vehicleUtils";
+import { tracksMileage } from "@/utils/vehicleUtils";
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "car", label: "Car" },

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
-import { tracksMileage } from "@/lib/vehicleUtils";
+import { tracksMileage } from "@/utils/vehicleUtils";
 import type { Vehicle, VehicleType, ServiceInterval } from "@/types/firestore";
 import { ActionableItems } from "@/components/dashboard/ActionableItems";
 import { TimelineView } from "@/components/dashboard/TimelineView";

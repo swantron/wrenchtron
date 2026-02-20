@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { addMaintenanceLog, updateMaintenanceLog } from "@/lib/firebase/firestore";
-import { tracksMileage } from "@/lib/vehicleUtils";
+import { tracksMileage } from "@/utils/vehicleUtils";
 import { OilChangeFields } from "./OilChangeFields";
 import { TireFields } from "./TireFields";
 import { BrakeFields } from "./BrakeFields";
