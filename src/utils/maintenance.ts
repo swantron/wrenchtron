@@ -12,6 +12,9 @@ export interface ActionItem {
     dueMileage?: number;
     remainingMiles?: number;
     remainingDays?: number;
+    // Total interval lengths (for progress bar calculation)
+    intervalMiles?: number;
+    intervalDays?: number;
     // Projection details
     isProjected?: boolean;
     projectedDate?: Date;
@@ -200,6 +203,8 @@ export function calculateActionItems(
                         dueDate,
                         remainingMiles,
                         remainingDays,
+                        intervalMiles: interval.mileageInterval ?? interval.totalLifeMileage,
+                        intervalDays: interval.timeIntervalMonths ? interval.timeIntervalMonths * 30 : undefined,
                         isOptional: interval.isOptional
                     });
                     continue; // Move to next interval
@@ -236,13 +241,6 @@ export function calculateActionItems(
             }
         }
 
-        console.log(`[Maintenance Debug] ${vehicle.name} - ${interval.name}: optional=${interval.isOptional}, prefix="${optionalPrefix}", reason="${reason}"`);
-
-        // Only add if it's not "far out" or if we want to show everything. 
-        // Let's show everything for now but sorting will handle priority.
-        // If status is upcoming but very far away (e.g. > 1000 miles or > 60 days), maybe reduce priority UI-wise.
-        // For now, add everything to the list.
-
         items.push({
             id: `${vehicle.id}-${interval.id}`,
             vehicleId: vehicle.id || "",
@@ -254,6 +252,8 @@ export function calculateActionItems(
             dueDate,
             remainingMiles,
             remainingDays,
+            intervalMiles: interval.mileageInterval ?? interval.totalLifeMileage,
+            intervalDays: interval.timeIntervalMonths ? interval.timeIntervalMonths * 30 : undefined,
             isProjected,
             projectedDate,
             projectedMileage: isProjected ? currentMileage : undefined,

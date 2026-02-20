@@ -14,8 +14,41 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
+import type { ActionItem } from "@/utils/maintenance";
 
-function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
+function ServiceProgressBar({ item }: { item: ActionItem }) {
+  let progress: number | null = null;
+
+  if (item.intervalMiles !== undefined && item.remainingMiles !== undefined) {
+    progress = Math.min(100, Math.max(0, ((item.intervalMiles - item.remainingMiles) / item.intervalMiles) * 100));
+  } else if (item.intervalDays !== undefined && item.remainingDays !== undefined) {
+    progress = Math.min(100, Math.max(0, ((item.intervalDays - item.remainingDays) / item.intervalDays) * 100));
+  }
+
+  if (progress === null) return null;
+
+  const isCritical = item.status === "overdue";
+  const isWarning = item.status === "due_soon";
+
+  return (
+    <div className="mt-4">
+      <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <span>{item.serviceName}</span>
+        <span>{Math.round(progress)}%</span>
+      </div>
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700/50">
+        <div
+          className={`h-full transition-all duration-1000 ease-out ${
+            isCritical ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-blue-500"
+          }`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DashboardVehicleCard({ vehicle, items }: { vehicle: Vehicle; items: ActionItem[] }) {
   const { user } = useAuth();
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -82,6 +115,7 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
           </div>
           <div className="mt-4">
             <MaintenanceSummary summary={summary} />
+            {items[0] && <ServiceProgressBar item={items[0]} />}
           </div>
         </div>
       </Link>
@@ -100,7 +134,7 @@ function DashboardVehicleCard({ vehicle }: { vehicle: Vehicle }) {
   );
 }
 
-export function DashboardGrid() {
+export function DashboardGrid({ actionItems }: { actionItems: ActionItem[] }) {
   const { vehicles, loading } = useVehicles();
 
   if (loading) {
@@ -146,7 +180,11 @@ export function DashboardGrid() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {vehicles.map((vehicle) => (
-        <DashboardVehicleCard key={vehicle.id} vehicle={vehicle} />
+        <DashboardVehicleCard
+          key={vehicle.id}
+          vehicle={vehicle}
+          items={actionItems.filter((i) => i.vehicleId === vehicle.id)}
+        />
       ))}
     </div>
   );

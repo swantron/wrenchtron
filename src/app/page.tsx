@@ -153,7 +153,7 @@ export default function HomePage() {
             )}
 
             <div className="mt-6">
-              <DashboardGrid />
+              <DashboardGrid actionItems={actionItems} />
             </div>
           </>
         ) : (
