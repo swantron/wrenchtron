@@ -118,6 +118,12 @@ export default function HomePage() {
               My Garage
             </p>
           </div>
+          <Link
+            href="/vehicles/new"
+            className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95"
+          >
+            Add to Garage
+          </Link>
         </div>
 
         {/* Tabs */}
