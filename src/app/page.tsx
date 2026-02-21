@@ -4,9 +4,8 @@ import { useState } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/layout/AppShell";
-import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
-import { ActionableItems } from "@/components/dashboard/ActionableItems";
 import { TimelineView } from "@/components/dashboard/TimelineView";
+import { MaintenanceHubOverview } from "@/components/dashboard/MaintenanceHubOverview";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useActionableItems } from "@/hooks/useActionableItems";
@@ -87,7 +86,7 @@ function LandingPage() {
 export default function HomePage() {
   const { user, loading } = useAuth();
   const { vehicles, loading: vehiclesLoading } = useVehicles();
-  const { items: actionItems, loading: itemsLoading } = useActionableItems(vehicles);
+  const { items: actionItems } = useActionableItems(vehicles);
   const [activeTab, setActiveTab] = useState<"overview" | "timeline">("overview");
 
   // Re-import useState since it was only in LandingPage scope implicitely or globally?
@@ -150,17 +149,7 @@ export default function HomePage() {
 
         {activeTab === "overview" ? (
           <>
-            {/* Actionable Items Section (Priority items only?) */}
-            {/* User asked for breakdown specifically for upcoming maintenance in timeline tab. */}
-            {/* Maybe we keep concise list here? Or full list? */}
-            {/* Existing behavior: full grid. Let's keep it. */}
-            {!itemsLoading && actionItems.length > 0 && (
-              <ActionableItems items={actionItems} />
-            )}
-
-            <div className="mt-6">
-              <DashboardGrid actionItems={actionItems} />
-            </div>
+            <MaintenanceHubOverview actionItems={actionItems} />
           </>
         ) : (
           <TimelineView items={actionItems} />

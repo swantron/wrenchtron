@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { subscribeToMaintenanceLogs, deleteVehicle } from "@/lib/firebase/firestore";
+import { deleteVehicle } from "@/lib/firebase/firestore";
 import { getReceiptURL } from "@/lib/firebase/storage";
-import { computeSummary, MaintenanceSummary } from "@/components/dashboard/MaintenanceSummary";
 import type { Vehicle } from "@/types/firestore";
-import type { MaintenanceLog } from "@/types/maintenance";
 import type { ActionItem } from "@/utils/maintenance";
 import { VEHICLE_TYPE_LABELS, formatMileage } from "@/utils/vehicleUtils";
 
@@ -21,48 +19,38 @@ interface VehicleCardProps {
   isDemo?: boolean;
 }
 
-function ServiceProgressBar({ item }: { item: ActionItem }) {
-  let progress: number | null = null;
-
-  if (item.intervalMiles !== undefined && item.remainingMiles !== undefined) {
-    progress = Math.min(100, Math.max(0, ((item.intervalMiles - item.remainingMiles) / item.intervalMiles) * 100));
-  } else if (item.intervalDays !== undefined && item.remainingDays !== undefined) {
-    progress = Math.min(100, Math.max(0, ((item.intervalDays - item.remainingDays) / item.intervalDays) * 100));
+function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
+  if (items.length === 0) {
+    return <p className="text-xs text-gray-400 dark:text-gray-500">No services tracked</p>;
   }
-
-  if (progress === null) return null;
-
-  const isCritical = item.status === "overdue";
-  const isWarning = item.status === "due_soon";
-
+  const shown = items.slice(0, 3);
   return (
-    <div className="mt-4">
-      <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-        <span>{item.serviceName}</span>
-        <span>{Math.round(progress)}%</span>
-      </div>
-      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700/50">
-        <div
-          className={`h-full transition-all duration-1000 ease-out ${isCritical ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-blue-500"
-            }`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+    <div className="space-y-2">
+      {shown.map(item => {
+        const dot = item.status === "overdue" ? "bg-red-500"
+          : item.status === "due_soon" ? "bg-amber-500"
+          : "bg-green-500";
+        return (
+          <div key={item.id} className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+              <span className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">{item.serviceName}</span>
+            </div>
+            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{item.reason}</span>
+          </div>
+        );
+      })}
+      {items.length > 3 && (
+        <p className="text-xs text-gray-400">+{items.length - 3} more</p>
+      )}
     </div>
   );
 }
 
 export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: VehicleCardProps) {
   const { user } = useAuth();
-  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    if (!user || !vehicle.id) return;
-    const unsub = subscribeToMaintenanceLogs(user.uid, vehicle.id, setLogs);
-    return unsub;
-  }, [user, vehicle.id]);
 
   useEffect(() => {
     let active = true;
@@ -82,8 +70,11 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
     return () => { active = false; };
   }, [vehicle.photoPath]);
 
-  const summary = computeSummary(logs, vehicle.currentMileage);
-  const urgentItem = items[0];
+  const borderClass = items[0]?.status === "overdue"
+    ? "border-red-400 dark:border-red-600"
+    : items[0]?.status === "due_soon"
+    ? "border-amber-300 dark:border-amber-600"
+    : "border-gray-200 dark:border-gray-700";
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -104,7 +95,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
     : { href: href || `/vehicles/detail?id=${vehicle.id}`, className: "block" };
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500/50">
+    <div className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:bg-gray-800 dark:hover:border-blue-500/50 ${borderClass}`}>
       {/* @ts-expect-error - CardWrapper can be 'button' or Link */}
       <CardWrapper {...wrapperProps}>
         <div className="relative aspect-video w-full bg-gray-100 dark:bg-gray-900">
@@ -137,8 +128,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
           </div>
 
           <div className="mt-4">
-            <MaintenanceSummary summary={summary} />
-            {urgentItem && <ServiceProgressBar item={urgentItem} />}
+            <ServiceStatusStrip items={items} />
           </div>
 
           {layout === "garage" && (
@@ -192,4 +182,3 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
     </div>
   );
 }
-

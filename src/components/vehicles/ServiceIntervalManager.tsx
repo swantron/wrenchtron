@@ -1,8 +1,94 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Vehicle, ServiceInterval, IntervalType } from "@/types/firestore";
 import type { MaintenanceType } from "@/types/maintenance";
+import type { VehicleType } from "@/types/firestore";
 import { updateVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
+import { VEHICLE_TYPE_LABELS } from "@/utils/vehicleUtils";
+
+interface SuggestedService {
+    name: string;
+    type: IntervalType;
+    targetMaintenanceType?: MaintenanceType;
+    mileageInterval?: number;
+    timeIntervalMonths?: number;
+    season?: "spring" | "fall" | "summer" | "winter";
+}
+
+const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
+    car: [
+        { name: "Oil Change", type: "composite", targetMaintenanceType: "oil_change", mileageInterval: 5000, timeIntervalMonths: 6 },
+        { name: "Tire Rotation", type: "mileage", targetMaintenanceType: "tire_rotation", mileageInterval: 6000 },
+        { name: "Cabin Air Filter", type: "mileage", targetMaintenanceType: "cabin_filter", mileageInterval: 15000 },
+        { name: "Air Filter", type: "mileage", targetMaintenanceType: "air_filter", mileageInterval: 30000 },
+        { name: "Spark Plugs", type: "mileage", targetMaintenanceType: "spark_plugs", mileageInterval: 60000 },
+        { name: "Transmission Fluid", type: "mileage", targetMaintenanceType: "transmission_fluid", mileageInterval: 60000 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
+        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
+    ],
+    truck: [
+        { name: "Oil Change", type: "composite", targetMaintenanceType: "oil_change", mileageInterval: 5000, timeIntervalMonths: 6 },
+        { name: "Tire Rotation", type: "mileage", targetMaintenanceType: "tire_rotation", mileageInterval: 6000 },
+        { name: "Cabin Air Filter", type: "mileage", targetMaintenanceType: "cabin_filter", mileageInterval: 15000 },
+        { name: "Air Filter", type: "mileage", targetMaintenanceType: "air_filter", mileageInterval: 30000 },
+        { name: "Spark Plugs", type: "mileage", targetMaintenanceType: "spark_plugs", mileageInterval: 60000 },
+        { name: "Transmission Fluid", type: "mileage", targetMaintenanceType: "transmission_fluid", mileageInterval: 60000 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
+        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
+        { name: "Alignment", type: "time", targetMaintenanceType: "alignment", timeIntervalMonths: 12 },
+    ],
+    suv: [
+        { name: "Oil Change", type: "composite", targetMaintenanceType: "oil_change", mileageInterval: 5000, timeIntervalMonths: 6 },
+        { name: "Tire Rotation", type: "mileage", targetMaintenanceType: "tire_rotation", mileageInterval: 6000 },
+        { name: "Cabin Air Filter", type: "mileage", targetMaintenanceType: "cabin_filter", mileageInterval: 15000 },
+        { name: "Air Filter", type: "mileage", targetMaintenanceType: "air_filter", mileageInterval: 30000 },
+        { name: "Spark Plugs", type: "mileage", targetMaintenanceType: "spark_plugs", mileageInterval: 60000 },
+        { name: "Transmission Fluid", type: "mileage", targetMaintenanceType: "transmission_fluid", mileageInterval: 60000 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
+        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
+    ],
+    van: [
+        { name: "Oil Change", type: "composite", targetMaintenanceType: "oil_change", mileageInterval: 5000, timeIntervalMonths: 6 },
+        { name: "Tire Rotation", type: "mileage", targetMaintenanceType: "tire_rotation", mileageInterval: 6000 },
+        { name: "Cabin Air Filter", type: "mileage", targetMaintenanceType: "cabin_filter", mileageInterval: 15000 },
+        { name: "Air Filter", type: "mileage", targetMaintenanceType: "air_filter", mileageInterval: 30000 },
+        { name: "Spark Plugs", type: "mileage", targetMaintenanceType: "spark_plugs", mileageInterval: 60000 },
+        { name: "Transmission Fluid", type: "mileage", targetMaintenanceType: "transmission_fluid", mileageInterval: 60000 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
+        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
+    ],
+    motorcycle: [
+        { name: "Oil Change", type: "mileage", targetMaintenanceType: "oil_change", mileageInterval: 3000 },
+        { name: "Chain Lube", type: "mileage", mileageInterval: 600 },
+        { name: "Tire Inspection", type: "mileage", targetMaintenanceType: "tire_rotation", mileageInterval: 3000 },
+    ],
+    atv: [
+        { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
+        { name: "Air Filter", type: "seasonal", targetMaintenanceType: "air_filter", season: "spring" },
+        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
+    ],
+    mower: [
+        { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
+        { name: "Blade Sharpening", type: "seasonal", season: "spring" },
+        { name: "Winterize", type: "seasonal", season: "fall" },
+        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
+    ],
+    snowblower: [
+        { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "fall" },
+        { name: "Auger Belt Check", type: "seasonal", season: "fall" },
+        { name: "Summerize", type: "seasonal", season: "spring" },
+        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
+    ],
+    boat: [
+        { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
+        { name: "Winterize", type: "seasonal", season: "fall" },
+        { name: "Propeller Check", type: "time", timeIntervalMonths: 12 },
+    ],
+};
 
 interface ServiceIntervalManagerProps {
     vehicle: Vehicle;
@@ -71,6 +157,28 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
     const [season, setSeason] = useState<"spring" | "fall" | "summer" | "winter">("spring");
     const [specificMonth, setSpecificMonth] = useState<number>(new Date().getMonth());
     const [notes, setNotes] = useState("");
+
+    const suggestions = useMemo(() => {
+        const candidates = SUGGESTED_SERVICES[vehicle.type] ?? SUGGESTED_SERVICES.car ?? [];
+        const existing = vehicle.serviceIntervals ?? [];
+        return candidates.filter(s =>
+            !existing.some(iv =>
+                (s.targetMaintenanceType && iv.targetMaintenanceType === s.targetMaintenanceType) ||
+                iv.name.toLowerCase() === s.name.toLowerCase()
+            )
+        );
+    }, [vehicle.serviceIntervals, vehicle.type]);
+
+    const prefillForm = (s: SuggestedService) => {
+        setName(s.name);
+        setType(s.type);
+        setTargetMaintenanceType(s.targetMaintenanceType ?? "");
+        setMileageInterval(s.mileageInterval ? String(s.mileageInterval) : "");
+        setTimeIntervalMonths(s.timeIntervalMonths ? String(s.timeIntervalMonths) : "");
+        setSeason(s.season ?? "spring");
+        setIsAdding(true);
+        setError("");
+    };
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -407,6 +515,25 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                     </div>
                 )}
             </div>
+
+            {suggestions.length > 0 && !isAdding && (
+                <div className="mt-8 border-t border-gray-100 pt-6 dark:border-gray-800">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+                        Suggested for your {VEHICLE_TYPE_LABELS[vehicle.type]}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {suggestions.map(s => (
+                            <button
+                                key={s.name}
+                                onClick={() => prefillForm(s)}
+                                className="flex items-center gap-1.5 rounded-full border border-dashed border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                            >
+                                + {s.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

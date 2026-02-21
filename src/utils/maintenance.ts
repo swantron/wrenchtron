@@ -1,5 +1,5 @@
 import { Vehicle } from "../types/firestore";
-import { MaintenanceLog } from "../types/maintenance";
+import { MaintenanceLog, MaintenanceDetails } from "../types/maintenance";
 
 export interface ActionItem {
     id: string;
@@ -20,6 +20,12 @@ export interface ActionItem {
     projectedDate?: Date;
     projectedMileage?: number;
     isOptional?: boolean;
+    lastLog?: {
+        date: Date;
+        mileage: number;
+        shop?: string;
+        details: MaintenanceDetails;
+    };
 }
 
 // Default annual mileage constant (unused)
@@ -205,7 +211,13 @@ export function calculateActionItems(
                         remainingDays,
                         intervalMiles: interval.mileageInterval ?? interval.totalLifeMileage,
                         intervalDays: interval.timeIntervalMonths ? interval.timeIntervalMonths * 30 : undefined,
-                        isOptional: interval.isOptional
+                        isOptional: interval.isOptional,
+                        lastLog: lastLog ? {
+                            date: lastLog.date.toDate(),
+                            mileage: lastLog.mileage,
+                            shop: lastLog.shop,
+                            details: lastLog.details,
+                        } : undefined,
                     });
                     continue; // Move to next interval
                 }
@@ -257,7 +269,13 @@ export function calculateActionItems(
             isProjected,
             projectedDate,
             projectedMileage: isProjected ? currentMileage : undefined,
-            isOptional: interval.isOptional
+            isOptional: interval.isOptional,
+            lastLog: lastLog ? {
+                date: lastLog.date.toDate(),
+                mileage: lastLog.mileage,
+                shop: lastLog.shop,
+                details: lastLog.details,
+            } : undefined,
         });
     }
 
