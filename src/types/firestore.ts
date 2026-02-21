@@ -33,6 +33,7 @@ export interface Vehicle {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   serviceIntervals?: ServiceInterval[];
+  resolvedRecalls?: string[]; // NHTSA campaign numbers
 }
 
 export type IntervalType = "mileage" | "time" | "seasonal" | "composite" | "month";

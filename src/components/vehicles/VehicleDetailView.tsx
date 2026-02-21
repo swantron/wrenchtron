@@ -14,6 +14,7 @@ import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 
 import { ServiceStatusPanel } from "@/components/vehicles/ServiceStatusPanel";
+import { RecallPanel } from "@/components/vehicles/RecallPanel";
 import { ServiceIntervalManager } from "@/components/vehicles/ServiceIntervalManager";
 
 function DetailItem({ label, value }: { label: string; value: string }) {
@@ -178,6 +179,8 @@ export function VehicleDetailView({
         {/* Left: Stats & Status */}
         <div className="space-y-6 lg:col-span-1">
           <ServiceStatusPanel vehicle={vehicle} logs={logs} />
+
+          <RecallPanel vehicle={vehicle} />
 
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
