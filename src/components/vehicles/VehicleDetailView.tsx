@@ -27,16 +27,31 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
+export function VehicleDetailView({
+  vehicleId,
+  vehicle: initialVehicle,
+  logs: initialLogs,
+  onBack
+}: {
+  vehicleId: string;
+  vehicle?: Vehicle;
+  logs?: MaintenanceLog[];
+  onBack?: () => void;
+}) {
   const { user } = useAuth();
   const router = useRouter();
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(initialVehicle || null);
+  const [logs, setLogs] = useState<MaintenanceLog[]>(initialLogs || []);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(
+    (initialVehicle?.photoPath && initialVehicle.photoPath.startsWith("/"))
+      ? initialVehicle.photoPath
+      : null
+  );
+  const [loading, setLoading] = useState(!initialVehicle);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (initialVehicle) return;
     if (!user || !vehicleId) return;
 
     // Fetch vehicle
@@ -48,9 +63,12 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
     // Subscribe to logs for summary
     const unsub = subscribeToMaintenanceLogs(user.uid, vehicleId, setLogs);
     return unsub;
-  }, [user, vehicleId]);
+  }, [user, vehicleId, initialVehicle]);
 
   useEffect(() => {
+    // If it's a static path (already initialized in state correctly), skip
+    if (vehicle?.photoPath && vehicle.photoPath.startsWith("/")) return;
+
     let active = true;
     const loadPhoto = async () => {
       if (vehicle?.photoPath) {
@@ -68,7 +86,7 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
     return () => {
       active = false;
     };
-  }, [vehicle?.photoPath]);
+  }, [vehicle?.photoPath, initialVehicle?.photoPath]);
 
   const summary = vehicle ? computeSummary(logs, vehicle.currentMileage) : null;
 
@@ -119,19 +137,30 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link
-            href={`/vehicles/edit?id=${vehicleId}`}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-          >
-            {deleting ? "Deleting..." : "Delete"}
-          </button>
+          {onBack ? (
+            <button
+              onClick={onBack}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Back to Fleet
+            </button>
+          ) : (
+            <>
+              <Link
+                href={`/vehicles/edit?id=${vehicleId}`}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -186,21 +215,23 @@ export function VehicleDetailView({ vehicleId }: { vehicleId: string }) {
               Maintenance History
             </h2>
             <Link
-              href={`/maintenance/new?vehicleId=${vehicleId}`}
+              href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
             >
               Log Service
             </Link>
           </div>
           <div className="mt-6">
-            <LogList vehicleId={vehicleId} />
+            <LogList vehicleId={vehicleId} logs={initialLogs} />
           </div>
         </div>
       </div>
 
-      <div className="mt-12 border-t border-gray-100 pt-12 dark:border-gray-800">
-        <ServiceIntervalManager vehicle={vehicle} />
-      </div>
+      {!onBack && (
+        <div className="mt-12 border-t border-gray-100 pt-12 dark:border-gray-800">
+          <ServiceIntervalManager vehicle={vehicle} />
+        </div>
+      )}
     </div >
   );
 }

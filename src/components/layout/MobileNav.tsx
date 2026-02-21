@@ -5,59 +5,29 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   {
-    href: "/",
-    label: "Home",
-    icon: (
-      <svg
-        className="h-6 w-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-        />
-      </svg>
-    ),
-  },
-  {
     href: "/vehicles",
     label: "Garage",
     icon: (
-      <svg
-        className="h-6 w-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0H21M3.375 14.25h17.25M3.375 14.25a1.125 1.125 0 0 1-1.125-1.125V6.75m18.375 7.5V6.75m0 0a1.125 1.125 0 0 0-1.125-1.125H3.375a1.125 1.125 0 0 0-1.125 1.125m18.375 0V3.375"
-        />
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
       </svg>
     ),
   },
   {
-    href: "/about",
-    label: "About",
+    href: "/",
+    label: "Hub",
     icon: (
-      <svg
-        className="h-6 w-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-        />
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/vehicles/new",
+    label: "Add",
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
       </svg>
     ),
   },
@@ -65,13 +35,22 @@ const navItems = [
 
 import { ThemeToggle } from "./ThemeToggle";
 
-export function MobileNav() {
+import { useAuth } from "@/hooks/useAuth";
+
+export function MobileNav({ isDemo }: { isDemo?: boolean }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAuthenticated = isDemo || !!user;
+
+  const filteredItems = navItems.filter(item => {
+    if (item.label === "Add" && !isAuthenticated) return false;
+    return true;
+  });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/80 pb-6 pt-2 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/80 md:hidden">
       <div className="flex items-center justify-around px-4">
-        {navItems.map((item) => (
+        {filteredItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}

@@ -272,9 +272,18 @@ function LogItem({
   );
 }
 
-export function LogList({ vehicleId }: { vehicleId: string }) {
+export function LogList({
+  vehicleId,
+  logs: initialLogs
+}: {
+  vehicleId: string;
+  logs?: MaintenanceLog[];
+}) {
   const { user } = useAuth();
-  const { logs, loading } = useMaintenanceLogs(vehicleId);
+  const { logs: fetchedLogs, loading: hookLoading } = useMaintenanceLogs(vehicleId);
+
+  const logs = initialLogs || fetchedLogs;
+  const loading = initialLogs ? false : hookLoading;
 
   const handleDelete = async (logId: string) => {
     if (!user) return;

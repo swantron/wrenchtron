@@ -112,7 +112,7 @@ export default function HomePage() {
         <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">
-              Dashboard
+              Maintenance Hub
             </h1>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
               My Garage
