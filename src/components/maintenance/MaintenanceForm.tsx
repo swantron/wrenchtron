@@ -9,6 +9,7 @@ import { tracksMileage } from "@/utils/vehicleUtils";
 import { OilChangeFields } from "./OilChangeFields";
 import { TireFields } from "./TireFields";
 import { BrakeFields } from "./BrakeFields";
+import { PartFields } from "./PartFields";
 import { ReceiptUpload } from "./ReceiptUpload";
 import type { VehicleType } from "@/types/firestore";
 import type {
@@ -17,7 +18,10 @@ import type {
   OilChangeDetails,
   TireDetails,
   BrakeDetails,
+  PartDetails,
 } from "@/types/maintenance";
+
+const PART_TYPES: MaintenanceType[] = ["air_filter", "cabin_filter", "spark_plugs", "wiper_blades"];
 
 const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
   { value: "oil_change", label: "Oil Change" },
@@ -63,6 +67,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
   const [oilDetails, setOilDetails] = useState<OilChangeDetails>(initialData?.details as OilChangeDetails ?? {});
   const [tireDetails, setTireDetails] = useState<TireDetails>(initialData?.details as TireDetails ?? {});
   const [brakeDetails, setBrakeDetails] = useState<BrakeDetails>(initialData?.details as BrakeDetails ?? {});
+  const [partDetails, setPartDetails] = useState<PartDetails>(initialData?.details as PartDetails ?? {});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +97,8 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         maintenanceType === "brake_rotors"
       ) {
         details = brakeDetails;
+      } else if (PART_TYPES.includes(maintenanceType)) {
+        details = partDetails;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,6 +254,15 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
             <BrakeFields details={brakeDetails} onChange={setBrakeDetails} />
           </div>
         )}
+
+      {PART_TYPES.includes(maintenanceType) && (
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/20">
+          <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+            Part Details
+          </h3>
+          <PartFields details={partDetails} onChange={setPartDetails} />
+        </div>
+      )}
 
       {user && (
         <ReceiptUpload

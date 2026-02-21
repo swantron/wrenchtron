@@ -30,9 +30,14 @@ export interface TireDetails {
   positions?: string[];
   brand?: string;
   model?: string;
-  size?: string;
-  treadDepth?: string; // e.g. "8/32"
+  size?: string;        // e.g. "235/65R17"
+  treadDepth?: string;  // e.g. "8/32"
   pressure?: number;    // PSI
+}
+
+export interface PartDetails {
+  brand?: string;
+  partNumber?: string;
 }
 
 export interface BrakeDetails {
@@ -52,6 +57,7 @@ export type MaintenanceDetails =
   | OilChangeDetails
   | TireDetails
   | BrakeDetails
+  | PartDetails
   | GenericDetails;
 
 export interface MaintenanceLog {

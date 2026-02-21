@@ -15,7 +15,8 @@ function formatSupplyLine(item: ActionItem): string | null {
   if (d.filterBrand) parts.push(`${d.filterBrand}${d.filterPartNumber ? ` ${d.filterPartNumber}` : ""} filter`);
   if (d.brand && d.model) parts.push(`${d.brand} ${d.model}`);
   if (d.size) parts.push(String(d.size));
-  if (d.brand && !d.model) parts.push(String(d.brand));
+  if (d.brand && d.partNumber) parts.push(`${d.brand} ${d.partNumber}`);
+  else if (d.brand && !d.model) parts.push(String(d.brand));
 
   return parts.length ? parts.join(" · ") : null;
 }
