@@ -86,10 +86,7 @@ function getDefaultIntervals(type: VehicleType): ServiceInterval[] {
             return DEFAULT_MOWER_INTERVALS;
         case "snowblower":
             return DEFAULT_SNOWBLOWER_INTERVALS;
-        case "car":
-        case "truck":
-        case "suv":
-        case "van":
+        case "auto":
         case "motorcycle":
             return DEFAULT_CAR_INTERVALS;
         default:

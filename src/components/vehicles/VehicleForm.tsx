@@ -11,15 +11,13 @@ import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
 import { tracksMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
-  { value: "car", label: "Car" },
-  { value: "truck", label: "Truck" },
-  { value: "suv", label: "SUV" },
-  { value: "van", label: "Van" },
+  { value: "auto", label: "Auto" },
   { value: "motorcycle", label: "Motorcycle" },
+  { value: "atv", label: "ATV" },
+  { value: "utv", label: "UTV" },
   { value: "mower", label: "Mower" },
   { value: "snowblower", label: "Snowblower" },
   { value: "boat", label: "Boat" },
-  { value: "atv", label: "ATV" },
   { value: "other", label: "Other" },
 ];
 
@@ -34,7 +32,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [error, setError] = useState("");
 
   const [name, setName] = useState(vehicle?.name ?? "");
-  const [type, setType] = useState<VehicleType>(vehicle?.type ?? "car");
+  const [type, setType] = useState<VehicleType>(vehicle?.type ?? "auto");
   const [year, setYear] = useState(vehicle?.year?.toString() ?? "");
   const [make, setMake] = useState(vehicle?.make ?? "");
   const [model, setModel] = useState(vehicle?.model ?? "");
@@ -80,9 +78,9 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         make,
         model,
         currentMileage: currentMileage ? parseInt(currentMileage) : 999999,
-        estimatedAnnualMileage: estimatedAnnualMileage ? parseInt(estimatedAnnualMileage) : undefined,
         isActive: true,
       };
+      if (estimatedAnnualMileage) data.estimatedAnnualMileage = parseInt(estimatedAnnualMileage);
       if (trim) data.trim = trim;
       if (engine) data.engine = engine;
       if (transmission) data.transmission = transmission;

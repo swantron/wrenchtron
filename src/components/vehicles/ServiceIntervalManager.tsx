@@ -16,18 +16,7 @@ interface SuggestedService {
 }
 
 const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
-    car: [
-        { name: "Oil Change", type: "time", targetMaintenanceType: "oil_change", timeIntervalMonths: 6 },
-        { name: "Tire Rotation", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
-        { name: "Cabin Air Filter", type: "time", targetMaintenanceType: "cabin_filter", timeIntervalMonths: 12 },
-        { name: "Air Filter", type: "time", targetMaintenanceType: "air_filter", timeIntervalMonths: 24 },
-        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 48 },
-        { name: "Transmission Fluid", type: "time", targetMaintenanceType: "transmission_fluid", timeIntervalMonths: 48 },
-        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
-        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
-        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
-    ],
-    truck: [
+    auto: [
         { name: "Oil Change", type: "time", targetMaintenanceType: "oil_change", timeIntervalMonths: 6 },
         { name: "Tire Rotation", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
         { name: "Cabin Air Filter", type: "time", targetMaintenanceType: "cabin_filter", timeIntervalMonths: 12 },
@@ -39,28 +28,6 @@ const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
         { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
         { name: "Alignment", type: "time", targetMaintenanceType: "alignment", timeIntervalMonths: 12 },
     ],
-    suv: [
-        { name: "Oil Change", type: "time", targetMaintenanceType: "oil_change", timeIntervalMonths: 6 },
-        { name: "Tire Rotation", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
-        { name: "Cabin Air Filter", type: "time", targetMaintenanceType: "cabin_filter", timeIntervalMonths: 12 },
-        { name: "Air Filter", type: "time", targetMaintenanceType: "air_filter", timeIntervalMonths: 24 },
-        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 48 },
-        { name: "Transmission Fluid", type: "time", targetMaintenanceType: "transmission_fluid", timeIntervalMonths: 48 },
-        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
-        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
-        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
-    ],
-    van: [
-        { name: "Oil Change", type: "time", targetMaintenanceType: "oil_change", timeIntervalMonths: 6 },
-        { name: "Tire Rotation", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
-        { name: "Cabin Air Filter", type: "time", targetMaintenanceType: "cabin_filter", timeIntervalMonths: 12 },
-        { name: "Air Filter", type: "time", targetMaintenanceType: "air_filter", timeIntervalMonths: 24 },
-        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 48 },
-        { name: "Transmission Fluid", type: "time", targetMaintenanceType: "transmission_fluid", timeIntervalMonths: 48 },
-        { name: "Coolant Flush", type: "time", targetMaintenanceType: "coolant_flush", timeIntervalMonths: 24 },
-        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
-        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
-    ],
     motorcycle: [
         { name: "Oil Change", type: "time", targetMaintenanceType: "oil_change", timeIntervalMonths: 6 },
         { name: "Chain Lube", type: "seasonal", season: "spring" },
@@ -70,6 +37,12 @@ const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
         { name: "Air Filter", type: "seasonal", targetMaintenanceType: "air_filter", season: "spring" },
         { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
+    ],
+    utv: [
+        { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
+        { name: "Air Filter", type: "seasonal", targetMaintenanceType: "air_filter", season: "spring" },
+        { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
     ],
     mower: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
@@ -159,7 +132,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
     const [notes, setNotes] = useState("");
 
     const suggestions = useMemo(() => {
-        const candidates = SUGGESTED_SERVICES[vehicle.type] ?? SUGGESTED_SERVICES.car ?? [];
+        const candidates = SUGGESTED_SERVICES[vehicle.type] ?? SUGGESTED_SERVICES.auto ?? [];
         const existing = vehicle.serviceIntervals ?? [];
         return candidates.filter(s =>
             !existing.some(iv =>
@@ -191,8 +164,8 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             id: crypto.randomUUID(),
             name,
             type,
-            notes: notes || undefined,
         };
+        if (notes) newInterval.notes = notes;
 
         if (targetMaintenanceType) {
             newInterval.targetMaintenanceType = targetMaintenanceType;

@@ -77,7 +77,7 @@ const demoVehicles: DemoVehicle[] = [
   {
     id: "f150",
     name: "The Tremor",
-    type: "truck",
+    type: "auto",
     year: 2023,
     make: "Ford",
     model: "F-150",
@@ -92,7 +92,7 @@ const demoVehicles: DemoVehicle[] = [
   {
     id: "yukon",
     name: "The Yukon",
-    type: "suv",
+    type: "auto",
     year: 1996,
     make: "GMC",
     model: "Yukon",

@@ -54,7 +54,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const requiresMileage = tracksMileage(vehicleType ?? "car");
+  const requiresMileage = tracksMileage(vehicleType ?? "auto");
 
   const [maintenanceType, setMaintenanceType] =
     useState<MaintenanceType>(initialData?.maintenanceType ?? initialType ?? "oil_change");

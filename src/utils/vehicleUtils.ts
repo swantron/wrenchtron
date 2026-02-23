@@ -1,15 +1,13 @@
 import { VehicleType } from '@/types/firestore';
 
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
-    car: 'Car',
-    truck: 'Truck',
-    suv: 'SUV',
-    van: 'Van',
+    auto: 'Auto',
     motorcycle: 'Motorcycle',
+    atv: 'ATV',
+    utv: 'UTV',
     mower: 'Mower',
     snowblower: 'Snowblower',
     boat: 'Boat',
-    atv: 'ATV/UTV',
     other: 'Other',
 };
 
@@ -22,7 +20,7 @@ export function tracksMileage(type: VehicleType): boolean {
 // Determines if a vehicle type has road-vehicle specific fields
 // (engine, transmission, drivetrain, VIN, license plate, recalls)
 export function isRoadVehicle(type: VehicleType): boolean {
-    const equipment: VehicleType[] = ['mower', 'snowblower', 'atv', 'boat'];
+    const equipment: VehicleType[] = ['mower', 'snowblower', 'atv', 'utv', 'boat'];
     return !equipment.includes(type);
 }
 

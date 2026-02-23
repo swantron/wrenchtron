@@ -2,12 +2,10 @@ import { Timestamp } from "firebase/firestore";
 import type { MaintenanceType } from "@/types/maintenance";
 
 export type VehicleType =
-  | "car"
-  | "truck"
+  | "auto"
   | "motorcycle"
   | "atv"
-  | "suv"
-  | "van"
+  | "utv"
   | "mower"
   | "snowblower"
   | "boat"
