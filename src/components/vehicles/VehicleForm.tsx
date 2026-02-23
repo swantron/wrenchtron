@@ -8,7 +8,7 @@ import { uploadVehiclePhoto } from "@/lib/firebase/storage";
 import { compressImage } from "@/lib/image/compress";
 import type { Vehicle, VehicleType } from "@/types/firestore";
 import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
-import { tracksMileage } from "@/utils/vehicleUtils";
+import { tracksMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "car", label: "Car" },
@@ -260,68 +260,72 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Engine
-          </label>
-          <input
-            type="text"
-            value={engine}
-            onChange={(e) => setEngine(e.target.value)}
-            placeholder="e.g. 2.5L 4-Cylinder"
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+        {isRoadVehicle(type) && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Engine
+              </label>
+              <input
+                type="text"
+                value={engine}
+                onChange={(e) => setEngine(e.target.value)}
+                placeholder="e.g. 2.5L 4-Cylinder"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Transmission
-          </label>
-          <input
-            type="text"
-            value={transmission}
-            onChange={(e) => setTransmission(e.target.value)}
-            placeholder="e.g. 8-Speed Automatic"
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Transmission
+              </label>
+              <input
+                type="text"
+                value={transmission}
+                onChange={(e) => setTransmission(e.target.value)}
+                placeholder="e.g. 8-Speed Automatic"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Drivetrain
-          </label>
-          <input
-            type="text"
-            value={drivetrain}
-            onChange={(e) => setDrivetrain(e.target.value)}
-            placeholder="e.g. FWD, AWD, 4WD"
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Drivetrain
+              </label>
+              <input
+                type="text"
+                value={drivetrain}
+                onChange={(e) => setDrivetrain(e.target.value)}
+                placeholder="e.g. FWD, AWD, 4WD"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            VIN
-          </label>
-          <input
-            type="text"
-            value={vin}
-            onChange={(e) => setVin(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                VIN
+              </label>
+              <input
+                type="text"
+                value={vin}
+                onChange={(e) => setVin(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            License Plate
-          </label>
-          <input
-            type="text"
-            value={licensePlate}
-            onChange={(e) => setLicensePlate(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                License Plate
+              </label>
+              <input
+                type="text"
+                value={licensePlate}
+                onChange={(e) => setLicensePlate(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {user && (

@@ -9,7 +9,7 @@ import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
-import { formatMileage } from "@/utils/vehicleUtils";
+import { formatMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 
@@ -180,7 +180,7 @@ export function VehicleDetailView({
         <div className="space-y-6 lg:col-span-1">
           <ServiceStatusPanel vehicle={vehicle} logs={logs} />
 
-          <RecallPanel vehicle={vehicle} />
+          {isRoadVehicle(vehicle.type) && <RecallPanel vehicle={vehicle} />}
 
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -193,11 +193,11 @@ export function VehicleDetailView({
                   value={`${formatMileage(vehicle.currentMileage, vehicle.type)} mi`}
                 />
               )}
-              {vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
-              {vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}
-              {vehicle.drivetrain && <DetailItem label="Drivetrain" value={vehicle.drivetrain} />}
-              {vehicle.vin && <DetailItem label="VIN" value={vehicle.vin} />}
-              {vehicle.licensePlate && <DetailItem label="License Plate" value={vehicle.licensePlate} />}
+              {isRoadVehicle(vehicle.type) && vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
+              {isRoadVehicle(vehicle.type) && vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}
+              {isRoadVehicle(vehicle.type) && vehicle.drivetrain && <DetailItem label="Drivetrain" value={vehicle.drivetrain} />}
+              {isRoadVehicle(vehicle.type) && vehicle.vin && <DetailItem label="VIN" value={vehicle.vin} />}
+              {isRoadVehicle(vehicle.type) && vehicle.licensePlate && <DetailItem label="License Plate" value={vehicle.licensePlate} />}
             </dl>
           </div>
         </div>

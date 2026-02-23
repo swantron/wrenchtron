@@ -19,6 +19,13 @@ export function tracksMileage(type: VehicleType): boolean {
     return !nonMileageTypes.includes(type);
 }
 
+// Determines if a vehicle type has road-vehicle specific fields
+// (engine, transmission, drivetrain, VIN, license plate, recalls)
+export function isRoadVehicle(type: VehicleType): boolean {
+    const equipment: VehicleType[] = ['mower', 'snowblower', 'atv', 'boat'];
+    return !equipment.includes(type);
+}
+
 // Helper to format mileage display (returns null if shouldn't be shown)
 export function formatMileage(mileage: number | undefined, type: VehicleType): string | null {
     if (!mileage || !tracksMileage(type)) {
