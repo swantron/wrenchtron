@@ -5,6 +5,7 @@ export type {
   OilChangeDetails,
   TireDetails,
   BrakeDetails,
+  PartDetails,
   GenericDetails,
   MaintenanceDetails,
 } from "./maintenance";
