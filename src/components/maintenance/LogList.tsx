@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { deleteMaintenanceLog } from "@/lib/firebase/firestore";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useToast } from "@/components/ui/Toast";
 import type {
   MaintenanceLog,
   MaintenanceType,
@@ -280,6 +281,7 @@ export function LogList({
   logs?: MaintenanceLog[];
 }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const { logs: fetchedLogs, loading: hookLoading } = useMaintenanceLogs(vehicleId);
 
   const logs = initialLogs || fetchedLogs;
@@ -287,7 +289,13 @@ export function LogList({
 
   const handleDelete = async (logId: string) => {
     if (!user) return;
-    await deleteMaintenanceLog(user.uid, vehicleId, logId);
+    try {
+      await deleteMaintenanceLog(user.uid, vehicleId, logId);
+      showToast("Log deleted.", "success");
+    } catch {
+      showToast("Failed to delete log. Please try again.", "error");
+      throw new Error("Delete failed");
+    }
   };
 
   if (loading) {

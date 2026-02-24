@@ -1,36 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
-interface ToastProps {
+type ToastType = "success" | "error" | "info";
+
+interface ToastItem {
+  id: number;
   message: string;
-  type?: "success" | "error";
-  onClose: () => void;
+  type: ToastType;
 }
 
-export function Toast({ message, type = "success", onClose }: ToastProps) {
-  const [visible, setVisible] = useState(true);
+interface ToastContextValue {
+  showToast: (message: string, type?: ToastType) => void;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(onClose, 300);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
+const ToastContext = createContext<ToastContextValue>({ showToast: () => {} });
 
-  const bgColor =
-    type === "error"
-      ? "bg-red-600"
-      : "bg-green-600";
+export function useToast() {
+  return useContext(ToastContext);
+}
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const showToast = useCallback((message: string, type: ToastType = "info") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }, []);
 
   return (
-    <div
-      className={`fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-lg transition-opacity md:bottom-6 ${bgColor} ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
-    >
-      {message}
-    </div>
+    <ToastContext.Provider value={{ showToast }}>
+      {children}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2">
+        {toasts.map((toast) => {
+          const styles =
+            toast.type === "success"
+              ? "bg-green-600"
+              : toast.type === "error"
+              ? "bg-red-600"
+              : "bg-gray-800 dark:bg-gray-700";
+          return (
+            <div
+              key={toast.id}
+              className={`${styles} pointer-events-auto max-w-xs rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg`}
+            >
+              {toast.message}
+            </div>
+          );
+        })}
+      </div>
+    </ToastContext.Provider>
   );
 }

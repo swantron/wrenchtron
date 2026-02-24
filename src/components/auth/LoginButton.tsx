@@ -1,20 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { signInWithGoogle } from "@/lib/firebase/auth";
+import { useToast } from "@/components/ui/Toast";
 
 export function LoginButton() {
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async () => {
+    setLoading(true);
     try {
       await signInWithGoogle();
     } catch (error) {
       console.error("Login failed:", error);
+      showToast("Sign in failed. Please try again.", "error");
+      setLoading(false);
     }
   };
 
   return (
     <button
       onClick={handleLogin}
-      className="flex items-center gap-3 rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-md transition-colors hover:bg-gray-50"
+      disabled={loading}
+      className="flex items-center gap-3 rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-md transition-colors hover:bg-gray-50 disabled:opacity-60"
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24">
         <path
@@ -34,7 +43,7 @@ export function LoginButton() {
           fill="#EA4335"
         />
       </svg>
-      Sign in with Google
+      {loading ? "Signing in..." : "Sign in with Google"}
     </button>
   );
 }

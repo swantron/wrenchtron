@@ -10,6 +10,7 @@ import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import { formatMileage, isRoadVehicle } from "@/utils/vehicleUtils";
+import { useToast } from "@/components/ui/Toast";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 
@@ -41,6 +42,7 @@ export function VehicleDetailView({
 }) {
   const { user } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [vehicle, setVehicle] = useState<Vehicle | null>(initialVehicle || null);
   const [logs, setLogs] = useState<MaintenanceLog[]>(initialLogs || []);
   const [photoUrl, setPhotoUrl] = useState<string | null>(
@@ -97,6 +99,7 @@ export function VehicleDetailView({
       await deleteVehicle(user.uid, vehicleId);
       router.push("/vehicles");
     } catch {
+      showToast("Failed to delete vehicle. Please try again.", "error");
       setDeleting(false);
     }
   };
