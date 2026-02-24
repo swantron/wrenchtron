@@ -132,7 +132,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
     const [notes, setNotes] = useState("");
 
     const suggestions = useMemo(() => {
-        const candidates = SUGGESTED_SERVICES[vehicle.type] ?? SUGGESTED_SERVICES.auto ?? [];
+        const candidates = SUGGESTED_SERVICES[vehicle.type] ?? [];
         const existing = vehicle.serviceIntervals ?? [];
         return candidates.filter(s =>
             !existing.some(iv =>
