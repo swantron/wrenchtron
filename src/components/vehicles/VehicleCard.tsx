@@ -49,10 +49,13 @@ function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
 
 export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: VehicleCardProps) {
   const { user } = useAuth();
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(
+    vehicle.photoPath?.startsWith("/") ? vehicle.photoPath : null
+  );
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (vehicle.photoPath?.startsWith("/")) return; // static asset, already set
     let active = true;
     const loadPhoto = async () => {
       if (vehicle.photoPath) {
@@ -152,7 +155,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            {isDemo ? "Sign Up" : "Edit"}
+            {isDemo ? "Sign In" : "Edit"}
           </Link>
           {!isDemo && (
             <button
@@ -173,7 +176,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
       <Link
         href={isDemo ? "/login" : `/maintenance/new?vehicleId=${vehicle.id}`}
         className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 hover:bg-blue-700 active:scale-95"
-        title={isDemo ? "Sign up to log service" : "Quick Log"}
+        title={isDemo ? "Sign in to log service" : "Quick Log"}
       >
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

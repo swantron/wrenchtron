@@ -59,7 +59,7 @@ export function DashboardGrid({
           href={isDemo ? "/login" : "/vehicles/new"}
           className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          {isDemo ? "Sign Up Free" : "Add to Garage"}
+          {isDemo ? "Sign In" : "Add to Garage"}
         </Link>
       </div>
     );

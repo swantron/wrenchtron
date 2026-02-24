@@ -591,7 +591,7 @@ function DemoContent() {
                   href="/login"
                   className="mt-8 inline-block rounded-2xl bg-white px-10 py-4 text-sm font-black uppercase tracking-widest text-gray-900 transition-all hover:bg-gray-100 active:scale-95"
                 >
-                  Create Your Fleet
+                  Sign In
                 </Link>
               </div>
             </div>
