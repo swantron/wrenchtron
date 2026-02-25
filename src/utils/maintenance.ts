@@ -2,8 +2,8 @@ import { Vehicle, VehicleType } from "../types/firestore";
 import { MaintenanceLog, MaintenanceDetails, MaintenanceType } from "../types/maintenance";
 
 // Maintenance types that don't apply to certain vehicle categories.
-// Intervals with these targetMaintenanceTypes are silently skipped during
-// calculation so stale/misconfigured Firestore data never surfaces in the UI.
+// Checked against both targetMaintenanceType and interval name so stale or
+// manually-entered intervals never surface in the wrong vehicle's status.
 const INAPPLICABLE_TYPES: Partial<Record<VehicleType, MaintenanceType[]>> = {
     mower:      ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
     snowblower: ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
@@ -11,6 +11,15 @@ const INAPPLICABLE_TYPES: Partial<Record<VehicleType, MaintenanceType[]>> = {
     utv:        ["tire_rotation", "cabin_filter"],
     boat:       ["tire_rotation", "tire_replacement", "cabin_filter", "alignment"],
 };
+
+function isIntervalInapplicable(interval: { name: string; targetMaintenanceType?: string }, type: VehicleType): boolean {
+    const blocked = INAPPLICABLE_TYPES[type];
+    if (!blocked) return false;
+    if (interval.targetMaintenanceType && blocked.includes(interval.targetMaintenanceType as MaintenanceType)) return true;
+    // Name-based fallback for manually-entered intervals without a targetMaintenanceType
+    const lower = interval.name.toLowerCase();
+    return blocked.some(t => lower.includes(t.replace(/_/g, " ")));
+}
 
 export interface ActionItem {
     id: string;
@@ -67,11 +76,7 @@ export function calculateActionItems(
     const items: ActionItem[] = [];
 
     for (const interval of vehicle.serviceIntervals) {
-        // Skip intervals that make no sense for this vehicle type
-        if (
-            interval.targetMaintenanceType &&
-            INAPPLICABLE_TYPES[vehicle.type]?.includes(interval.targetMaintenanceType)
-        ) continue;
+        if (isIntervalInapplicable(interval, vehicle.type)) continue;
 
         // Find the latest log that matches this service interval
         const relevantLogs = logs.filter(log => {

@@ -237,7 +237,7 @@ export function VehicleDetailView({
         <div className="space-y-6 lg:col-span-1">
           <ServiceStatusPanel vehicle={vehicle} logs={logs} />
 
-          {isRoadVehicle(vehicle.type) && <RecallPanel vehicle={vehicle} />}
+          {(vehicle.type === "auto" || vehicle.type === "motorcycle") && <RecallPanel vehicle={vehicle} />}
 
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
