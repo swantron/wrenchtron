@@ -32,6 +32,40 @@ const DEFAULT_CAR_INTERVALS: ServiceInterval[] = [
     },
 ];
 
+const DEFAULT_ATV_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-atv-oil",
+        name: "Oil Change",
+        type: "seasonal",
+        season: "spring",
+        notes: "Annual oil change at start of season",
+    },
+    {
+        id: "default-atv-air",
+        name: "Air Filter",
+        type: "seasonal",
+        season: "spring",
+        notes: "Inspect and replace air filter",
+    },
+];
+
+const DEFAULT_BOAT_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-boat-oil",
+        name: "Oil Change",
+        type: "seasonal",
+        season: "spring",
+        notes: "Annual oil change before launch",
+    },
+    {
+        id: "default-boat-winter",
+        name: "Winterize",
+        type: "seasonal",
+        season: "fall",
+        notes: "Winterize engine and systems",
+    },
+];
+
 const DEFAULT_MOWER_INTERVALS: ServiceInterval[] = [
     {
         id: "default-mower-oil",
@@ -82,15 +116,20 @@ const DEFAULT_SNOWBLOWER_INTERVALS: ServiceInterval[] = [
 
 function getDefaultIntervals(type: VehicleType): ServiceInterval[] {
     switch (type) {
+        case "auto":
+        case "motorcycle":
+            return DEFAULT_CAR_INTERVALS;
         case "mower":
             return DEFAULT_MOWER_INTERVALS;
         case "snowblower":
             return DEFAULT_SNOWBLOWER_INTERVALS;
-        case "auto":
-        case "motorcycle":
-            return DEFAULT_CAR_INTERVALS;
+        case "atv":
+        case "utv":
+            return DEFAULT_ATV_INTERVALS;
+        case "boat":
+            return DEFAULT_BOAT_INTERVALS;
         default:
-            return DEFAULT_CAR_INTERVALS;
+            return [];
     }
 }
 
