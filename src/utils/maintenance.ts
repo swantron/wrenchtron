@@ -1,5 +1,16 @@
-import { Vehicle } from "../types/firestore";
-import { MaintenanceLog, MaintenanceDetails } from "../types/maintenance";
+import { Vehicle, VehicleType } from "../types/firestore";
+import { MaintenanceLog, MaintenanceDetails, MaintenanceType } from "../types/maintenance";
+
+// Maintenance types that don't apply to certain vehicle categories.
+// Intervals with these targetMaintenanceTypes are silently skipped during
+// calculation so stale/misconfigured Firestore data never surfaces in the UI.
+const INAPPLICABLE_TYPES: Partial<Record<VehicleType, MaintenanceType[]>> = {
+    mower:      ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
+    snowblower: ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
+    atv:        ["tire_rotation", "cabin_filter"],
+    utv:        ["tire_rotation", "cabin_filter"],
+    boat:       ["tire_rotation", "tire_replacement", "cabin_filter", "alignment"],
+};
 
 export interface ActionItem {
     id: string;
@@ -56,6 +67,12 @@ export function calculateActionItems(
     const items: ActionItem[] = [];
 
     for (const interval of vehicle.serviceIntervals) {
+        // Skip intervals that make no sense for this vehicle type
+        if (
+            interval.targetMaintenanceType &&
+            INAPPLICABLE_TYPES[vehicle.type]?.includes(interval.targetMaintenanceType)
+        ) continue;
+
         // Find the latest log that matches this service interval
         const relevantLogs = logs.filter(log => {
             if (interval.targetMaintenanceType) {
