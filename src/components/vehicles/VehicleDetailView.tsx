@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,12 +11,66 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import { formatMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 import { useToast } from "@/components/ui/Toast";
+import { downloadCSV, printMaintenanceHistory } from "@/lib/export";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 
 import { ServiceStatusPanel } from "@/components/vehicles/ServiceStatusPanel";
 import { RecallPanel } from "@/components/vehicles/RecallPanel";
 import { ServiceIntervalManager } from "@/components/vehicles/ServiceIntervalManager";
+
+function ExportMenu({ vehicle, logs }: { vehicle: Vehicle; logs: MaintenanceLog[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Export
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <button
+            type="button"
+            onClick={() => { downloadCSV(vehicle, logs); setOpen(false); }}
+            className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => { printMaintenanceHistory(vehicle, logs); setOpen(false); }}
+            className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print / Save PDF
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
@@ -211,12 +265,15 @@ export function VehicleDetailView({
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Maintenance History
             </h2>
-            <Link
-              href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-            >
-              Log Service
-            </Link>
+            <div className="flex items-center gap-2">
+              {logs.length > 0 && <ExportMenu vehicle={vehicle} logs={logs} />}
+              <Link
+                href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+              >
+                Log Service
+              </Link>
+            </div>
           </div>
           <div className="mt-6">
             <LogList vehicleId={vehicleId} logs={initialLogs} />
