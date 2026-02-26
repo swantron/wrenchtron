@@ -12,7 +12,7 @@ export const vehicleFormSchema = z.object({
   engine: z.string().optional(),
   transmission: z.string().optional(),
   drivetrain: z.string().optional(),
-  vin: z.string().optional(),
+  vin: z.string().regex(/^[A-HJ-NPR-Z0-9]{17}$/, "VIN must be exactly 17 characters (letters and numbers, no I, O, or Q)").optional().or(z.literal("")),
   licensePlate: z.string().optional(),
 });
 

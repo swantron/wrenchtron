@@ -13,7 +13,7 @@ interface RecallPanelProps {
 
 export function RecallPanel({ vehicle }: RecallPanelProps) {
   const { user } = useAuth();
-  const { recalls, loading, error } = useRecalls(vehicle.vin);
+  const { recalls, loading, error } = useRecalls(vehicle.vin, vehicle.make, vehicle.model, vehicle.year);
 
   // null = use vehicle prop; non-null = optimistic override after user action
   const [optimisticResolved, setOptimisticResolved] = useState<string[] | null>(null);

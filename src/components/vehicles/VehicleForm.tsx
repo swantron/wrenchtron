@@ -354,9 +354,12 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
                 id="vf-vin"
                 type="text"
                 value={vin}
-                onChange={(e) => setVin(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                onChange={(e) => setVin(e.target.value.toUpperCase())}
+                placeholder="17-character VIN"
+                maxLength={17}
+                className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 dark:bg-gray-800 dark:text-white ${fieldErrors.vin ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-gray-300 bg-white focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600"}`}
               />
+              {fieldErrors.vin && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.vin}</p>}
             </div>
 
             <div>
