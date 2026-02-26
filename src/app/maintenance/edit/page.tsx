@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { MaintenanceForm } from "@/components/maintenance/MaintenanceForm";
-import { getMaintenanceLog } from "@/lib/firebase/firestore";
+import { getMaintenanceLog, getVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { MaintenanceLog } from "@/types/maintenance";
@@ -18,6 +18,7 @@ function EditMaintenanceContent() {
     const logId = searchParams.get("logId");
 
     const [log, setLog] = useState<MaintenanceLog | null>(null);
+    const [vehicleName, setVehicleName] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -25,12 +26,16 @@ function EditMaintenanceContent() {
 
         const fetchLog = async () => {
             try {
-                const data = await getMaintenanceLog(user.uid, vehicleId, logId);
+                const [data, vehicle] = await Promise.all([
+                    getMaintenanceLog(user.uid, vehicleId, logId),
+                    getVehicle(user.uid, vehicleId),
+                ]);
                 if (data) {
                     setLog(data);
                 } else {
                     router.push(`/vehicles/detail?id=${vehicleId}`);
                 }
+                if (vehicle) setVehicleName(vehicle.name);
             } catch (err) {
                 console.error("Failed to fetch log:", err);
             } finally {
@@ -58,7 +63,7 @@ function EditMaintenanceContent() {
                     Edit Maintenance
                 </h1>
                 <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    Update your logs
+                    {vehicleName ?? "Update your logs"}
                 </p>
             </div>
 
