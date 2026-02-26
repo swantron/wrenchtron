@@ -211,39 +211,39 @@ export function calculateActionItems(
             if (interval.season === "fall" && month >= 8 && month <= 10) isSeason = true;
             if (interval.season === "winter" && (month === 11 || month <= 1)) isSeason = true;
 
-            const optionalPrefix = interval.isOptional ? "(Optional) " : "";
+            // Off-season: don't surface the item at all
+            if (!isSeason) continue;
 
-            if (isSeason) {
-                // Check if done in the last 6 months
-                const sixMonthsAgo = new Date();
-                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-                if (lastDate < sixMonthsAgo) {
-                    status = "due_soon";
-                    reason = `${optionalPrefix}It is ${interval.season}, time for ${interval.name}.`;
-                    items.push({
-                        id: `${vehicle.id}-${interval.id}`,
-                        vehicleId: vehicle.id || "",
-                        vehicleName: vehicle.name,
-                        serviceName: interval.name,
-                        status,
-                        reason,
-                        dueMileage,
-                        dueDate,
-                        remainingMiles,
-                        remainingDays,
-                        intervalMiles: interval.mileageInterval ?? interval.totalLifeMileage,
-                        intervalDays: interval.timeIntervalMonths ? interval.timeIntervalMonths * 30 : undefined,
-                        isOptional: interval.isOptional,
-                        lastLog: lastLog ? {
-                            date: lastLog.date.toDate(),
-                            mileage: lastLog.mileage,
-                            shop: lastLog.shop,
-                            details: lastLog.details,
-                        } : undefined,
-                    });
-                    continue; // Move to next interval
-                }
-            }
+            // In-season: check if already done within the last 6 months
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            if (lastDate >= sixMonthsAgo) continue; // recently serviced — skip
+
+            const optionalPrefix = interval.isOptional ? "(Optional) " : "";
+            status = "due_soon";
+            reason = `${optionalPrefix}It is ${interval.season}, time for ${interval.name}.`;
+            items.push({
+                id: `${vehicle.id}-${interval.id}`,
+                vehicleId: vehicle.id || "",
+                vehicleName: vehicle.name,
+                serviceName: interval.name,
+                status,
+                reason,
+                dueMileage,
+                dueDate,
+                remainingMiles,
+                remainingDays,
+                intervalMiles: interval.mileageInterval ?? interval.totalLifeMileage,
+                intervalDays: interval.timeIntervalMonths ? interval.timeIntervalMonths * 30 : undefined,
+                isOptional: interval.isOptional,
+                lastLog: lastLog ? {
+                    date: lastLog.date.toDate(),
+                    mileage: lastLog.mileage,
+                    shop: lastLog.shop,
+                    details: lastLog.details,
+                } : undefined,
+            });
+            continue; // Move to next interval
         }
 
         const optionalPrefix = interval.isOptional ? "(Optional) " : "";

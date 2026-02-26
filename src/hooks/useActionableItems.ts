@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Vehicle, VehicleType } from "@/types/firestore";
 import { MaintenanceLog } from "@/types/maintenance";
 import { subscribeToMaintenanceLogs } from "@/lib/firebase/firestore";
@@ -133,55 +133,46 @@ function getDefaultIntervals(type: VehicleType): ServiceInterval[] {
     }
 }
 
+const statusRank = { overdue: 0, due_soon: 1, upcoming: 2 };
+
+function mergeAndSort(perVehicle: Record<string, ActionItem[]>): ActionItem[] {
+    const all: ActionItem[] = [];
+    for (const items of Object.values(perVehicle)) {
+        all.push(...items);
+    }
+    return all.sort((a, b) => {
+        if (statusRank[a.status] !== statusRank[b.status]) {
+            return statusRank[a.status] - statusRank[b.status];
+        }
+        const aDays = a.remainingDays ?? 9999;
+        const bDays = b.remainingDays ?? 9999;
+        return aDays - bDays;
+    });
+}
+
 export function useActionableItems(vehicles: Vehicle[]) {
     const { user } = useAuth();
     const [items, setItems] = useState<ActionItem[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Per-vehicle item cache — updated individually so one vehicle's log
+    // change doesn't recalculate every other vehicle.
+    const perVehicleRef = useRef<Record<string, ActionItem[]>>({});
+    const vehicleCount = vehicles.length;
+
     useEffect(() => {
-        if (!user || vehicles.length === 0) {
+        if (!user || vehicleCount === 0) {
             const timer = setTimeout(() => {
+                perVehicleRef.current = {};
                 setItems([]);
                 setLoading(false);
             }, 0);
             return () => clearTimeout(timer);
         }
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLoading(true);
         const vehicleLogs: Record<string, MaintenanceLog[]> = {};
         const unsubscribes: (() => void)[] = [];
-
-        // Helper to re-calculate everything when any log changes
-        const recalculateAll = () => {
-            let allItems: ActionItem[] = [];
-            vehicles.forEach(vehicle => {
-                const logs = vehicleLogs[vehicle.id!] || [];
-                // Inject defaults if no intervals defined
-                const vehicleWithDefaults = {
-                    ...vehicle,
-                    serviceIntervals: (vehicle.serviceIntervals && vehicle.serviceIntervals.length > 0)
-                        ? vehicle.serviceIntervals
-                        : getDefaultIntervals(vehicle.type)
-                };
-                const vehicleItems = calculateActionItems(vehicleWithDefaults, logs);
-                allItems = [...allItems, ...vehicleItems];
-            });
-
-            // Global Sort
-            const statusRank = { overdue: 0, due_soon: 1, upcoming: 2 };
-            allItems.sort((a, b) => {
-                if (statusRank[a.status] !== statusRank[b.status]) {
-                    return statusRank[a.status] - statusRank[b.status];
-                }
-                const aDays = a.remainingDays ?? 9999;
-                const bDays = b.remainingDays ?? 9999;
-                return aDays - bDays;
-            });
-
-            setItems(allItems);
-            setLoading(false);
-        };
+        let receivedCount = 0;
 
         vehicles.forEach((vehicle) => {
             if (!vehicle.id) return;
@@ -191,7 +182,21 @@ export function useActionableItems(vehicles: Vehicle[]) {
                 vehicle.id,
                 (logs) => {
                     vehicleLogs[vehicle.id!] = logs;
-                    recalculateAll();
+
+                    // Recalculate only this vehicle's items
+                    const vehicleWithDefaults = {
+                        ...vehicle,
+                        serviceIntervals: (vehicle.serviceIntervals && vehicle.serviceIntervals.length > 0)
+                            ? vehicle.serviceIntervals
+                            : getDefaultIntervals(vehicle.type),
+                    };
+                    perVehicleRef.current[vehicle.id!] = calculateActionItems(vehicleWithDefaults, logs);
+
+                    receivedCount++;
+                    if (receivedCount >= vehicleCount) {
+                        setLoading(false);
+                    }
+                    setItems(mergeAndSort(perVehicleRef.current));
                 },
                 (error) => {
                     console.error(`Error fetching logs for ${vehicle.name}:`, error);
@@ -203,7 +208,10 @@ export function useActionableItems(vehicles: Vehicle[]) {
         return () => {
             unsubscribes.forEach((unsub) => unsub());
         };
-    }, [user, vehicles]); // Re-run if vehicle list changes (e.g. add/remove vehicle)
+    // vehicleCount (primitive) intentionally replaces vehicles (object reference) to avoid
+    // re-subscribing on every Firestore update that doesn't change the vehicle list size.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, vehicleCount]);
 
     return { items, loading };
 }

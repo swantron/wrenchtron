@@ -13,20 +13,20 @@ export interface NHTSARecall {
 // Hoisted outside the hook so setState calls happen in callbacks, not the effect body
 function fetchRecallsByVin(
   vin: string,
+  signal: AbortSignal,
   onResult: (recalls: NHTSARecall[]) => void,
   onError: (msg: string) => void,
-): () => void {
-  let active = true;
-
-  fetch(`https://api.nhtsa.gov/recalls/recallsByVehicle?vin=${encodeURIComponent(vin)}`)
+): void {
+  fetch(`https://api.nhtsa.gov/recalls/recallsByVehicle?vin=${encodeURIComponent(vin)}`, { signal })
     .then(res => {
       if (!res.ok) throw new Error(`NHTSA returned ${res.status}`);
       return res.json();
     })
-    .then(data => { if (active) onResult(data.results ?? []); })
-    .catch(() => { if (active) onError("Could not load recall data from NHTSA."); });
-
-  return () => { active = false; };
+    .then(data => { onResult(data.results ?? []); })
+    .catch(err => {
+      if (err.name === "AbortError") return;
+      onError("Could not load recall data from NHTSA.");
+    });
 }
 
 interface UseRecallsResult {
@@ -42,7 +42,9 @@ export function useRecalls(vin: string | undefined): UseRecallsResult {
 
   useEffect(() => {
     if (!vin) return;
-    return fetchRecallsByVin(vin, setRecalls, setError);
+    const controller = new AbortController();
+    fetchRecallsByVin(vin, controller.signal, setRecalls, setError);
+    return () => { controller.abort(); };
   }, [vin]);
 
   return {

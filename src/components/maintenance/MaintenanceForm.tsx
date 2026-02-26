@@ -12,6 +12,7 @@ import { BrakeFields } from "./BrakeFields";
 import { PartFields } from "./PartFields";
 import { ReceiptUpload } from "./ReceiptUpload";
 import type { VehicleType } from "@/types/firestore";
+import { maintenanceFormSchema } from "@/lib/validation/maintenanceSchema";
 import type {
   MaintenanceLog,
   MaintenanceType,
@@ -53,6 +54,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const requiresMileage = tracksMileage(vehicleType ?? "auto");
 
@@ -73,10 +75,22 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
     e.preventDefault();
     if (!user) return;
 
-    if (!date || (requiresMileage && !mileage)) {
-      setError(requiresMileage ? "Please fill in date and mileage." : "Please fill in the date.");
+    const result = maintenanceFormSchema.safeParse({ date, cost: cost || undefined });
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFieldErrors(errors);
       return;
     }
+
+    if (requiresMileage && !mileage) {
+      setFieldErrors({ mileage: "Mileage is required" });
+      return;
+    }
+    setFieldErrors({});
 
     setSaving(true);
     setError("");
@@ -167,6 +181,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
+          {fieldErrors.date && <p className="mt-1 text-xs text-red-600">{fieldErrors.date}</p>}
         </div>
 
         {requiresMileage && (
@@ -182,6 +197,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               required
             />
+            {fieldErrors.mileage && <p className="mt-1 text-xs text-red-600">{fieldErrors.mileage}</p>}
           </div>
         )}
 

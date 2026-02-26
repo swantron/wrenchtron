@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Vehicle, ServiceInterval, IntervalType } from "@/types/firestore";
 import type { MaintenanceType } from "@/types/maintenance";
 import type { VehicleType } from "@/types/firestore";
 import { updateVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { VEHICLE_TYPE_LABELS } from "@/utils/vehicleUtils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface SuggestedService {
     name: string;
@@ -120,6 +121,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Form State
     const [name, setName] = useState("");
@@ -203,15 +205,13 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
         }
     };
 
-    const handleDelete = async (intervalId: string) => {
-        if (!user || !vehicle.id) return;
-        if (!confirm("Are you sure you want to remove this goal?")) return;
-
+    const handleDeleteConfirm = useCallback(async () => {
+        if (!user || !vehicle.id || !confirmDeleteId) return;
+        setConfirmDeleteId(null);
         setError("");
         const updatedIntervals = (vehicle.serviceIntervals || []).filter(
-            (i) => i.id !== intervalId
+            (i) => i.id !== confirmDeleteId
         );
-
         try {
             await updateVehicle(user.uid, vehicle.id, {
                 serviceIntervals: updatedIntervals,
@@ -220,7 +220,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             console.error("Error removing interval:", err);
             setError("Failed to remove service goal. Please try again.");
         }
-    };
+    }, [user, vehicle.id, vehicle.serviceIntervals, confirmDeleteId]);
 
     const resetForm = () => {
         setName("");
@@ -434,7 +434,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                                     {INTERVAL_TYPES.find((t) => t.value === interval.type)?.label}
                                 </span>
                                 <button
-                                    onClick={() => handleDelete(interval.id)}
+                                    onClick={() => setConfirmDeleteId(interval.id)}
                                     className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                                     title="Remove Goal"
                                 >
@@ -507,6 +507,16 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={confirmDeleteId !== null}
+                title="Remove Service Goal"
+                description="This service interval will be removed."
+                confirmLabel="Remove"
+                destructive
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setConfirmDeleteId(null)}
+            />
         </div>
     );
 }

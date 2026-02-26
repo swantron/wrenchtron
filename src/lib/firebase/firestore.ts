@@ -5,6 +5,7 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  getDocs,
   query,
   orderBy,
   onSnapshot,
@@ -49,6 +50,20 @@ export async function updateVehicle(
 
 export async function deleteVehicle(userId: string, vehicleId: string) {
   return deleteDoc(vehicleDoc(userId, vehicleId));
+}
+
+export async function deleteVehicleWithLogs(
+  userId: string,
+  vehicleId: string,
+  logIds?: string[]
+): Promise<void> {
+  let idsToDelete = logIds;
+  if (!idsToDelete) {
+    const snapshot = await getDocs(maintenanceCollection(userId, vehicleId));
+    idsToDelete = snapshot.docs.map((d) => d.id);
+  }
+  await Promise.all(idsToDelete.map((id) => deleteDoc(maintenanceDoc(userId, vehicleId, id))));
+  await deleteDoc(vehicleDoc(userId, vehicleId));
 }
 
 export async function getVehicle(userId: string, vehicleId: string) {

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { deleteVehicle } from "@/lib/firebase/firestore";
+import { deleteVehicleWithLogs } from "@/lib/firebase/firestore";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
 import type { ActionItem } from "@/utils/maintenance";
@@ -53,6 +54,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
     vehicle.photoPath?.startsWith("/") ? vehicle.photoPath : null
   );
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (vehicle.photoPath?.startsWith("/")) return; // static asset, already set
@@ -79,14 +81,18 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
     ? "border-amber-300 dark:border-amber-600"
     : "border-gray-200 dark:border-gray-700";
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!user || !vehicle.id) return;
-    if (!confirm(`Delete ${vehicle.name}? This cannot be undone.`)) return;
+    setConfirmOpen(false);
     setDeleting(true);
     try {
-      await deleteVehicle(user.uid, vehicle.id);
+      await deleteVehicleWithLogs(user.uid, vehicle.id);
     } catch {
       setDeleting(false);
     }
@@ -159,7 +165,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
           </Link>
           {!isDemo && (
             <button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               disabled={deleting}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
             >
@@ -182,6 +188,16 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </Link>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`Delete ${vehicle.name}?`}
+        description="This will permanently delete this vehicle and all its maintenance logs. This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

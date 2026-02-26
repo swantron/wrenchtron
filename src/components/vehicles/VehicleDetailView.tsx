@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { getVehicle, deleteVehicle, subscribeToMaintenanceLogs } from "@/lib/firebase/firestore";
+import { getVehicle, deleteVehicleWithLogs, subscribeToMaintenanceLogs } from "@/lib/firebase/firestore";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import { formatMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 import { useToast } from "@/components/ui/Toast";
-import { downloadCSV, printMaintenanceHistory } from "@/lib/export";
+import { downloadCSV, printMaintenanceHistory } from "@/utils/export";
 import NextImage from "next/image";
 import { LogList } from "@/components/maintenance/LogList";
 
@@ -106,6 +107,7 @@ export function VehicleDetailView({
   );
   const [loading, setLoading] = useState(!initialVehicle);
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (initialVehicle) return;
@@ -145,12 +147,12 @@ export function VehicleDetailView({
     };
   }, [vehicle?.photoPath, initialVehicle?.photoPath]);
 
-  const handleDelete = async () => {
+  const handleDeleteConfirm = async () => {
     if (!user || !vehicleId) return;
-    if (!confirm("Are you sure you want to delete this vehicle?")) return;
+    setConfirmOpen(false);
     setDeleting(true);
     try {
-      await deleteVehicle(user.uid, vehicleId);
+      await deleteVehicleWithLogs(user.uid, vehicleId, logs.map((l) => l.id!));
       router.push("/vehicles");
     } catch {
       showToast("Failed to delete vehicle. Please try again.", "error");
@@ -181,6 +183,7 @@ export function VehicleDetailView({
   }
 
   return (
+    <>
     <div className="px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         <div>
@@ -209,7 +212,7 @@ export function VehicleDetailView({
                 Edit
               </Link>
               <button
-                onClick={handleDelete}
+                onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
                 className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
               >
@@ -286,6 +289,17 @@ export function VehicleDetailView({
           <ServiceIntervalManager vehicle={vehicle} />
         </div>
       )}
-    </div >
+    </div>
+
+    <ConfirmDialog
+      open={confirmOpen}
+      title="Delete Vehicle"
+      description={`This will permanently delete this vehicle and all ${logs.length} maintenance log(s). This cannot be undone.`}
+      confirmLabel="Delete"
+      destructive
+      onConfirm={handleDeleteConfirm}
+      onCancel={() => setConfirmOpen(false)}
+    />
+    </>
   );
 }

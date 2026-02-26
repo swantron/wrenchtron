@@ -7,6 +7,7 @@ import type {
   BrakeDetails,
   PartDetails,
 } from "@/types/maintenance";
+import { MAX_DISPLAY_MILEAGE } from "@/utils/vehicleUtils";
 
 const TYPE_LABELS: Record<MaintenanceType, string> = {
   oil_change: "Oil Change",
@@ -135,7 +136,7 @@ export function printMaintenanceHistory(vehicle: Vehicle, logs: MaintenanceLog[]
     .join("");
 
   const specItems: string[] = [];
-  if (vehicle.currentMileage && vehicle.currentMileage < 500000)
+  if (vehicle.currentMileage && vehicle.currentMileage < MAX_DISPLAY_MILEAGE)
     specItems.push(`<div class="spec"><label>Odometer</label><span>${vehicle.currentMileage.toLocaleString()} mi</span></div>`);
   if (vehicle.engine)
     specItems.push(`<div class="spec"><label>Engine</label><span>${escapeHtml(vehicle.engine)}</span></div>`);

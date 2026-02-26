@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,8 @@ import { deleteMaintenanceLog } from "@/lib/firebase/firestore";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useToast } from "@/components/ui/Toast";
+import { formatCost } from "@/utils/format";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type {
   MaintenanceLog,
   MaintenanceType,
@@ -37,11 +39,6 @@ const typeLabels: Record<MaintenanceType, string> = {
 function formatDate(timestamp: { toDate?: () => Date } | undefined): string {
   if (!timestamp || !timestamp.toDate) return "—";
   return timestamp.toDate().toLocaleDateString();
-}
-
-function formatCost(cents: number): string {
-  if (!cents) return "—";
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function LogDetails({ log }: { log: MaintenanceLog }) {
@@ -188,16 +185,17 @@ function LogItem({
   onDelete: (logId: string) => Promise<void>;
 }) {
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this maintenance log? This cannot be undone.")) return;
+  const handleDeleteConfirm = useCallback(async () => {
+    setConfirmOpen(false);
     setDeleting(true);
     try {
       await onDelete(log.id!);
     } catch {
       setDeleting(false);
     }
-  };
+  }, [log.id, onDelete]);
 
   return (
     <div className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/30">
@@ -244,7 +242,7 @@ function LogItem({
             {formatCost(log.cost)}
           </p>
           <button
-            onClick={handleDelete}
+            onClick={() => setConfirmOpen(true)}
             disabled={deleting}
             className="rounded-lg p-1.5 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 disabled:opacity-50 dark:text-gray-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
             title="Delete log"
@@ -269,6 +267,16 @@ function LogItem({
       {log.receiptPaths.length > 0 && (
         <ReceiptGallery paths={log.receiptPaths} />
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete Maintenance Log"
+        description="This maintenance log cannot be recovered."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

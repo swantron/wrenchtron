@@ -1,5 +1,7 @@
 import { VehicleType } from '@/types/firestore';
 
+export const MAX_DISPLAY_MILEAGE = 500_000;
+
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
     auto: 'Auto',
     motorcycle: 'Motorcycle',
@@ -11,17 +13,26 @@ export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
     other: 'Other',
 };
 
+export const VEHICLE_CAPABILITIES: Record<VehicleType, { tracksMileage: boolean; isRoadVehicle: boolean }> = {
+    auto:       { tracksMileage: true,  isRoadVehicle: true  },
+    motorcycle: { tracksMileage: true,  isRoadVehicle: true  },
+    atv:        { tracksMileage: true,  isRoadVehicle: false },
+    utv:        { tracksMileage: true,  isRoadVehicle: false },
+    boat:       { tracksMileage: true,  isRoadVehicle: false },
+    other:      { tracksMileage: true,  isRoadVehicle: false },
+    mower:      { tracksMileage: false, isRoadVehicle: false },
+    snowblower: { tracksMileage: false, isRoadVehicle: false },
+};
+
 // Determines if a vehicle type typically tracks mileage
 export function tracksMileage(type: VehicleType): boolean {
-    const nonMileageTypes: VehicleType[] = ['mower', 'snowblower'];
-    return !nonMileageTypes.includes(type);
+    return VEHICLE_CAPABILITIES[type].tracksMileage;
 }
 
 // Determines if a vehicle type has road-vehicle specific fields
 // (engine, transmission, drivetrain, VIN, license plate, recalls)
 export function isRoadVehicle(type: VehicleType): boolean {
-    const equipment: VehicleType[] = ['mower', 'snowblower', 'atv', 'utv', 'boat'];
-    return !equipment.includes(type);
+    return VEHICLE_CAPABILITIES[type].isRoadVehicle;
 }
 
 // Helper to format mileage display (returns null if shouldn't be shown)
@@ -31,7 +42,7 @@ export function formatMileage(mileage: number | undefined, type: VehicleType): s
     }
 
     // Treat very high mileage (>500k) as placeholder
-    if (mileage > 500000) {
+    if (mileage > MAX_DISPLAY_MILEAGE) {
         return null;
     }
 

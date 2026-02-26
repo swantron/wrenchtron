@@ -9,6 +9,7 @@ import { compressImage } from "@/lib/image/compress";
 import type { Vehicle, VehicleType } from "@/types/firestore";
 import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
 import { tracksMileage, isRoadVehicle } from "@/utils/vehicleUtils";
+import { vehicleFormSchema } from "@/lib/validation/vehicleSchema";
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "auto", label: "Auto" },
@@ -30,6 +31,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [name, setName] = useState(vehicle?.name ?? "");
   const [type, setType] = useState<VehicleType>(vehicle?.type ?? "auto");
@@ -59,12 +61,37 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
     e.preventDefault();
     if (!user) return;
 
-    // Mileage is only required for vehicles that track mileage
     const requiresMileage = tracksMileage(type);
-    if (!name || !year || !make || !model || (requiresMileage && !currentMileage)) {
-      setError("Please fill in all required fields.");
+    const rawData = {
+      name,
+      type,
+      year,
+      make,
+      model,
+      trim: trim || undefined,
+      currentMileage: requiresMileage && currentMileage ? currentMileage : undefined,
+      estimatedAnnualMileage: estimatedAnnualMileage || undefined,
+      engine: engine || undefined,
+      transmission: transmission || undefined,
+      drivetrain: drivetrain || undefined,
+      vin: vin || undefined,
+      licensePlate: licensePlate || undefined,
+    };
+
+    const result = vehicleFormSchema.safeParse(rawData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      if (requiresMileage && !currentMileage) {
+        errors.currentMileage = "Mileage is required";
+      }
+      setFieldErrors(errors);
       return;
     }
+    setFieldErrors({});
 
     setSaving(true);
     setError("");
@@ -136,6 +163,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
+          {fieldErrors.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
         </div>
 
         <div>
@@ -168,6 +196,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
+          {fieldErrors.year && <p className="mt-1 text-xs text-red-600">{fieldErrors.year}</p>}
         </div>
 
         <div>
@@ -182,6 +211,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
+          {fieldErrors.make && <p className="mt-1 text-xs text-red-600">{fieldErrors.make}</p>}
         </div>
 
         <div>
@@ -196,6 +226,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
+          {fieldErrors.model && <p className="mt-1 text-xs text-red-600">{fieldErrors.model}</p>}
         </div>
 
         <div>
@@ -224,6 +255,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               required
             />
+            {fieldErrors.currentMileage && <p className="mt-1 text-xs text-red-600">{fieldErrors.currentMileage}</p>}
           </div>
         )}
 
