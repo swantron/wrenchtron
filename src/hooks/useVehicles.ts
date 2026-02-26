@@ -20,10 +20,14 @@ export function useVehicles() {
     }
 
     prevUid.current = user.uid;
-    const unsubscribe = subscribeToVehicles(user.uid, (v) => {
-      setVehicles(v);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeToVehicles(
+      user.uid,
+      (v) => {
+        setVehicles(v);
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
 
     return unsubscribe;
   }, [user]);
