@@ -133,6 +133,12 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
     const [specificMonth, setSpecificMonth] = useState<number>(new Date().getMonth());
     const [notes, setNotes] = useState("");
 
+    // Recalls are tracked in RecallPanel; hide from Service Schedule to avoid duplication
+    const displayIntervals = useMemo(
+        () => (vehicle.serviceIntervals ?? []).filter((i) => i.name.toLowerCase() !== "recall"),
+        [vehicle.serviceIntervals]
+    );
+
     const suggestions = useMemo(() => {
         const candidates = SUGGESTED_SERVICES[vehicle.type] ?? [];
         const existing = vehicle.serviceIntervals ?? [];
@@ -423,7 +429,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
 
             {/* List of existing intervals */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {(vehicle.serviceIntervals || []).map((interval) => (
+                {displayIntervals.map((interval) => (
                     <div
                         key={interval.id}
                         className="relative flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500/30"
@@ -471,7 +477,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                         </div>
                     </div>
                 ))}
-                {(!vehicle.serviceIntervals || vehicle.serviceIntervals.length === 0) && !isAdding && (
+                {displayIntervals.length === 0 && !isAdding && (
                     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/50 sm:col-span-full">
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                             No custom intervals set. Using defaults based on vehicle type.
