@@ -3,6 +3,7 @@
 import { createContext, useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/config";
+import { getGoogleRedirectResult } from "@/lib/firebase/auth";
 
 export interface AuthContextType {
   user: User | null;
@@ -19,7 +20,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (u) => {
+    const auth = getFirebaseAuth();
+    getGoogleRedirectResult().catch((err) => {
+      console.error("Auth redirect result error:", err);
+    });
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
     });
