@@ -288,7 +288,12 @@ export function VehicleDetailView({
 
       {!onBack && (
         <div className="mt-12 border-t border-gray-100 pt-12 dark:border-gray-800">
-          <ServiceIntervalManager vehicle={vehicle} />
+          <ServiceIntervalManager
+            vehicle={vehicle}
+            onIntervalsChange={(intervals) =>
+              setVehicle((v) => v ? { ...v, serviceIntervals: intervals } : v)
+            }
+          />
         </div>
       )}
     </div>

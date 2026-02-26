@@ -66,6 +66,7 @@ const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
 
 interface ServiceIntervalManagerProps {
     vehicle: Vehicle;
+    onIntervalsChange?: (intervals: ServiceInterval[]) => void;
 }
 
 const INTERVAL_TYPES: { value: IntervalType; label: string }[] = [
@@ -116,7 +117,7 @@ const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
     { value: "other", label: "Other" },
 ];
 
-export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps) {
+export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIntervalManagerProps) {
     const { user } = useAuth();
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -201,6 +202,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             await updateVehicle(user.uid, vehicle.id, {
                 serviceIntervals: updatedIntervals,
             });
+            onIntervalsChange?.(updatedIntervals);
             setIsAdding(false);
             resetForm();
         } catch (err) {
@@ -222,6 +224,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
             await updateVehicle(user.uid, vehicle.id, {
                 serviceIntervals: updatedIntervals,
             });
+            onIntervalsChange?.(updatedIntervals);
         } catch (err) {
             console.error("Error removing interval:", err);
             setError("Failed to remove service goal. Please try again.");
