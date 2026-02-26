@@ -26,13 +26,13 @@ export const VEHICLE_CAPABILITIES: Record<VehicleType, { tracksMileage: boolean;
 
 // Determines if a vehicle type typically tracks mileage
 export function tracksMileage(type: VehicleType): boolean {
-    return VEHICLE_CAPABILITIES[type].tracksMileage;
+    return VEHICLE_CAPABILITIES[type]?.tracksMileage ?? false;
 }
 
 // Determines if a vehicle type has road-vehicle specific fields
 // (engine, transmission, drivetrain, VIN, license plate, recalls)
 export function isRoadVehicle(type: VehicleType): boolean {
-    return VEHICLE_CAPABILITIES[type].isRoadVehicle;
+    return VEHICLE_CAPABILITIES[type]?.isRoadVehicle ?? false;
 }
 
 // Helper to format mileage display (returns null if shouldn't be shown)
