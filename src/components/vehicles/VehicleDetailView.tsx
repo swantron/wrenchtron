@@ -240,35 +240,37 @@ export function VehicleDetailView({
         <div className="space-y-6 lg:col-span-1">
           <ServiceStatusPanel vehicle={vehicle} logs={logs} />
 
-          {(vehicle.type === "auto" || vehicle.type === "motorcycle") && <RecallPanel vehicle={vehicle} />}
+          {isRoadVehicle(vehicle.type) && <RecallPanel vehicle={vehicle} />}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Vehicle Specs
-            </h3>
-            <dl className="space-y-4">
-              {formatMileage(vehicle.currentMileage, vehicle.type) && (
-                <DetailItem
-                  label="Current Mileage"
-                  value={`${formatMileage(vehicle.currentMileage, vehicle.type)} mi`}
-                />
-              )}
-              {isRoadVehicle(vehicle.type) && vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
-              {isRoadVehicle(vehicle.type) && vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}
-              {isRoadVehicle(vehicle.type) && vehicle.drivetrain && <DetailItem label="Drivetrain" value={vehicle.drivetrain} />}
-              {isRoadVehicle(vehicle.type) && vehicle.vin && <DetailItem label="VIN" value={vehicle.vin} />}
-              {isRoadVehicle(vehicle.type) && vehicle.licensePlate && <DetailItem label="License Plate" value={vehicle.licensePlate} />}
-            </dl>
-          </div>
+          {(formatMileage(vehicle.currentMileage, vehicle.type) || isRoadVehicle(vehicle.type)) && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Vehicle Specs
+              </h3>
+              <dl className="space-y-4">
+                {formatMileage(vehicle.currentMileage, vehicle.type) && (
+                  <DetailItem
+                    label="Current Mileage"
+                    value={`${formatMileage(vehicle.currentMileage, vehicle.type)} mi`}
+                  />
+                )}
+                {isRoadVehicle(vehicle.type) && vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
+                {isRoadVehicle(vehicle.type) && vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}
+                {isRoadVehicle(vehicle.type) && vehicle.drivetrain && <DetailItem label="Drivetrain" value={vehicle.drivetrain} />}
+                {isRoadVehicle(vehicle.type) && vehicle.vin && <DetailItem label="VIN" value={vehicle.vin} />}
+                {isRoadVehicle(vehicle.type) && vehicle.licensePlate && <DetailItem label="License Plate" value={vehicle.licensePlate} />}
+              </dl>
+            </div>
+          )}
         </div>
 
         {/* Right: History */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Maintenance History
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {logs.length > 0 && <ExportMenu vehicle={vehicle} logs={logs} />}
               <Link
                 href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}

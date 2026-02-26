@@ -152,10 +152,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="mf-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Maintenance Type *
           </label>
           <select
+            id="mf-type"
             value={maintenanceType}
             onChange={(e) =>
               setMaintenanceType(e.target.value as MaintenanceType)
@@ -171,10 +172,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="mf-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Date *
           </label>
           <input
+            id="mf-date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -186,10 +188,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
 
         {requiresMileage && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="mf-mileage" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Mileage *
             </label>
             <input
+              id="mf-mileage"
               type="number"
               value={mileage}
               onChange={(e) => setMileage(e.target.value)}
@@ -202,10 +205,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="mf-cost" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Cost ($)
           </label>
           <input
+            id="mf-cost"
             type="number"
             value={cost}
             onChange={(e) => setCost(e.target.value)}
@@ -217,10 +221,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="mf-shop" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Shop / Location
           </label>
           <input
+            id="mf-shop"
             type="text"
             value={shop}
             onChange={(e) => setShop(e.target.value)}
@@ -230,10 +235,11 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="mf-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Notes
           </label>
           <textarea
+            id="mf-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}

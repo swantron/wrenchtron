@@ -16,10 +16,11 @@ export function BrakeFields({ details, onChange }: BrakeFieldsProps) {
         <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="bf-position" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Position
                     </label>
                     <select
+                        id="bf-position"
                         value={details.position || ""}
                         onChange={(e) => update("position", e.target.value)}
                         className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -32,10 +33,11 @@ export function BrakeFields({ details, onChange }: BrakeFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="bf-pad-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Pad Type
                     </label>
                     <select
+                        id="bf-pad-type"
                         value={details.padType || ""}
                         onChange={(e) => update("padType", e.target.value)}
                         className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -48,10 +50,11 @@ export function BrakeFields({ details, onChange }: BrakeFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="bf-brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Brand
                     </label>
                     <input
+                        id="bf-brand"
                         type="text"
                         value={details.brand || ""}
                         onChange={(e) => update("brand", e.target.value)}
@@ -61,10 +64,11 @@ export function BrakeFields({ details, onChange }: BrakeFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="bf-thickness" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Pad Thickness (mm)
                     </label>
                     <input
+                        id="bf-thickness"
                         type="text"
                         value={details.padThickness || ""}
                         onChange={(e) => update("padThickness", e.target.value)}

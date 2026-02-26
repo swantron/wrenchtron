@@ -21,7 +21,7 @@ export function AppShell({
           You are offline. Changes will sync when reconnected.
         </div>
       )}
-      <main className="pb-20 md:pb-0">{children}</main>
+      <main className="pb-24 md:pb-0">{children}</main>
       <MobileNav isDemo={isDemo} />
     </div>
   );

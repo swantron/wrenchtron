@@ -9,7 +9,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
 import type { ActionItem } from "@/utils/maintenance";
-import { VEHICLE_TYPE_LABELS, formatMileage } from "@/utils/vehicleUtils";
+import { getVehicleTypeLabel, formatMileage } from "@/utils/vehicleUtils";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -104,6 +104,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
     : { href: href || `/vehicles/detail?id=${vehicle.id}`, className: "block" };
 
   return (
+    <>
     <div className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:bg-gray-800 dark:hover:border-blue-500/50 ${borderClass}`}>
       {/* @ts-expect-error - CardWrapper can be 'button' or Link */}
       <CardWrapper {...wrapperProps}>
@@ -131,7 +132,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
             </div>
             {layout === "garage" && (
               <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                {VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}
+                {getVehicleTypeLabel(vehicle.type)}
               </span>
             )}
           </div>
@@ -189,15 +190,16 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
         </svg>
       </Link>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        title={`Delete ${vehicle.name}?`}
-        description="This will permanently delete this vehicle and all its maintenance logs. This cannot be undone."
-        confirmLabel="Delete"
-        destructive
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setConfirmOpen(false)}
-      />
     </div>
+    <ConfirmDialog
+      open={confirmOpen}
+      title={`Delete ${vehicle.name}?`}
+      description="This will permanently delete this vehicle and all its maintenance logs. This cannot be undone."
+      confirmLabel="Delete"
+      destructive
+      onConfirm={handleDeleteConfirm}
+      onCancel={() => setConfirmOpen(false)}
+    />
+    </>
   );
 }

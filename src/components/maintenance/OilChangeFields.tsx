@@ -15,10 +15,11 @@ export function OilChangeFields({ details, onChange }: OilChangeFieldsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="oc-oil-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Oil Type
         </label>
         <select
+          id="oc-oil-type"
           value={details.oilType || ""}
           onChange={(e) => update("oilType", e.target.value)}
           className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -32,10 +33,11 @@ export function OilChangeFields({ details, onChange }: OilChangeFieldsProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="oc-oil-weight" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Oil Weight
         </label>
         <select
+          id="oc-oil-weight"
           value={details.oilWeight || ""}
           onChange={(e) => update("oilWeight", e.target.value)}
           className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -52,10 +54,11 @@ export function OilChangeFields({ details, onChange }: OilChangeFieldsProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="oc-oil-brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Oil Brand
         </label>
         <input
+          id="oc-oil-brand"
           type="text"
           value={details.oilBrand || ""}
           onChange={(e) => update("oilBrand", e.target.value)}
@@ -65,10 +68,11 @@ export function OilChangeFields({ details, onChange }: OilChangeFieldsProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="oc-oil-qty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Oil Quantity (quarts)
         </label>
         <input
+          id="oc-oil-qty"
           type="number"
           value={details.oilQuantity || ""}
           onChange={(e) =>
@@ -82,10 +86,11 @@ export function OilChangeFields({ details, onChange }: OilChangeFieldsProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="oc-filter-brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Filter Brand
         </label>
         <input
+          id="oc-filter-brand"
           type="text"
           value={details.filterBrand || ""}
           onChange={(e) => update("filterBrand", e.target.value)}
@@ -95,10 +100,11 @@ export function OilChangeFields({ details, onChange }: OilChangeFieldsProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="oc-filter-pn" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Filter Part Number
         </label>
         <input
+          id="oc-filter-pn"
           type="text"
           value={details.filterPartNumber || ""}
           onChange={(e) => update("filterPartNumber", e.target.value)}

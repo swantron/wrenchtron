@@ -52,10 +52,11 @@ export function TireFields({ details, onChange }: TireFieldsProps) {
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="tf-brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Brand
                     </label>
                     <input
+                        id="tf-brand"
                         type="text"
                         value={details.brand || ""}
                         onChange={(e) => update("brand", e.target.value)}
@@ -65,10 +66,11 @@ export function TireFields({ details, onChange }: TireFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="tf-model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Model / Type
                     </label>
                     <input
+                        id="tf-model"
                         type="text"
                         value={details.model || ""}
                         onChange={(e) => update("model", e.target.value)}
@@ -78,10 +80,11 @@ export function TireFields({ details, onChange }: TireFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="tf-size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Size
                     </label>
                     <input
+                        id="tf-size"
                         type="text"
                         value={details.size || ""}
                         onChange={(e) => update("size", e.target.value)}
@@ -91,10 +94,11 @@ export function TireFields({ details, onChange }: TireFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="tf-tread" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tread Depth
                     </label>
                     <input
+                        id="tf-tread"
                         type="text"
                         value={details.treadDepth || ""}
                         onChange={(e) => update("treadDepth", e.target.value)}
@@ -104,10 +108,11 @@ export function TireFields({ details, onChange }: TireFieldsProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="tf-pressure" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Pressure (PSI)
                     </label>
                     <input
+                        id="tf-pressure"
                         type="number"
                         value={details.pressure || ""}
                         onChange={(e) => update("pressure", e.target.value ? parseInt(e.target.value) : undefined)}

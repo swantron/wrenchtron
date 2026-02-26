@@ -156,10 +156,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="vf-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Name *
           </label>
           <input
+            id="vf-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -171,10 +172,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="vf-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Type *
           </label>
           <select
+            id="vf-type"
             value={type}
             onChange={(e) => setType(e.target.value as VehicleType)}
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -188,10 +190,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="vf-year" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Year *
           </label>
           <input
+            id="vf-year"
             type="number"
             value={year}
             onChange={(e) => setYear(e.target.value)}
@@ -204,10 +207,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="vf-make" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Make *
           </label>
           <input
+            id="vf-make"
             type="text"
             value={make}
             onChange={(e) => setMake(e.target.value)}
@@ -219,10 +223,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="vf-model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Model *
           </label>
           <input
+            id="vf-model"
             type="text"
             value={model}
             onChange={(e) => setModel(e.target.value)}
@@ -234,10 +239,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="vf-trim" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Trim
           </label>
           <input
+            id="vf-trim"
             type="text"
             value={trim}
             onChange={(e) => setTrim(e.target.value)}
@@ -248,10 +254,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
 
         {tracksMileage(type) && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="vf-mileage" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Current Mileage *
             </label>
             <input
+              id="vf-mileage"
               type="number"
               value={currentMileage}
               onChange={(e) => setCurrentMileage(e.target.value)}
@@ -265,11 +272,12 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
 
         {tracksMileage(type) && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="vf-annual-mileage" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Estimated Annual Mileage
             </label>
             <div className="mt-1 flex rounded-md shadow-sm">
               <input
+                id="vf-annual-mileage"
                 type="number"
                 value={estimatedAnnualMileage}
                 onChange={(e) => setEstimatedAnnualMileage(e.target.value)}
@@ -297,10 +305,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         {isRoadVehicle(type) && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="vf-engine" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Engine
               </label>
               <input
+                id="vf-engine"
                 type="text"
                 value={engine}
                 onChange={(e) => setEngine(e.target.value)}
@@ -310,10 +319,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="vf-transmission" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Transmission
               </label>
               <input
+                id="vf-transmission"
                 type="text"
                 value={transmission}
                 onChange={(e) => setTransmission(e.target.value)}
@@ -323,10 +333,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="vf-drivetrain" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Drivetrain
               </label>
               <input
+                id="vf-drivetrain"
                 type="text"
                 value={drivetrain}
                 onChange={(e) => setDrivetrain(e.target.value)}
@@ -336,10 +347,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="vf-vin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 VIN
               </label>
               <input
+                id="vf-vin"
                 type="text"
                 value={vin}
                 onChange={(e) => setVin(e.target.value)}
@@ -348,10 +360,11 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="vf-plate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 License Plate
               </label>
               <input
+                id="vf-plate"
                 type="text"
                 value={licensePlate}
                 onChange={(e) => setLicensePlate(e.target.value)}

@@ -15,10 +15,11 @@ export function PartFields({ details, onChange }: PartFieldsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="pf-brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Brand
         </label>
         <input
+          id="pf-brand"
           type="text"
           value={details.brand || ""}
           onChange={(e) => update("brand", e.target.value)}
@@ -27,10 +28,11 @@ export function PartFields({ details, onChange }: PartFieldsProps) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="pf-part-number" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Part Number
         </label>
         <input
+          id="pf-part-number"
           type="text"
           value={details.partNumber || ""}
           onChange={(e) => update("partNumber", e.target.value)}
