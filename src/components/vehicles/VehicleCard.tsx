@@ -152,9 +152,9 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
         </div>
       </CardWrapper>
 
-      {/* Management actions — visible only on Garage page, fade in on hover */}
+      {/* Management actions — always visible on Garage page for touch discoverability */}
       {layout === "garage" && (
-        <div className="flex justify-end gap-1 border-t border-gray-100 px-5 py-3 opacity-0 transition-opacity group-hover:opacity-100 dark:border-gray-700/50">
+        <div className="flex justify-end gap-1 border-t border-gray-100 px-5 py-3 dark:border-gray-700/50">
           <Link
             href={isDemo ? "/login" : `/vehicles/edit?id=${vehicle.id}`}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"

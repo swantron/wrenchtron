@@ -68,12 +68,9 @@ export function NavBar({ isDemo }: { isDemo?: boolean }) {
             )}
             {user && (
               <div className="flex items-center gap-6 border-l border-gray-100 pl-4 dark:border-gray-800">
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Authenticated</span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">
-                    {user.displayName || user.email}
-                  </span>
-                </div>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
+                  {user.displayName || user.email}
+                </span>
                 <button
                   onClick={() => isDemo ? (window.location.href = "/login") : signOut()}
                   className="rounded-xl bg-gray-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-500 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"

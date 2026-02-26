@@ -22,23 +22,25 @@ function formatSupplyLine(item: ActionItem): string | null {
 }
 
 export function MaintenanceHubOverview({ actionItems }: MaintenanceHubOverviewProps) {
-  const thisWeek = actionItems.filter(
-    i => i.status === "overdue" || (i.remainingDays !== undefined && i.remainingDays <= 7)
+  const overdue = actionItems.filter((i) => i.status === "overdue");
+  const dueThisWeek = actionItems.filter(
+    (i) => i.status !== "overdue" && i.remainingDays !== undefined && i.remainingDays <= 7
   );
   const thisMonth = actionItems.filter(
-    i => i.status !== "overdue" && i.remainingDays !== undefined && i.remainingDays > 7 && i.remainingDays <= 30
+    (i) => i.status !== "overdue" && i.remainingDays !== undefined && i.remainingDays > 7 && i.remainingDays <= 30
   );
   const later = actionItems.filter(
-    i => i.status !== "overdue" && (i.remainingDays === undefined || i.remainingDays > 30)
+    (i) => i.status !== "overdue" && (i.remainingDays === undefined || i.remainingDays > 30)
   );
 
   // Limit total shown to 10
-  const allShown = [...thisWeek, ...thisMonth, ...later].slice(0, 10);
-  const thisWeekShown = allShown.filter(i => thisWeek.includes(i));
-  const thisMonthShown = allShown.filter(i => thisMonth.includes(i));
-  const laterShown = allShown.filter(i => later.includes(i));
+  const allShown = [...overdue, ...dueThisWeek, ...thisMonth, ...later].slice(0, 10);
+  const overdueShown = allShown.filter((i) => overdue.includes(i));
+  const dueThisWeekShown = allShown.filter((i) => dueThisWeek.includes(i));
+  const thisMonthShown = allShown.filter((i) => thisMonth.includes(i));
+  const laterShown = allShown.filter((i) => later.includes(i));
 
-  const hasUrgent = thisWeek.length > 0 || thisMonth.length > 0;
+  const hasUrgent = overdue.length > 0 || dueThisWeek.length > 0 || thisMonth.length > 0;
 
   // Supply list: overdue + due_soon with supply data
   const supplyItems = actionItems.filter(
@@ -72,16 +74,21 @@ export function MaintenanceHubOverview({ actionItems }: MaintenanceHubOverviewPr
           </div>
         ) : null}
 
-        {thisWeekShown.length > 0 && (
-          <ScheduleSection label="This Week" items={thisWeekShown} />
+        {overdueShown.length > 0 && (
+          <ScheduleSection label="Overdue" items={overdueShown} />
+        )}
+        {dueThisWeekShown.length > 0 && (
+          <div className={overdueShown.length > 0 ? "mt-6" : ""}>
+            <ScheduleSection label="Due This Week" items={dueThisWeekShown} />
+          </div>
         )}
         {thisMonthShown.length > 0 && (
-          <div className="mt-6">
+          <div className={overdueShown.length > 0 || dueThisWeekShown.length > 0 ? "mt-6" : ""}>
             <ScheduleSection label="This Month" items={thisMonthShown} />
           </div>
         )}
         {laterShown.length > 0 && (
-          <div className="mt-6">
+          <div className={overdueShown.length > 0 || dueThisWeekShown.length > 0 || thisMonthShown.length > 0 ? "mt-6" : ""}>
             <ScheduleSection label="Later" items={laterShown} />
           </div>
         )}

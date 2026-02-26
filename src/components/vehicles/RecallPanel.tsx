@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRecalls, type NHTSARecall } from "@/hooks/useRecalls";
 import { updateVehicle } from "@/lib/firebase/firestore";
@@ -11,9 +11,23 @@ interface RecallPanelProps {
   vehicle: Vehicle;
 }
 
+function summarizeByComponent(recalls: NHTSARecall[]): string {
+  const byComponent = new Map<string, number>();
+  for (const r of recalls) {
+    const key = r.Component.split(":")[0] || r.Component;
+    byComponent.set(key, (byComponent.get(key) || 0) + 1);
+  }
+  const parts = Array.from(byComponent.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name, count]) => `${count} ${name}`);
+  return parts.join(", ");
+}
+
 export function RecallPanel({ vehicle }: RecallPanelProps) {
   const { user } = useAuth();
   const { recalls, loading, error } = useRecalls(vehicle.vin, vehicle.make, vehicle.model, vehicle.year);
+  const [listExpanded, setListExpanded] = useState(false);
 
   // null = use vehicle prop; non-null = optimistic override after user action
   const [optimisticResolved, setOptimisticResolved] = useState<string[] | null>(null);
@@ -21,6 +35,7 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
 
   const pending = recalls.filter(r => !resolved.includes(r.NHTSACampaignNumber));
   const done = recalls.filter(r => resolved.includes(r.NHTSACampaignNumber));
+  const summary = useMemo(() => summarizeByComponent(pending), [pending]);
 
   const handleResolve = async (campaignNumber: string) => {
     if (!user || !vehicle.id) return;
@@ -97,14 +112,41 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
 
       {pending.length > 0 && (
         <div className="space-y-3">
-          {pending.map(recall => (
-            <RecallRow
-              key={recall.NHTSACampaignNumber}
-              recall={recall}
-              resolved={false}
-              onResolve={user ? () => handleResolve(recall.NHTSACampaignNumber) : undefined}
-            />
-          ))}
+          {!listExpanded ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-800/50 dark:bg-amber-900/10">
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                {pending.length} pending recall{pending.length !== 1 ? "s" : ""}
+              </p>
+              {summary && (
+                <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">{summary}</p>
+              )}
+              <button
+                onClick={() => setListExpanded(true)}
+                className="mt-3 text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                Show all →
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => setListExpanded(false)}
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              >
+                ← Collapse
+              </button>
+              <div className="space-y-3">
+                {pending.map(recall => (
+                  <RecallRow
+                    key={recall.NHTSACampaignNumber}
+                    recall={recall}
+                    resolved={false}
+                    onResolve={user ? () => handleResolve(recall.NHTSACampaignNumber) : undefined}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 

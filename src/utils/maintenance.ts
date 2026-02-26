@@ -77,6 +77,8 @@ export function calculateActionItems(
 
     for (const interval of vehicle.serviceIntervals) {
         if (isIntervalInapplicable(interval, vehicle.type)) continue;
+        // Recalls are safety issues tracked by RecallPanel, not mileage-based maintenance
+        if (interval.name.toLowerCase() === "recall") continue;
 
         // Find the latest log that matches this service interval
         const relevantLogs = logs.filter(log => {

@@ -66,7 +66,7 @@ export function TimelineView({ items }: TimelineViewProps) {
 
         if (noDate.length > 0) {
             result.push({
-                title: "Future / Unknown Date",
+                title: "No date set",
                 items: noDate,
             });
         }

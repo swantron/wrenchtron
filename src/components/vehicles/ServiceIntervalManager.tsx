@@ -238,13 +238,13 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Maintenance Goals
+                    Service Schedule
                 </h3>
                 <button
                     onClick={() => { setIsAdding(!isAdding); setError(""); }}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
                 >
-                    {isAdding ? "Cancel" : "Add Goal"}
+                    {isAdding ? "Cancel" : "Add Service"}
                 </button>
             </div>
 
@@ -259,7 +259,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                     <div className="grid gap-6 md:grid-cols-2">
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Goal Name
+                                Service
                             </label>
                             <input
                                 type="text"
@@ -415,7 +415,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                             disabled={loading}
                             className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
                         >
-                            {loading ? "Saving..." : "Save Goal"}
+                            {loading ? "Saving..." : "Save"}
                         </button>
                     </div>
                 </form>
@@ -436,7 +436,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                                 <button
                                     onClick={() => setConfirmDeleteId(interval.id)}
                                     className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                                    title="Remove Goal"
+                                    title="Remove Service"
                                 >
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -474,16 +474,16 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
                 {(!vehicle.serviceIntervals || vehicle.serviceIntervals.length === 0) && !isAdding && (
                     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/50 sm:col-span-full">
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                            No custom goals set. Using defaults based on vehicle type.
+                            No custom intervals set. Using defaults based on vehicle type.
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                            Add a goal to override defaults.
+                            Add a custom interval to override defaults.
                         </p>
                         <button
                             onClick={() => setIsAdding(true)}
                             className="mt-4 text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
                         >
-                            Add a custom goal
+                            Add custom interval
                         </button>
                     </div>
                 )}
@@ -510,7 +510,7 @@ export function ServiceIntervalManager({ vehicle }: ServiceIntervalManagerProps)
 
             <ConfirmDialog
                 open={confirmDeleteId !== null}
-                title="Remove Service Goal"
+                title="Remove Service"
                 description="This service interval will be removed."
                 confirmLabel="Remove"
                 destructive
