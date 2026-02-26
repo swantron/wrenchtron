@@ -22,6 +22,8 @@ const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+const KNOWN_VEHICLE_TYPES = new Set<string>(vehicleTypes.map((vt) => vt.value));
+
 interface VehicleFormProps {
   vehicle?: Vehicle;
 }
@@ -34,7 +36,9 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [name, setName] = useState(vehicle?.name ?? "");
-  const [type, setType] = useState<VehicleType>(vehicle?.type ?? "auto");
+  const [type, setType] = useState<VehicleType>(
+    vehicle?.type && KNOWN_VEHICLE_TYPES.has(vehicle.type) ? vehicle.type : "auto"
+  );
   const [year, setYear] = useState(vehicle?.year?.toString() ?? "");
   const [make, setMake] = useState(vehicle?.make ?? "");
   const [model, setModel] = useState(vehicle?.model ?? "");
