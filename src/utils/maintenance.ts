@@ -91,7 +91,25 @@ export function calculateActionItems(
             return type === normalizedName || (log.notes && log.notes.toLowerCase().includes(normalizedName));
         }).sort((a, b) => b.date.toMillis() - a.date.toMillis());
 
-        const lastLog = relevantLogs[0];
+        let lastLog = relevantLogs[0];
+        // coveredBy: if a covering interval's logs are more recent, use those
+        if (interval.coveredBy) {
+            const coveringInterval = vehicle.serviceIntervals?.find(i => i.id === interval.coveredBy);
+            if (coveringInterval) {
+                const coveringLogs = logs.filter(log => {
+                    if (coveringInterval.targetMaintenanceType) {
+                        return log.maintenanceType === coveringInterval.targetMaintenanceType;
+                    }
+                    const normalizedName = coveringInterval.name.toLowerCase();
+                    const logType = log.maintenanceType.replace(/_/g, " ");
+                    return logType === normalizedName || (log.notes && log.notes.toLowerCase().includes(normalizedName));
+                }).sort((a, b) => b.date.toMillis() - a.date.toMillis());
+                const coveringLast = coveringLogs[0];
+                if (coveringLast && (!lastLog || coveringLast.date.toMillis() > lastLog.date.toMillis())) {
+                    lastLog = coveringLast;
+                }
+            }
+        }
         const lastDate = lastLog ? lastLog.date.toDate() : vehicle.createdAt.toDate();
         const lastMileage = lastLog ? lastLog.mileage : 0;
 
@@ -318,5 +336,116 @@ export function calculateActionItems(
         const aDays = a.remainingDays ?? 9999;
         const bDays = b.remainingDays ?? 9999;
         return aDays - bDays;
+    });
+}
+
+export interface ScheduleEntry {
+    intervalId: string;
+    name: string;
+    nextLabel: string;
+    nextDate?: Date;
+}
+
+export function getFullSchedule(vehicle: Vehicle, logs: MaintenanceLog[]): ScheduleEntry[] {
+    if (!vehicle.serviceIntervals || vehicle.serviceIntervals.length === 0) {
+        return [];
+    }
+
+    const entries: ScheduleEntry[] = [];
+    const now = new Date();
+
+    for (const interval of vehicle.serviceIntervals) {
+        if (isIntervalInapplicable(interval, vehicle.type)) continue;
+        if (interval.name.toLowerCase() === "recall") continue;
+
+        if (interval.type === "seasonal") {
+            const seasonLabel = interval.season
+                ? interval.season.charAt(0).toUpperCase() + interval.season.slice(1)
+                : "seasonal";
+            entries.push({
+                intervalId: interval.id,
+                name: interval.name,
+                nextLabel: `Every ${seasonLabel}`,
+            });
+            continue;
+        }
+
+        if (interval.type === "month" && interval.specificMonth !== undefined) {
+            const targetMonth = interval.specificMonth;
+            const monthName = new Date(2000, targetMonth, 1).toLocaleDateString("en-US", { month: "long" });
+            let nextYear = now.getFullYear();
+            if (now.getMonth() > targetMonth) {
+                nextYear++;
+            }
+            const nextDate = new Date(nextYear, targetMonth, 1);
+            entries.push({
+                intervalId: interval.id,
+                name: interval.name,
+                nextLabel: `Next ${monthName}`,
+                nextDate,
+            });
+            continue;
+        }
+
+        // mileage, time, composite
+        const relevantLogs = logs.filter(log => {
+            if (interval.targetMaintenanceType) {
+                return log.maintenanceType === interval.targetMaintenanceType;
+            }
+            const normalizedName = interval.name.toLowerCase();
+            const logType = log.maintenanceType.replace(/_/g, " ");
+            return logType === normalizedName || (log.notes && log.notes.toLowerCase().includes(normalizedName));
+        }).sort((a, b) => b.date.toMillis() - a.date.toMillis());
+
+        const lastLog = relevantLogs[0];
+        const lastDate = lastLog ? lastLog.date.toDate() : vehicle.createdAt.toDate();
+        const lastMileage = lastLog ? lastLog.mileage : 0;
+
+        let nextDate: Date | undefined;
+        let nextLabel = "—";
+
+        if (interval.type === "time" && interval.timeIntervalMonths) {
+            nextDate = new Date(lastDate);
+            nextDate.setMonth(nextDate.getMonth() + interval.timeIntervalMonths);
+            nextLabel = `~${nextDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+        } else if (interval.type === "mileage" && interval.mileageInterval) {
+            const dueMileage = lastMileage + interval.mileageInterval;
+            if (vehicle.estimatedAnnualMileage && vehicle.estimatedAnnualMileage > 0) {
+                const currentMileage = calculateProjectedMileage(vehicle);
+                const dailyRate = vehicle.estimatedAnnualMileage / 365;
+                const daysUntilDue = (dueMileage - currentMileage) / dailyRate;
+                nextDate = new Date(now.getTime() + daysUntilDue * 24 * 60 * 60 * 1000);
+                nextLabel = `~${nextDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+            } else {
+                nextLabel = `@ ${dueMileage.toLocaleString()} mi`;
+            }
+        } else if (interval.type === "composite") {
+            let timeNextDate: Date | undefined;
+            if (interval.timeIntervalMonths) {
+                timeNextDate = new Date(lastDate);
+                timeNextDate.setMonth(timeNextDate.getMonth() + interval.timeIntervalMonths);
+                nextDate = timeNextDate;
+            }
+            if (interval.mileageInterval) {
+                const dueMileage = lastMileage + interval.mileageInterval;
+                if (timeNextDate) {
+                    nextLabel = `~${timeNextDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })} or @ ${dueMileage.toLocaleString()} mi`;
+                } else {
+                    nextLabel = `@ ${dueMileage.toLocaleString()} mi`;
+                }
+            } else if (timeNextDate) {
+                nextLabel = `~${timeNextDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+            }
+        }
+
+        entries.push({ intervalId: interval.id, name: interval.name, nextLabel, nextDate });
+    }
+
+    // Entries with nextDate first (ascending), seasonal entries (no date) last
+    return entries.sort((a, b) => {
+        if (a.nextDate && b.nextDate) return a.nextDate.getTime() - b.nextDate.getTime();
+        if (a.nextDate) return -1;
+        if (b.nextDate) return 1;
+        return 0;
     });
 }

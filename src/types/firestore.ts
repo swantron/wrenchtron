@@ -50,6 +50,9 @@ export interface ServiceInterval {
   // Notes
   notes?: string;
 
+  // Covered-by: id of another ServiceInterval that satisfies this one when logged
+  coveredBy?: string;
+
   // Refinement fields
   isOptional?: boolean;
   isComponentBased?: boolean;

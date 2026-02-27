@@ -4,6 +4,7 @@ import type { MaintenanceType } from "@/types/maintenance";
 import type { VehicleType } from "@/types/firestore";
 import { updateVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
+import { useVehicles } from "@/hooks/useVehicles";
 import { VEHICLE_TYPE_LABELS } from "@/utils/vehicleUtils";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
@@ -117,12 +118,63 @@ const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
     { value: "other", label: "Other" },
 ];
 
+function CopyDropdown({
+    interval,
+    allVehicles,
+    currentVehicleId,
+    onCopy,
+    onCancel,
+}: {
+    interval: ServiceInterval;
+    allVehicles: Vehicle[];
+    currentVehicleId: string;
+    onCopy: (targetVehicle: Vehicle) => void;
+    onCancel: () => void;
+}) {
+    const others = allVehicles
+        .filter(v => v.id !== currentVehicleId)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    return (
+        <div className="mt-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Copy &ldquo;{interval.name}&rdquo; to:
+                </span>
+                <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    Cancel
+                </button>
+            </div>
+            {others.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No other vehicles available.</p>
+            ) : (
+                <div className="space-y-1">
+                    {others.map(v => (
+                        <div key={v.id} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <span className="text-sm text-gray-900 dark:text-white">{v.name}</span>
+                            <button
+                                onClick={() => onCopy(v)}
+                                className="rounded-md bg-blue-600 px-3 py-1 text-xs font-bold text-white hover:bg-blue-700"
+                            >
+                                Copy here
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIntervalManagerProps) {
     const { user } = useAuth();
+    const { vehicles: allVehicles } = useVehicles();
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [copyingInterval, setCopyingInterval] = useState<ServiceInterval | null>(null);
 
     // Form State
     const [name, setName] = useState("");
@@ -131,8 +183,9 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
     const [mileageInterval, setMileageInterval] = useState<string>("");
     const [timeIntervalMonths, setTimeIntervalMonths] = useState<string>("");
     const [season, setSeason] = useState<"spring" | "fall" | "summer" | "winter">("spring");
-    const [specificMonth, setSpecificMonth] = useState<number>(new Date().getMonth());
+    const [specificMonth, setSpecificMonth] = useState<number>((new Date().getMonth() + 1) % 12);
     const [notes, setNotes] = useState("");
+    const [coveredBy, setCoveredBy] = useState<string>("");
 
     // Recalls are tracked in RecallPanel; hide from Service Schedule to avoid duplication
     const displayIntervals = useMemo(
@@ -151,6 +204,20 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
         );
     }, [vehicle.serviceIntervals, vehicle.type]);
 
+    const resetForm = () => {
+        setName("");
+        setType("mileage");
+        setTargetMaintenanceType("");
+        setMileageInterval("");
+        setTimeIntervalMonths("");
+        setSeason("spring");
+        setSpecificMonth((new Date().getMonth() + 1) % 12);
+        setNotes("");
+        setCoveredBy("");
+        setEditingId(null);
+        setError("");
+    };
+
     const prefillForm = (s: SuggestedService) => {
         setName(s.name);
         setType(s.type);
@@ -162,6 +229,21 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
         setError("");
     };
 
+    const handleEditClick = (interval: ServiceInterval) => {
+        setName(interval.name);
+        setType(interval.type);
+        setTargetMaintenanceType(interval.targetMaintenanceType ?? "");
+        setMileageInterval(interval.mileageInterval ? String(interval.mileageInterval) : "");
+        setTimeIntervalMonths(interval.timeIntervalMonths ? String(interval.timeIntervalMonths) : "");
+        setSeason(interval.season ?? "spring");
+        setSpecificMonth(interval.specificMonth ?? (new Date().getMonth() + 1) % 12);
+        setNotes(interval.notes ?? "");
+        setCoveredBy(interval.coveredBy ?? "");
+        setEditingId(interval.id);
+        setIsAdding(true);
+        setError("");
+    };
+
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !vehicle.id) return;
@@ -169,34 +251,37 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
         setLoading(true);
         setError("");
 
-        const newInterval: ServiceInterval = {
-            id: crypto.randomUUID(),
+        const intervalData: ServiceInterval = {
+            id: editingId ?? crypto.randomUUID(),
             name,
             type,
         };
-        if (notes) newInterval.notes = notes;
+        if (notes) intervalData.notes = notes;
+        if (coveredBy) intervalData.coveredBy = coveredBy;
 
         if (targetMaintenanceType) {
-            newInterval.targetMaintenanceType = targetMaintenanceType;
+            intervalData.targetMaintenanceType = targetMaintenanceType;
         }
 
         if (type === "mileage" || type === "composite") {
-            newInterval.mileageInterval = parseInt(mileageInterval);
+            intervalData.mileageInterval = parseInt(mileageInterval);
         }
 
         if (type === "time" || type === "composite") {
-            newInterval.timeIntervalMonths = parseInt(timeIntervalMonths);
+            intervalData.timeIntervalMonths = parseInt(timeIntervalMonths);
         }
 
         if (type === "seasonal") {
-            newInterval.season = season;
+            intervalData.season = season;
         }
 
         if (type === "month") {
-            newInterval.specificMonth = specificMonth;
+            intervalData.specificMonth = specificMonth;
         }
 
-        const updatedIntervals = [...(vehicle.serviceIntervals || []), newInterval];
+        const updatedIntervals = editingId
+            ? (vehicle.serviceIntervals || []).map(i => i.id === editingId ? intervalData : i)
+            : [...(vehicle.serviceIntervals || []), intervalData];
 
         try {
             await updateVehicle(user.uid, vehicle.id, {
@@ -206,8 +291,8 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
             setIsAdding(false);
             resetForm();
         } catch (err) {
-            console.error("Error adding interval:", err);
-            setError("Failed to add service goal. Please try again.");
+            console.error("Error saving interval:", err);
+            setError("Failed to save service goal. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -231,16 +316,17 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
         }
     }, [user, vehicle.id, vehicle.serviceIntervals, confirmDeleteId]);
 
-    const resetForm = () => {
-        setName("");
-        setType("mileage");
-        setTargetMaintenanceType("");
-        setMileageInterval("");
-        setTimeIntervalMonths("");
-        setSeason("spring");
-        setSpecificMonth(new Date().getMonth());
-        setNotes("");
-        setError("");
+    const handleCopyToVehicle = async (targetVehicle: Vehicle) => {
+        if (!user || !targetVehicle.id || !copyingInterval) return;
+        const newInterval = { ...copyingInterval, id: crypto.randomUUID() };
+        const updatedIntervals = [...(targetVehicle.serviceIntervals ?? []), newInterval];
+        try {
+            await updateVehicle(user.uid, targetVehicle.id, { serviceIntervals: updatedIntervals });
+            setCopyingInterval(null);
+        } catch (err) {
+            console.error("Error copying interval:", err);
+            setError("Failed to copy service interval.");
+        }
     };
 
     return (
@@ -250,7 +336,11 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                     Service Schedule
                 </h3>
                 <button
-                    onClick={() => { setIsAdding(!isAdding); setError(""); }}
+                    onClick={() => {
+                        if (isAdding) resetForm();
+                        setIsAdding(!isAdding);
+                        setError("");
+                    }}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
                 >
                     {isAdding ? "Cancel" : "Add Service"}
@@ -409,6 +499,28 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                                 className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                             />
                         </div>
+
+                        {displayIntervals.length >= 1 && (
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    Covered By <span className="normal-case font-normal">(optional — logging the covering interval satisfies this one too)</span>
+                                </label>
+                                <select
+                                    value={coveredBy}
+                                    onChange={(e) => setCoveredBy(e.target.value)}
+                                    className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                                >
+                                    <option value="">— None —</option>
+                                    {displayIntervals
+                                        .filter(i => i.id !== editingId)
+                                        .map(i => (
+                                            <option key={i.id} value={i.id}>
+                                                {i.name}
+                                            </option>
+                                        ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
@@ -424,7 +536,7 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                             disabled={loading}
                             className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
                         >
-                            {loading ? "Saving..." : "Save"}
+                            {loading ? "Saving..." : editingId ? "Update" : "Save"}
                         </button>
                     </div>
                 </form>
@@ -442,15 +554,35 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                                 <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                                     {INTERVAL_TYPES.find((t) => t.value === interval.type)?.label}
                                 </span>
-                                <button
-                                    onClick={() => setConfirmDeleteId(interval.id)}
-                                    className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                                    title="Remove Service"
-                                >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => handleEditClick(interval)}
+                                        className="rounded-lg p-1 text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                                        title="Edit Service"
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        onClick={() => setCopyingInterval(copyingInterval?.id === interval.id ? null : interval)}
+                                        className="rounded-lg p-1 text-gray-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                                        title="Copy to another vehicle"
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmDeleteId(interval.id)}
+                                        className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                        title="Remove Service"
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <h4 className="mt-3 text-lg font-bold text-gray-900 dark:text-white">
@@ -471,6 +603,12 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                                 {interval.type === "seasonal" && `Every ${interval.season}`}
                                 {interval.type === "month" && `Every ${MONTHS.find(m => m.value === interval.specificMonth)?.label}`}
                             </div>
+
+                            {interval.coveredBy && (
+                                <p className="mt-1 text-xs font-medium text-purple-600 dark:text-purple-400">
+                                    Covered by: {displayIntervals.find(i => i.id === interval.coveredBy)?.name ?? "Unknown"}
+                                </p>
+                            )}
 
                             {interval.notes && (
                                 <p className="mt-2 text-xs italic text-gray-500">
@@ -497,6 +635,16 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                     </div>
                 )}
             </div>
+
+            {copyingInterval && vehicle.id && (
+                <CopyDropdown
+                    interval={copyingInterval}
+                    allVehicles={allVehicles}
+                    currentVehicleId={vehicle.id}
+                    onCopy={handleCopyToVehicle}
+                    onCancel={() => setCopyingInterval(null)}
+                />
+            )}
 
             {suggestions.length > 0 && !isAdding && (
                 <div className="mt-8 border-t border-gray-100 pt-6 dark:border-gray-800">
