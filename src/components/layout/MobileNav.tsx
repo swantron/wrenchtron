@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   {
@@ -32,10 +34,6 @@ const navItems = [
     ),
   },
 ];
-
-import { ThemeToggle } from "./ThemeToggle";
-
-import { useAuth } from "@/hooks/useAuth";
 
 export function MobileNav({ isDemo }: { isDemo?: boolean }) {
   const pathname = usePathname();

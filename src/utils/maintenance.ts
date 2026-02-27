@@ -48,8 +48,6 @@ export interface ActionItem {
     };
 }
 
-// Default annual mileage constant (unused)
-
 export function calculateProjectedMileage(vehicle: Vehicle): number {
     if (!vehicle.estimatedAnnualMileage || vehicle.estimatedAnnualMileage <= 0) {
         return vehicle.currentMileage;

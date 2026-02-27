@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { VehicleDetailView } from "@/components/vehicles/VehicleDetailView";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 function VehicleDetailContent() {
   const searchParams = useSearchParams();
@@ -25,7 +26,7 @@ export default function VehicleDetailPage() {
   return (
     <ProtectedRoute>
       <AppShell>
-        <Suspense>
+        <Suspense fallback={<div className="flex justify-center py-12"><LoadingSpinner /></div>}>
           <VehicleDetailContent />
         </Suspense>
       </AppShell>

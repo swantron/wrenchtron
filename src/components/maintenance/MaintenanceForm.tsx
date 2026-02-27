@@ -115,8 +115,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
         details = partDetails;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const logData: any = {
+      const logData: Omit<MaintenanceLog, "id" | "createdAt" | "updatedAt"> = {
         maintenanceType,
         date: Timestamp.fromDate(new Date(date + "T00:00:00")),
         mileage: mileage ? parseInt(mileage) : 0,

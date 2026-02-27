@@ -13,9 +13,10 @@ export default function AboutPage() {
                             About <span className="text-blue-600">Wrenchtron</span>
                         </h1>
                         <p className="mt-8 text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
-                            Wrenchtron was built on the principle of the &quot;Serverless Triad&quot;:
-                            Hosting, Functions, and Storage. This architecture ensures the
-                            app stays fast, secure, and—most importantly—costs $0.00 to run.
+                            Wrenchtron runs entirely on the client—no servers, no backend.
+                            Firebase handles auth, data (Firestore), and file storage;
+                            Next.js exports a fully static bundle. This architecture ensures
+                            the app stays fast, secure, and—most importantly—costs $0.00 to run.
                         </p>
                     </section>
 

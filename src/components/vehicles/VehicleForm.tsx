@@ -101,8 +101,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
     setError("");
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data: any = {
+      const data: Omit<Vehicle, "id" | "createdAt" | "updatedAt"> = {
         name,
         type,
         year: parseInt(year),

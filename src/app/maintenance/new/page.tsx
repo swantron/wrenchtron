@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { MaintenanceForm } from "@/components/maintenance/MaintenanceForm";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useVehicles } from "@/hooks/useVehicles";
 import { getVehicle } from "@/lib/firebase/firestore";
@@ -95,7 +96,7 @@ export default function NewMaintenancePage() {
   return (
     <ProtectedRoute>
       <AppShell>
-        <Suspense>
+        <Suspense fallback={<div className="flex justify-center py-12"><LoadingSpinner /></div>}>
           <NewMaintenanceContent />
         </Suspense>
       </AppShell>
