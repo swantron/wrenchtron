@@ -107,7 +107,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
         year: parseInt(year),
         make,
         model,
-        currentMileage: currentMileage ? parseInt(currentMileage) : 999999,
+        currentMileage: currentMileage ? parseInt(currentMileage) : 0,
         isActive: true,
       };
       if (estimatedAnnualMileage) data.estimatedAnnualMileage = parseInt(estimatedAnnualMileage);
