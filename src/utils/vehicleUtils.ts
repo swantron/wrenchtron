@@ -19,7 +19,7 @@ export const VEHICLE_CAPABILITIES: Record<VehicleType, { tracksMileage: boolean;
     atv:        { tracksMileage: true,  isRoadVehicle: false },
     utv:        { tracksMileage: true,  isRoadVehicle: false },
     boat:       { tracksMileage: true,  isRoadVehicle: false },
-    other:      { tracksMileage: true,  isRoadVehicle: false },
+    other:      { tracksMileage: false, isRoadVehicle: false },
     mower:      { tracksMileage: false, isRoadVehicle: false },
     snowblower: { tracksMileage: false, isRoadVehicle: false },
 };
