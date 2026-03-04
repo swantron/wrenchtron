@@ -85,7 +85,7 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
       <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
         Recalls for <strong>{vehicle.year} {vehicle.make} {vehicle.model}</strong> — not VIN-specific. Some may not apply to your vehicle.{" "}
         <a
-          href="https://www.nhtsa.gov/recalls"
+          href={`https://www.nhtsa.gov/recalls${vehicle.vin ? `?vymm=${encodeURIComponent(vehicle.vin)}` : ""}`}
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-blue-600 hover:underline dark:text-blue-400"
