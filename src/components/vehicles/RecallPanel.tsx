@@ -70,10 +70,6 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
     );
   }
 
-  const nhtsakUrl = vehicle.vin
-    ? `https://www.nhtsa.gov/vehicle/lookup?vin=${vehicle.vin}`
-    : `https://www.nhtsa.gov/vehicle/lookup`;
-
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-1 flex items-center justify-between">
@@ -89,12 +85,12 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
       <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
         All known recalls for this model.{" "}
         <a
-          href={nhtsakUrl}
+          href="https://www.nhtsa.gov/recalls"
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-blue-600 hover:underline dark:text-blue-400"
         >
-          Check NHTSA{vehicle.vin ? " with your VIN" : ""} for exact results →
+          Check NHTSA for VIN-specific results →
         </a>
       </p>
 
