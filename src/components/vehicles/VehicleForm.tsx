@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { addVehicle, updateVehicle } from "@/lib/firebase/firestore";
@@ -10,6 +10,9 @@ import type { Vehicle, VehicleType } from "@/types/firestore";
 import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
 import { tracksMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 import { vehicleFormSchema } from "@/lib/validation/vehicleSchema";
+import { decodeVin } from "@/lib/nhtsa/decodeVin";
+
+const VIN_VALID_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/;
 
 const vehicleTypes: { value: VehicleType; label: string }[] = [
   { value: "auto", label: "Auto" },
@@ -60,6 +63,49 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   );
   const [photoPath, setPhotoPath] = useState(vehicle?.photoPath ?? "");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [vinDecoding, setVinDecoding] = useState(false);
+
+  const handleVinDecode = useCallback(async () => {
+    const clean = vin.replace(/\s/g, "").toUpperCase();
+    if (clean.length !== 17) return;
+    setVinDecoding(true);
+    try {
+      const result = await decodeVin(clean);
+      if (result) {
+        if (result.make) setMake(result.make);
+        if (result.model) setModel(result.model);
+        if (result.year) setYear(String(result.year));
+        if (result.trim) setTrim(result.trim);
+        if (result.engine) setEngine(result.engine);
+        if (result.transmission) setTransmission(result.transmission);
+      }
+    } finally {
+      setVinDecoding(false);
+    }
+  }, [vin]);
+
+  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "");
+    setVin(val);
+    if (fieldErrors.vin) setFieldErrors((prev) => ({ ...prev, vin: "" }));
+  };
+
+  const handleVinBlur = () => {
+    if (vin.replace(/\s/g, "").length === 17) {
+      handleVinDecode();
+    }
+  };
+
+  const vinLength = vin.length;
+  const vinValid = VIN_VALID_REGEX.test(vin);
+  const vinBorderClass =
+    vinLength === 0
+      ? "border-gray-300 dark:border-gray-600"
+      : vinLength === 17
+        ? vinValid
+          ? "border-green-500 focus:border-green-500 focus:ring-green-500"
+          : "border-red-500 focus:border-red-500 focus:ring-red-500"
+        : "border-gray-300 dark:border-gray-600";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,15 +395,38 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
               <label htmlFor="vf-vin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 VIN
               </label>
-              <input
-                id="vf-vin"
-                type="text"
-                value={vin}
-                onChange={(e) => setVin(e.target.value.toUpperCase())}
-                placeholder="17-character VIN"
-                maxLength={17}
-                className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 dark:bg-gray-800 dark:text-white ${fieldErrors.vin ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-gray-300 bg-white focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600"}`}
-              />
+              <div className="mt-1 flex gap-2">
+                <input
+                  id="vf-vin"
+                  type="text"
+                  value={vin}
+                  onChange={handleVinChange}
+                  onBlur={handleVinBlur}
+                  placeholder="17-character VIN"
+                  maxLength={17}
+                  autoComplete="off"
+                  className={`block flex-1 rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 dark:bg-gray-800 dark:text-white ${fieldErrors.vin ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "bg-white dark:border-gray-600 " + vinBorderClass}`}
+                />
+                <button
+                  type="button"
+                  onClick={handleVinDecode}
+                  disabled={vin.length !== 17 || vinDecoding}
+                  className="shrink-0 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  {vinDecoding ? "…" : "Decode"}
+                </button>
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {vinLength}/17
+                  {vinLength === 17 && !vinValid && (
+                    <span className="ml-1 text-red-600 dark:text-red-400">· Invalid chars (no I, O, Q)</span>
+                  )}
+                </span>
+                {vinLength === 17 && vinValid && (
+                  <span className="text-xs text-green-600 dark:text-green-400">Valid format</span>
+                )}
+              </div>
               {fieldErrors.vin && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.vin}</p>}
             </div>
 

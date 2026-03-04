@@ -10,7 +10,7 @@ import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getReceiptURL } from "@/lib/firebase/storage";
-import { formatMileage, isRoadVehicle } from "@/utils/vehicleUtils";
+import { formatMileage, formatRelativeTime, isRoadVehicle } from "@/utils/vehicleUtils";
 import { useToast } from "@/components/ui/Toast";
 import { downloadCSV, printMaintenanceHistory } from "@/utils/export";
 import NextImage from "next/image";
@@ -249,10 +249,21 @@ export function VehicleDetailView({
               </h3>
               <dl className="space-y-4">
                 {formatMileage(vehicle.currentMileage, vehicle.type) && (
-                  <DetailItem
-                    label="Current Mileage"
-                    value={`${formatMileage(vehicle.currentMileage, vehicle.type)} mi`}
-                  />
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">
+                      Current Mileage
+                    </dt>
+                    <dd className="mt-0.5 flex items-baseline gap-2">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {formatMileage(vehicle.currentMileage, vehicle.type)} mi
+                      </span>
+                      {vehicle.updatedAt && (
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                          Updated {formatRelativeTime(vehicle.updatedAt.toDate())}
+                        </span>
+                      )}
+                    </dd>
+                  </div>
                 )}
                 {isRoadVehicle(vehicle.type) && vehicle.engine && <DetailItem label="Engine" value={vehicle.engine} />}
                 {isRoadVehicle(vehicle.type) && vehicle.transmission && <DetailItem label="Transmission" value={vehicle.transmission} />}

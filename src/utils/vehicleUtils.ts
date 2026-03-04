@@ -67,3 +67,20 @@ export function formatMileage(mileage: number | undefined, type: string): string
 
     return mileage.toLocaleString();
 }
+
+/** Format a date as "X days/months ago" for staleness indicators */
+export function formatRelativeTime(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+
+    if (diffDays === 0) return "today";
+    if (diffDays === 1) return "yesterday";
+    if (diffDays < 30) return `${diffDays} days ago`;
+    if (diffMonths === 1) return "1 month ago";
+    if (diffMonths < 12) return `${diffMonths} months ago`;
+    if (diffYears === 1) return "1 year ago";
+    return `${diffYears} years ago`;
+}

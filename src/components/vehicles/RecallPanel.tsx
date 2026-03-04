@@ -78,19 +78,19 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
         </h3>
         {pending.length > 0 && (
           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            {pending.length} potential
+            {pending.length} by model
           </span>
         )}
       </div>
       <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
-        All known recalls for this model.{" "}
+        Recalls for <strong>{vehicle.year} {vehicle.make} {vehicle.model}</strong> — not VIN-specific. Some may not apply to your vehicle.{" "}
         <a
           href="https://www.nhtsa.gov/recalls"
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-blue-600 hover:underline dark:text-blue-400"
         >
-          Check NHTSA for VIN-specific results →
+          Check NHTSA with your VIN for exact results →
         </a>
       </p>
 
