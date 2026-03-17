@@ -278,18 +278,20 @@ export function calculateActionItems(
         } else if (isMileageDueSoon || isTimeDueSoon) {
             status = "due_soon";
             if (isMileageDueSoon) {
-                reason = `${optionalPrefix}Due in ${remainingMiles} miles`;
+                reason = remainingMiles === 0 ? `${optionalPrefix}Due now` : `${optionalPrefix}Due in ${remainingMiles} miles`;
             } else {
-                reason = `${optionalPrefix}Due in ${remainingDays} days`;
+                reason = remainingDays === 0 ? `${optionalPrefix}Due today` : `${optionalPrefix}Due in ${remainingDays} days`;
             }
         } else {
             status = "upcoming";
             if (remainingMiles !== undefined && remainingDays !== undefined) {
-                reason = `${optionalPrefix}Due in ${remainingMiles} miles or ${remainingDays} days`;
+                reason = remainingMiles === 0 && remainingDays === 0
+                    ? `${optionalPrefix}Due today`
+                    : `${optionalPrefix}Due in ${remainingMiles} miles or ${remainingDays} days`;
             } else if (remainingMiles !== undefined) {
-                reason = `${optionalPrefix}Due in ${remainingMiles} miles`;
+                reason = remainingMiles === 0 ? `${optionalPrefix}Due now` : `${optionalPrefix}Due in ${remainingMiles} miles`;
             } else if (remainingDays !== undefined) {
-                reason = `${optionalPrefix}Due in ${remainingDays} days`;
+                reason = remainingDays === 0 ? `${optionalPrefix}Due today` : `${optionalPrefix}Due in ${remainingDays} days`;
             }
         }
 

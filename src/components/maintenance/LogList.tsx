@@ -231,7 +231,8 @@ function LogItem({
         <div className="flex items-start gap-3">
           <Link
             href={`/maintenance/edit?vehicleId=${vehicleId}&logId=${log.id}`}
-            className="rounded-lg p-1.5 text-gray-300 opacity-0 transition-all hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100 dark:text-gray-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+            className="rounded-lg p-1.5 text-gray-400 opacity-70 transition-all hover:bg-blue-50 hover:text-blue-500 hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 dark:text-gray-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+            aria-label={`Edit ${typeLabels[log.maintenanceType] || log.maintenanceType} log`}
             title="Edit log"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,7 +245,8 @@ function LogItem({
           <button
             onClick={() => setConfirmOpen(true)}
             disabled={deleting}
-            className="rounded-lg p-1.5 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 disabled:opacity-50 dark:text-gray-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            className="rounded-lg p-1.5 text-gray-400 opacity-70 transition-all hover:bg-red-50 hover:text-red-500 hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 dark:text-gray-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            aria-label={`Delete ${typeLabels[log.maintenanceType] || log.maintenanceType} log`}
             title="Delete log"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

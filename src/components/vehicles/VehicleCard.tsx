@@ -22,7 +22,7 @@ interface VehicleCardProps {
 
 function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
   if (items.length === 0) {
-    return <p className="text-xs text-gray-400 dark:text-gray-500">No services tracked</p>;
+    return <p className="text-xs text-gray-600 dark:text-gray-400">No services tracked</p>;
   }
   const shown = items.slice(0, 3);
   return (
@@ -37,12 +37,12 @@ function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
               <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
               <span className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">{item.serviceName}</span>
             </div>
-            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{item.reason}</span>
+            <span className="shrink-0 text-xs text-gray-600 dark:text-gray-300">{item.reason}</span>
           </div>
         );
       })}
       {items.length > 3 && (
-        <p className="text-xs text-gray-400">+{items.length - 3} more</p>
+        <p className="text-xs text-gray-600 dark:text-gray-400">+{items.length - 3} more</p>
       )}
     </div>
   );
@@ -123,15 +123,15 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
         <div className="p-5">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+              <div className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                 {vehicle.name}
-              </h3>
+              </div>
               <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                 {vehicle.year} {vehicle.make} {vehicle.model}
               </p>
             </div>
             {layout === "garage" && (
-              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                 {getVehicleTypeLabel(vehicle.type)}
               </span>
             )}
@@ -142,7 +142,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
           </div>
 
           {layout === "garage" && (
-            <div className="mt-3 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
               {formatMileage(vehicle.currentMileage, vehicle.type) && (
                 <span>{formatMileage(vehicle.currentMileage, vehicle.type)} mi</span>
               )}
@@ -183,6 +183,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
       <Link
         href={isDemo ? "/login" : `/maintenance/new?vehicleId=${vehicle.id}`}
         className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 hover:bg-blue-700 active:scale-95"
+        aria-label={isDemo ? "Sign in to log service" : "Quick log maintenance"}
         title={isDemo ? "Sign in to log service" : "Quick Log"}
       >
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

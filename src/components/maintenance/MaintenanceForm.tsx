@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { addMaintenanceLog, updateMaintenanceLog } from "@/lib/firebase/firestore";
@@ -70,6 +71,16 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
   const [tireDetails, setTireDetails] = useState<TireDetails>(initialData?.details as TireDetails ?? {});
   const [brakeDetails, setBrakeDetails] = useState<BrakeDetails>(initialData?.details as BrakeDetails ?? {});
   const [partDetails, setPartDetails] = useState<PartDetails>(initialData?.details as PartDetails ?? {});
+  const [dirty, setDirty] = useState(false);
+
+  useUnsavedChanges(dirty);
+
+  useEffect(() => {
+    const firstError = Object.keys(fieldErrors)[0];
+    if (firstError) {
+      document.getElementById(`mf-${firstError}`)?.focus();
+    }
+  }, [fieldErrors]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +105,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
 
     setSaving(true);
     setError("");
+    setDirty(false);
 
     try {
       const costCents = cost ? Math.round(parseFloat(cost) * 100) : 0;
@@ -142,7 +154,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onChange={() => setDirty(true)} className="space-y-6">
       {error && (
         <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}

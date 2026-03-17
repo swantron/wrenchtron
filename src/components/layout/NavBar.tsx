@@ -38,11 +38,19 @@ export function NavBar({ isDemo }: { isDemo?: boolean }) {
                       : link.href
                   : link.href;
 
+                const isActive = isDemo
+                  ? pathname === "/demo" && (link.href === "/vehicles" || link.href === "/hub")
+                  : link.href === "/vehicles"
+                    ? pathname.startsWith("/vehicles")
+                    : link.href === "/hub"
+                      ? pathname.startsWith("/hub")
+                      : pathname === link.href;
+
                 return (
                   <Link
                     key={link.href}
                     href={href}
-                    className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${pathname === link.href || (isDemo && pathname === "/demo" && (link.href === "/vehicles" || link.href === "/hub"))
+                    className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${isActive
                       ? "text-blue-600 dark:text-blue-400"
                       : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                       }`}

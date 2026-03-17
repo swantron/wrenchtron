@@ -33,6 +33,15 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: "/about",
+    label: "About",
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
 ];
 
 export function MobileNav({ isDemo }: { isDemo?: boolean }) {
@@ -45,19 +54,26 @@ export function MobileNav({ isDemo }: { isDemo?: boolean }) {
     return true;
   });
 
+  const isActive = (item: (typeof navItems)[0]) => {
+    if (item.href === "/vehicles") return pathname.startsWith("/vehicles");
+    if (item.href === "/hub") return pathname.startsWith("/hub");
+    if (item.href === "/about") return pathname === "/about";
+    return pathname === item.href;
+  };
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/80 pb-6 pt-2 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/80 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/80 pt-2 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/80 md:hidden [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-around px-4">
         {filteredItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-black uppercase tracking-widest transition-all ${pathname === item.href
+            className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-black uppercase tracking-widest transition-all ${isActive(item)
               ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
               : "text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300"
               }`}
           >
-            <div className={`p-1 ${pathname === item.href ? "scale-110" : "scale-100"} transition-transform`}>
+            <div className={`p-1 ${isActive(item) ? "scale-110" : "scale-100"} transition-transform`}>
               {item.icon}
             </div>
             {item.label}

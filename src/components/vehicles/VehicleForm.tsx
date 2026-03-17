@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { addVehicle, updateVehicle } from "@/lib/firebase/firestore";
 import { uploadVehiclePhoto } from "@/lib/firebase/storage";
 import { compressImage } from "@/lib/image/compress";
@@ -64,6 +65,32 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [photoPath, setPhotoPath] = useState(vehicle?.photoPath ?? "");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [vinDecoding, setVinDecoding] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  useUnsavedChanges(dirty);
+
+  useEffect(() => {
+    const fieldIdMap: Record<string, string> = {
+      name: "vf-name",
+      type: "vf-type",
+      year: "vf-year",
+      make: "vf-make",
+      model: "vf-model",
+      trim: "vf-trim",
+      currentMileage: "vf-mileage",
+      estimatedAnnualMileage: "vf-annual-mileage",
+      engine: "vf-engine",
+      transmission: "vf-transmission",
+      drivetrain: "vf-drivetrain",
+      vin: "vf-vin",
+      licensePlate: "vf-plate",
+    };
+    const firstError = Object.keys(fieldErrors)[0];
+    if (firstError) {
+      const id = fieldIdMap[firstError] ?? `vf-${firstError}`;
+      document.getElementById(id)?.focus();
+    }
+  }, [fieldErrors]);
 
   const handleVinDecode = useCallback(async () => {
     const clean = vin.replace(/\s/g, "").toUpperCase();
@@ -145,6 +172,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
 
     setSaving(true);
     setError("");
+    setDirty(false);
 
     try {
       const data: Omit<Vehicle, "id" | "createdAt" | "updatedAt"> = {
@@ -192,7 +220,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onChange={() => setDirty(true)} className="space-y-6">
       {error && (
         <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}
