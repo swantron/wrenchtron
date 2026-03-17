@@ -10,6 +10,7 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
+  deleteField,
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./config";
@@ -32,6 +33,7 @@ export async function addVehicle(
 ) {
   return addDoc(vehiclesCollection(userId), {
     ...data,
+    isArchived: data.isArchived ?? false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -75,15 +77,18 @@ export async function getVehicle(userId: string, vehicleId: string) {
 export function subscribeToVehicles(
   userId: string,
   callback: (vehicles: Vehicle[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  options?: { archived?: boolean }
 ): Unsubscribe {
   const q = query(vehiclesCollection(userId), orderBy("createdAt", "desc"));
   return onSnapshot(
     q,
     (snapshot) => {
-      const vehicles = snapshot.docs.map(
+      let vehicles = snapshot.docs.map(
         (d) => ({ id: d.id, ...d.data() }) as Vehicle
       );
+      const showArchived = options?.archived === true;
+      vehicles = vehicles.filter((v) => (v.isArchived === true) === showArchived);
       callback(vehicles);
     },
     (error) => {
@@ -91,6 +96,22 @@ export function subscribeToVehicles(
       onError?.(error);
     }
   );
+}
+
+export async function archiveVehicle(userId: string, vehicleId: string) {
+  return updateDoc(vehicleDoc(userId, vehicleId), {
+    isArchived: true,
+    archivedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function unarchiveVehicle(userId: string, vehicleId: string) {
+  return updateDoc(vehicleDoc(userId, vehicleId), {
+    isArchived: false,
+    archivedAt: deleteField(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 // ---- Maintenance Log CRUD ----

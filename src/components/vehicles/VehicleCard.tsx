@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { deleteVehicleWithLogs } from "@/lib/firebase/firestore";
+import { deleteVehicleWithLogs, archiveVehicle, unarchiveVehicle } from "@/lib/firebase/firestore";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
@@ -18,6 +18,51 @@ interface VehicleCardProps {
   onClick?: () => void;
   href?: string;
   isDemo?: boolean;
+  showUnarchive?: boolean;
+}
+
+function UnarchiveButton({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
+  const { user } = useAuth();
+  const [unarchiving, setUnarchiving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleUnarchive = async () => {
+    if (!user) return;
+    setConfirmOpen(false);
+    setUnarchiving(true);
+    try {
+      await unarchiveVehicle(user.uid, vehicleId);
+    } catch {
+      setUnarchiving(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setConfirmOpen(true);
+        }}
+        disabled={unarchiving}
+        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-green-50 hover:text-green-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+      >
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        {unarchiving ? "Restoring…" : "Unarchive"}
+      </button>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`Restore ${vehicleName}?`}
+        description="This will move the vehicle back to your garage."
+        confirmLabel="Restore"
+        onConfirm={handleUnarchive}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
+  );
 }
 
 function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
@@ -48,13 +93,15 @@ function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
   );
 }
 
-export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: VehicleCardProps) {
+export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, showUnarchive }: VehicleCardProps) {
   const { user } = useAuth();
   const [photoUrl, setPhotoUrl] = useState<string | null>(
     vehicle.photoPath?.startsWith("/") ? vehicle.photoPath : null
   );
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (vehicle.photoPath?.startsWith("/")) return; // static asset, already set
@@ -95,6 +142,23 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
       await deleteVehicleWithLogs(user.uid, vehicle.id);
     } catch {
       setDeleting(false);
+    }
+  };
+
+  const handleArchiveClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setArchiveConfirmOpen(true);
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (!user || !vehicle.id) return;
+    setArchiveConfirmOpen(false);
+    setArchiving(true);
+    try {
+      await archiveVehicle(user.uid, vehicle.id);
+    } catch {
+      setArchiving(false);
     }
   };
 
@@ -155,26 +219,54 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
       {/* Management actions — always visible on Garage page for touch discoverability */}
       {layout === "garage" && (
         <div className="flex justify-end gap-1 border-t border-gray-100 px-5 py-3 dark:border-gray-700/50">
-          <Link
-            href={isDemo ? "/login" : `/vehicles/edit?id=${vehicle.id}`}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            {isDemo ? "Sign In" : "Edit"}
-          </Link>
-          {!isDemo && (
-            <button
-              onClick={handleDeleteClick}
-              disabled={deleting}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              {deleting ? "Deleting…" : "Delete"}
-            </button>
+          {showUnarchive ? (
+            <>
+              <Link
+                href={`/vehicles/detail?id=${vehicle.id}`}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+              >
+                View
+              </Link>
+              {!isDemo && (
+                <UnarchiveButton vehicleId={vehicle.id!} vehicleName={vehicle.name} />
+              )}
+            </>
+          ) : (
+            <>
+              <Link
+                href={isDemo ? "/login" : `/vehicles/edit?id=${vehicle.id}`}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                {isDemo ? "Sign In" : "Edit"}
+              </Link>
+              {!isDemo && (
+                <button
+                  onClick={handleArchiveClick}
+                  disabled={archiving}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                  {archiving ? "Archiving…" : "Archive"}
+                </button>
+              )}
+              {!isDemo && (
+                <button
+                  onClick={handleDeleteClick}
+                  disabled={deleting}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -200,6 +292,14 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo }: V
       destructive
       onConfirm={handleDeleteConfirm}
       onCancel={() => setConfirmOpen(false)}
+    />
+    <ConfirmDialog
+      open={archiveConfirmOpen}
+      title={`Archive ${vehicle.name}?`}
+      description="This will move the vehicle to your archive. You can view and restore it later. Maintenance history is preserved."
+      confirmLabel="Archive"
+      onConfirm={handleArchiveConfirm}
+      onCancel={() => setArchiveConfirmOpen(false)}
     />
     </>
   );

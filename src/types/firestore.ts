@@ -28,6 +28,8 @@ export interface Vehicle {
   estimatedAnnualMileage?: number; // For predictive maintenance
   photoPath?: string;
   isActive: boolean;
+  isArchived?: boolean;
+  archivedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   serviceIntervals?: ServiceInterval[];

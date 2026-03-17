@@ -6,9 +6,9 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { VehicleCard } from "./VehicleCard";
 import Link from "next/link";
 
-export function VehicleList() {
-  const { vehicles, loading } = useVehicles();
-  const { items: actionItems } = useActionableItems(vehicles);
+export function VehicleList({ archived = false }: { archived?: boolean }) {
+  const { vehicles, loading } = useVehicles({ archived });
+  const { items: actionItems } = useActionableItems(archived ? [] : vehicles);
 
   if (loading) {
     return (
@@ -31,20 +31,22 @@ export function VehicleList() {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0H21M3.375 14.25h17.25M3.375 14.25a1.125 1.125 0 0 1-1.125-1.125V6.75m18.375 7.5V6.75m0 0a1.125 1.125 0 0 0-1.125-1.125H3.375a1.125 1.125 0 0 0-1.125 1.125m18.375 0V3.375"
+            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
           />
         </svg>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Garage is empty
+          {archived ? "No archived vehicles" : "Garage is empty"}
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Add your first vehicle to start tracking maintenance.
+          {archived
+            ? "Archive a vehicle when you no longer own it to keep history without cluttering your garage."
+            : "Add your first vehicle to start tracking maintenance."}
         </p>
         <Link
-          href="/vehicles/new"
+          href={archived ? "/vehicles" : "/vehicles/new"}
           className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Add to Garage
+          {archived ? "Back to Garage" : "Add to Garage"}
         </Link>
       </div>
     );
@@ -58,6 +60,7 @@ export function VehicleList() {
           vehicle={vehicle}
           items={actionItems.filter((i) => i.vehicleId === vehicle.id)}
           layout="garage"
+          showUnarchive={archived}
         />
       ))}
     </div>

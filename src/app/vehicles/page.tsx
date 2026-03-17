@@ -19,12 +19,20 @@ export default function VehiclesPage() {
                 Fleet
               </p>
             </div>
-            <Link
-              href="/vehicles/new"
-              className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95"
-            >
-              Add to Garage
-            </Link>
+            <div className="flex shrink-0 items-center gap-3">
+              <Link
+                href="/vehicles/archived"
+                className="rounded-2xl border border-gray-200 px-6 py-3 text-sm font-black uppercase tracking-widest text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                Archived
+              </Link>
+              <Link
+                href="/vehicles/new"
+                className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95"
+              >
+                Add to Garage
+              </Link>
+            </div>
           </div>
           <div className="mt-6">
             <VehicleList />

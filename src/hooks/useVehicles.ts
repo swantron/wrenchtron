@@ -5,11 +5,12 @@ import { useAuth } from "./useAuth";
 import { subscribeToVehicles } from "@/lib/firebase/firestore";
 import type { Vehicle } from "@/types/firestore";
 
-export function useVehicles() {
+export function useVehicles(options?: { archived?: boolean }) {
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const prevUid = useRef<string | null>(null);
+  const archived = options?.archived ?? false;
 
   useEffect(() => {
     if (!user) {
@@ -26,11 +27,12 @@ export function useVehicles() {
         setVehicles(v);
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
+      { archived }
     );
 
     return unsubscribe;
-  }, [user]);
+  }, [user, archived]);
 
   const isLoading = loading && !!user;
 

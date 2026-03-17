@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { getVehicle, deleteVehicleWithLogs, subscribeToMaintenanceLogs } from "@/lib/firebase/firestore";
+import { getVehicle, deleteVehicleWithLogs, subscribeToMaintenanceLogs, archiveVehicle, unarchiveVehicle } from "@/lib/firebase/firestore";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
@@ -107,7 +107,11 @@ export function VehicleDetailView({
   );
   const [loading, setLoading] = useState(!initialVehicle);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [unarchiving, setUnarchiving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
+  const [unarchiveConfirmOpen, setUnarchiveConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (initialVehicle) return;
@@ -160,6 +164,34 @@ export function VehicleDetailView({
     }
   };
 
+  const handleArchiveConfirm = async () => {
+    if (!user || !vehicleId) return;
+    setArchiveConfirmOpen(false);
+    setArchiving(true);
+    try {
+      await archiveVehicle(user.uid, vehicleId);
+      router.push("/vehicles");
+    } catch {
+      showToast("Failed to archive vehicle. Please try again.", "error");
+      setArchiving(false);
+    }
+  };
+
+  const handleUnarchiveConfirm = async () => {
+    if (!user || !vehicleId) return;
+    setUnarchiveConfirmOpen(false);
+    setUnarchiving(true);
+    try {
+      await unarchiveVehicle(user.uid, vehicleId);
+      showToast("Vehicle restored to garage.", "success");
+      setVehicle((v) => v ? { ...v, isArchived: false, archivedAt: undefined } : v);
+      setUnarchiving(false);
+    } catch {
+      showToast("Failed to restore vehicle. Please try again.", "error");
+      setUnarchiving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -195,7 +227,7 @@ export function VehicleDetailView({
             {vehicle.trim ? ` ${vehicle.trim}` : ""}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {onBack ? (
             <button
               onClick={onBack}
@@ -203,14 +235,41 @@ export function VehicleDetailView({
             >
               Back to Fleet
             </button>
-          ) : (
+          ) : vehicle.isArchived ? (
+            <Link
+              href="/vehicles/archived"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Back to Archived
+            </Link>
+          ) : null}
+          {!onBack && (
             <>
+              {!vehicle.isArchived && (
               <Link
                 href={`/vehicles/edit?id=${vehicleId}`}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Edit
               </Link>
+              )}
+              {vehicle.isArchived ? (
+                <button
+                  onClick={() => setUnarchiveConfirmOpen(true)}
+                  disabled={unarchiving}
+                  className="rounded-lg border border-green-300 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                >
+                  {unarchiving ? "Restoring…" : "Restore to Garage"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setArchiveConfirmOpen(true)}
+                  disabled={archiving}
+                  className="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  {archiving ? "Archiving…" : "Archive"}
+                </button>
+              )}
               <button
                 onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
@@ -283,12 +342,14 @@ export function VehicleDetailView({
             </h2>
             <div className="flex shrink-0 items-center gap-2">
               {logs.length > 0 && <ExportMenu vehicle={vehicle} logs={logs} />}
-              <Link
-                href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-              >
-                Log Service
-              </Link>
+              {!vehicle.isArchived && (
+                <Link
+                  href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+                >
+                  Log Service
+                </Link>
+              )}
             </div>
           </div>
           <div className="mt-6">
@@ -297,7 +358,7 @@ export function VehicleDetailView({
         </div>
       </div>
 
-      {!onBack && (
+      {!onBack && !vehicle.isArchived && (
         <div className="mt-12 border-t border-gray-100 pt-12 dark:border-gray-800">
           <ServiceIntervalManager
             vehicle={vehicle}
@@ -317,6 +378,22 @@ export function VehicleDetailView({
       destructive
       onConfirm={handleDeleteConfirm}
       onCancel={() => setConfirmOpen(false)}
+    />
+    <ConfirmDialog
+      open={archiveConfirmOpen}
+      title="Archive Vehicle?"
+      description="This will move the vehicle to your archive. You can view and restore it later. Maintenance history is preserved."
+      confirmLabel="Archive"
+      onConfirm={handleArchiveConfirm}
+      onCancel={() => setArchiveConfirmOpen(false)}
+    />
+    <ConfirmDialog
+      open={unarchiveConfirmOpen}
+      title="Restore to Garage?"
+      description="This will move the vehicle back to your garage."
+      confirmLabel="Restore"
+      onConfirm={handleUnarchiveConfirm}
+      onCancel={() => setUnarchiveConfirmOpen(false)}
     />
     </>
   );
