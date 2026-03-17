@@ -7,7 +7,7 @@ import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { addVehicle, updateVehicle } from "@/lib/firebase/firestore";
 import { uploadVehiclePhoto } from "@/lib/firebase/storage";
 import { compressImage } from "@/lib/image/compress";
-import type { Vehicle, VehicleType } from "@/types/firestore";
+import type { Vehicle, VehicleType, Powertrain } from "@/types/firestore";
 import { VehiclePhotoUpload } from "./VehiclePhotoUpload";
 import { tracksMileage, isRoadVehicle } from "@/utils/vehicleUtils";
 import { vehicleFormSchema } from "@/lib/validation/vehicleSchema";
@@ -28,6 +28,14 @@ const vehicleTypes: { value: VehicleType; label: string }[] = [
 
 const KNOWN_VEHICLE_TYPES = new Set<string>(vehicleTypes.map((vt) => vt.value));
 
+const powertrainOptions: { value: Powertrain; label: string }[] = [
+  { value: "gas", label: "Gas" },
+  { value: "electric", label: "Electric" },
+  { value: "hybrid", label: "Hybrid" },
+];
+
+const TYPES_WITH_POWERTRAIN: VehicleType[] = ["auto", "motorcycle", "atv", "utv", "mower", "snowblower", "boat"];
+
 interface VehicleFormProps {
   vehicle?: Vehicle;
 }
@@ -42,6 +50,9 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [name, setName] = useState(vehicle?.name ?? "");
   const [type, setType] = useState<VehicleType>(
     vehicle?.type && KNOWN_VEHICLE_TYPES.has(vehicle.type) ? vehicle.type : "auto"
+  );
+  const [powertrain, setPowertrain] = useState<Powertrain>(
+    vehicle?.powertrain ?? "gas"
   );
   const [year, setYear] = useState(vehicle?.year?.toString() ?? "");
   const [make, setMake] = useState(vehicle?.make ?? "");
@@ -142,6 +153,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
     const rawData = {
       name,
       type,
+      powertrain: TYPES_WITH_POWERTRAIN.includes(type) ? powertrain : undefined,
       year,
       make,
       model,
@@ -192,6 +204,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
       if (vin) data.vin = vin;
       if (licensePlate) data.licensePlate = licensePlate;
       if (photoPath) data.photoPath = photoPath;
+      data.powertrain = powertrain;
 
       if (vehicle?.id) {
         await updateVehicle(user.uid, vehicle.id, data);
@@ -261,6 +274,29 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             ))}
           </select>
         </div>
+
+        {TYPES_WITH_POWERTRAIN.includes(type) && (
+          <div>
+            <label htmlFor="vf-powertrain" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Powertrain
+            </label>
+            <select
+              id="vf-powertrain"
+              value={powertrain}
+              onChange={(e) => setPowertrain(e.target.value as Powertrain)}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            >
+              {powertrainOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Electric and hybrid vehicles have different maintenance needs.
+            </p>
+          </div>
+        )}
 
         <div>
           <label htmlFor="vf-year" className="block text-sm font-medium text-gray-700 dark:text-gray-300">

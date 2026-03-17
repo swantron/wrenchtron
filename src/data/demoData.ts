@@ -1,9 +1,10 @@
-import type { VehicleType } from "@/types/firestore";
+import type { VehicleType, Powertrain } from "@/types/firestore";
 
 export interface DemoVehicle {
   id: string;
   name: string;
   type: VehicleType;
+  powertrain?: Powertrain;
   year: number;
   make: string;
   model: string;

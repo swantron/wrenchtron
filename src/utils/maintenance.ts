@@ -1,10 +1,8 @@
 import { Vehicle, VehicleType } from "../types/firestore";
 import { MaintenanceLog, MaintenanceDetails, MaintenanceType } from "../types/maintenance";
 
-// Maintenance types that don't apply to certain vehicle categories.
-// Checked against both targetMaintenanceType and interval name so stale or
-// manually-entered intervals never surface in the wrong vehicle's status.
-const INAPPLICABLE_TYPES: Partial<Record<VehicleType, MaintenanceType[]>> = {
+// Maintenance types that don't apply to certain vehicle categories (gas/default).
+const INAPPLICABLE_BY_TYPE: Partial<Record<VehicleType, MaintenanceType[]>> = {
     mower:      ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
     snowblower: ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
     atv:        ["tire_rotation", "cabin_filter"],
@@ -12,11 +10,24 @@ const INAPPLICABLE_TYPES: Partial<Record<VehicleType, MaintenanceType[]>> = {
     boat:       ["tire_rotation", "tire_replacement", "cabin_filter", "alignment"],
 };
 
-function isIntervalInapplicable(interval: { name: string; targetMaintenanceType?: string }, type: VehicleType): boolean {
-    const blocked = INAPPLICABLE_TYPES[type];
-    if (!blocked) return false;
+// ICE-specific maintenance that electric vehicles don't need.
+const ELECTRIC_INAPPLICABLE: MaintenanceType[] = [
+    "oil_change", "spark_plugs", "air_filter", "transmission_fluid", "coolant_flush",
+];
+
+function getInapplicableTypes(vehicle: { type: VehicleType; powertrain?: string }): MaintenanceType[] {
+    const base = INAPPLICABLE_BY_TYPE[vehicle.type] ?? [];
+    const electric = vehicle.powertrain === "electric" ? ELECTRIC_INAPPLICABLE : [];
+    return [...new Set([...base, ...electric])];
+}
+
+function isIntervalInapplicable(
+    interval: { name: string; targetMaintenanceType?: string },
+    vehicle: { type: VehicleType; powertrain?: string }
+): boolean {
+    const blocked = getInapplicableTypes(vehicle);
+    if (blocked.length === 0) return false;
     if (interval.targetMaintenanceType && blocked.includes(interval.targetMaintenanceType as MaintenanceType)) return true;
-    // Name-based fallback for manually-entered intervals without a targetMaintenanceType
     const lower = interval.name.toLowerCase();
     return blocked.some(t => lower.includes(t.replace(/_/g, " ")));
 }
@@ -74,7 +85,7 @@ export function calculateActionItems(
     const items: ActionItem[] = [];
 
     for (const interval of vehicle.serviceIntervals) {
-        if (isIntervalInapplicable(interval, vehicle.type)) continue;
+        if (isIntervalInapplicable(interval, vehicle)) continue;
         // Recalls are safety issues tracked by RecallPanel, not mileage-based maintenance
         if (interval.name.toLowerCase() === "recall") continue;
 
@@ -355,7 +366,7 @@ export function getFullSchedule(vehicle: Vehicle, logs: MaintenanceLog[]): Sched
     const now = new Date();
 
     for (const interval of vehicle.serviceIntervals) {
-        if (isIntervalInapplicable(interval, vehicle.type)) continue;
+        if (isIntervalInapplicable(interval, vehicle)) continue;
         if (interval.name.toLowerCase() === "recall") continue;
 
         if (interval.type === "seasonal") {

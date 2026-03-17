@@ -1,4 +1,4 @@
-import { VehicleType } from '@/types/firestore';
+import { VehicleType, Powertrain } from '@/types/firestore';
 
 export const MAX_DISPLAY_MILEAGE = 500_000;
 
@@ -52,6 +52,21 @@ export function tracksMileage(type: string): boolean {
 // (engine, transmission, drivetrain, VIN, license plate, recalls)
 export function isRoadVehicle(type: string): boolean {
     return VEHICLE_CAPABILITIES[normalizeVehicleType(type)].isRoadVehicle;
+}
+
+/** True if vehicle has electric or hybrid powertrain. Undefined powertrain = gas. */
+export function isElectric(vehicle: { powertrain?: Powertrain }): boolean {
+    return vehicle.powertrain === "electric";
+}
+
+/** True if vehicle has hybrid powertrain. */
+export function isHybrid(vehicle: { powertrain?: Powertrain }): boolean {
+    return vehicle.powertrain === "hybrid";
+}
+
+/** True if vehicle has any electric component (electric or hybrid). */
+export function hasElectricPowertrain(vehicle: { powertrain?: Powertrain }): boolean {
+    return vehicle.powertrain === "electric" || vehicle.powertrain === "hybrid";
 }
 
 // Helper to format mileage display (returns null if shouldn't be shown)

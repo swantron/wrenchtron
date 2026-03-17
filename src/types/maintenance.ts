@@ -15,6 +15,8 @@ export type MaintenanceType =
   | "wiper_blades"
   | "alignment"
   | "inspection"
+  | "blade_sharpening"
+  | "blade_replacement"
   | "other";
 
 export interface OilChangeDetails {

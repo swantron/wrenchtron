@@ -17,7 +17,7 @@ interface SuggestedService {
     season?: "spring" | "fall" | "summer" | "winter";
 }
 
-const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
+const SUGGESTED_SERVICES_GAS: Partial<Record<VehicleType, SuggestedService[]>> = {
     auto: [
         { name: "Oil Change", type: "time", targetMaintenanceType: "oil_change", timeIntervalMonths: 6 },
         { name: "Tire Rotation", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
@@ -48,7 +48,7 @@ const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
     ],
     mower: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
-        { name: "Blade Sharpening", type: "seasonal", season: "spring" },
+        { name: "Blade Sharpening", type: "seasonal", targetMaintenanceType: "blade_sharpening", season: "spring" },
         { name: "Winterize", type: "seasonal", season: "fall" },
         { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
     ],
@@ -64,6 +64,49 @@ const SUGGESTED_SERVICES: Partial<Record<VehicleType, SuggestedService[]>> = {
         { name: "Propeller Check", type: "time", timeIntervalMonths: 12 },
     ],
 };
+
+const SUGGESTED_SERVICES_ELECTRIC: Partial<Record<VehicleType, SuggestedService[]>> = {
+    auto: [
+        { name: "Tire Rotation", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
+        { name: "Cabin Air Filter", type: "time", targetMaintenanceType: "cabin_filter", timeIntervalMonths: 24 },
+        { name: "Brake Inspection", type: "time", targetMaintenanceType: "brake_pads", timeIntervalMonths: 24 },
+        { name: "Wiper Blades", type: "time", targetMaintenanceType: "wiper_blades", timeIntervalMonths: 12 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+    ],
+    motorcycle: [
+        { name: "Tire Inspection", type: "time", targetMaintenanceType: "tire_rotation", timeIntervalMonths: 6 },
+        { name: "Battery Check", type: "time", targetMaintenanceType: "battery", timeIntervalMonths: 12 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+    ],
+    atv: [
+        { name: "Battery Check", type: "time", targetMaintenanceType: "battery", timeIntervalMonths: 12 },
+        { name: "Inspection", type: "seasonal", targetMaintenanceType: "inspection", season: "spring" },
+    ],
+    utv: [
+        { name: "Battery Check", type: "time", targetMaintenanceType: "battery", timeIntervalMonths: 12 },
+        { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
+    ],
+    mower: [
+        { name: "Battery Check", type: "time", targetMaintenanceType: "battery", timeIntervalMonths: 12 },
+        { name: "Blade Sharpening", type: "seasonal", targetMaintenanceType: "blade_sharpening", season: "spring" },
+        { name: "Blade Replacement", type: "time", targetMaintenanceType: "blade_replacement", timeIntervalMonths: 24 },
+        { name: "Inspection", type: "seasonal", targetMaintenanceType: "inspection", season: "spring" },
+    ],
+    snowblower: [
+        { name: "Battery Check", type: "time", targetMaintenanceType: "battery", timeIntervalMonths: 12 },
+        { name: "Auger Belt Check", type: "seasonal", season: "fall" },
+        { name: "Inspection", type: "seasonal", targetMaintenanceType: "inspection", season: "fall" },
+    ],
+    boat: [
+        { name: "Battery Check", type: "time", targetMaintenanceType: "battery", timeIntervalMonths: 12 },
+        { name: "Inspection", type: "seasonal", targetMaintenanceType: "inspection", season: "spring" },
+    ],
+};
+
+function getSuggestedServices(vehicle: { type: VehicleType; powertrain?: string }): SuggestedService[] {
+    const map = vehicle.powertrain === "electric" ? SUGGESTED_SERVICES_ELECTRIC : SUGGESTED_SERVICES_GAS;
+    return map[vehicle.type] ?? [];
+}
 
 interface ServiceIntervalManagerProps {
     vehicle: Vehicle;
@@ -115,6 +158,8 @@ const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
     { value: "wiper_blades", label: "Wiper Blades" },
     { value: "alignment", label: "Alignment" },
     { value: "inspection", label: "Inspection" },
+    { value: "blade_sharpening", label: "Blade Sharpening" },
+    { value: "blade_replacement", label: "Blade Replacement" },
     { value: "other", label: "Other" },
 ];
 
@@ -194,7 +239,7 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
     );
 
     const suggestions = useMemo(() => {
-        const candidates = SUGGESTED_SERVICES[vehicle.type] ?? [];
+        const candidates = getSuggestedServices(vehicle);
         const existing = vehicle.serviceIntervals ?? [];
         return candidates.filter(s =>
             !existing.some(iv =>
@@ -202,7 +247,7 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                 iv.name.toLowerCase() === s.name.toLowerCase()
             )
         );
-    }, [vehicle.serviceIntervals, vehicle.type]);
+    }, [vehicle.serviceIntervals, vehicle.type, vehicle.powertrain]);
 
     const resetForm = () => {
         setName("");

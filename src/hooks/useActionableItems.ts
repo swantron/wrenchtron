@@ -14,6 +14,7 @@ const DEFAULT_CAR_INTERVALS: ServiceInterval[] = [
         type: "composite",
         mileageInterval: 5000,
         timeIntervalMonths: 6,
+        targetMaintenanceType: "oil_change",
         notes: "Regular oil and filter change",
     },
     {
@@ -21,6 +22,7 @@ const DEFAULT_CAR_INTERVALS: ServiceInterval[] = [
         name: "Tire Rotation",
         type: "mileage",
         mileageInterval: 6000,
+        targetMaintenanceType: "tire_rotation",
         notes: "Rotate tires to ensure even wear",
     },
     {
@@ -28,7 +30,43 @@ const DEFAULT_CAR_INTERVALS: ServiceInterval[] = [
         name: "Engine Air Filter",
         type: "mileage",
         mileageInterval: 30000,
+        targetMaintenanceType: "air_filter",
         notes: "Replace engine air filter",
+    },
+];
+
+const DEFAULT_CAR_ELECTRIC_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-ev-tire",
+        name: "Tire Rotation",
+        type: "mileage",
+        mileageInterval: 6000,
+        targetMaintenanceType: "tire_rotation",
+        notes: "Rotate tires to ensure even wear",
+    },
+    {
+        id: "default-ev-cabin",
+        name: "Cabin Air Filter",
+        type: "time",
+        timeIntervalMonths: 24,
+        targetMaintenanceType: "cabin_filter",
+        notes: "Replace cabin air filter",
+    },
+    {
+        id: "default-ev-brake",
+        name: "Brake Inspection",
+        type: "time",
+        timeIntervalMonths: 24,
+        targetMaintenanceType: "brake_pads",
+        notes: "Inspect brakes (regen reduces wear but still needed)",
+    },
+    {
+        id: "default-ev-inspection",
+        name: "Inspection",
+        type: "time",
+        timeIntervalMonths: 12,
+        targetMaintenanceType: "inspection",
+        notes: "Annual inspection",
     },
 ];
 
@@ -38,6 +76,7 @@ const DEFAULT_ATV_INTERVALS: ServiceInterval[] = [
         name: "Oil Change",
         type: "seasonal",
         season: "spring",
+        targetMaintenanceType: "oil_change",
         notes: "Annual oil change at start of season",
     },
     {
@@ -45,7 +84,27 @@ const DEFAULT_ATV_INTERVALS: ServiceInterval[] = [
         name: "Air Filter",
         type: "seasonal",
         season: "spring",
+        targetMaintenanceType: "air_filter",
         notes: "Inspect and replace air filter",
+    },
+];
+
+const DEFAULT_ATV_ELECTRIC_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-atv-e-battery",
+        name: "Battery Check",
+        type: "time",
+        timeIntervalMonths: 12,
+        targetMaintenanceType: "battery",
+        notes: "Check battery health and connections",
+    },
+    {
+        id: "default-atv-e-inspection",
+        name: "Inspection",
+        type: "seasonal",
+        season: "spring",
+        targetMaintenanceType: "inspection",
+        notes: "Inspect brakes, tires, and electrical connections",
     },
 ];
 
@@ -55,6 +114,7 @@ const DEFAULT_BOAT_INTERVALS: ServiceInterval[] = [
         name: "Oil Change",
         type: "seasonal",
         season: "spring",
+        targetMaintenanceType: "oil_change",
         notes: "Annual oil change before launch",
     },
     {
@@ -66,12 +126,32 @@ const DEFAULT_BOAT_INTERVALS: ServiceInterval[] = [
     },
 ];
 
+const DEFAULT_BOAT_ELECTRIC_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-boat-e-battery",
+        name: "Battery Check",
+        type: "time",
+        timeIntervalMonths: 12,
+        targetMaintenanceType: "battery",
+        notes: "Check battery health and connections",
+    },
+    {
+        id: "default-boat-e-inspection",
+        name: "Inspection",
+        type: "seasonal",
+        season: "spring",
+        targetMaintenanceType: "inspection",
+        notes: "Inspect motor, propeller, and electrical systems",
+    },
+];
+
 const DEFAULT_MOWER_INTERVALS: ServiceInterval[] = [
     {
         id: "default-mower-oil",
         name: "Oil Change",
         type: "seasonal",
         season: "spring",
+        targetMaintenanceType: "oil_change",
         notes: "Annual oil change before mowing season",
     },
     {
@@ -79,6 +159,7 @@ const DEFAULT_MOWER_INTERVALS: ServiceInterval[] = [
         name: "Blade Sharpening",
         type: "seasonal",
         season: "spring",
+        targetMaintenanceType: "blade_sharpening",
         notes: "Sharpen or replace blades",
     },
     {
@@ -90,12 +171,40 @@ const DEFAULT_MOWER_INTERVALS: ServiceInterval[] = [
     },
 ];
 
+const DEFAULT_MOWER_ELECTRIC_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-mower-e-battery",
+        name: "Battery Check",
+        type: "time",
+        timeIntervalMonths: 12,
+        targetMaintenanceType: "battery",
+        notes: "Check battery health and connections",
+    },
+    {
+        id: "default-mower-e-blades",
+        name: "Blade Sharpening",
+        type: "seasonal",
+        season: "spring",
+        targetMaintenanceType: "blade_sharpening",
+        notes: "Sharpen or replace blades",
+    },
+    {
+        id: "default-mower-e-inspection",
+        name: "Inspection",
+        type: "seasonal",
+        season: "spring",
+        targetMaintenanceType: "inspection",
+        notes: "Inspect deck, wheels, and electrical connections",
+    },
+];
+
 const DEFAULT_SNOWBLOWER_INTERVALS: ServiceInterval[] = [
     {
         id: "default-snow-oil",
         name: "Oil Change",
         type: "seasonal",
         season: "fall",
+        targetMaintenanceType: "oil_change",
         notes: "Annual oil change before winter",
     },
     {
@@ -114,20 +223,49 @@ const DEFAULT_SNOWBLOWER_INTERVALS: ServiceInterval[] = [
     },
 ];
 
-function getDefaultIntervals(type: VehicleType): ServiceInterval[] {
+const DEFAULT_SNOWBLOWER_ELECTRIC_INTERVALS: ServiceInterval[] = [
+    {
+        id: "default-snow-e-battery",
+        name: "Battery Check",
+        type: "time",
+        timeIntervalMonths: 12,
+        targetMaintenanceType: "battery",
+        notes: "Check battery health and connections",
+    },
+    {
+        id: "default-snow-e-auger",
+        name: "Auger/Belt Check",
+        type: "seasonal",
+        season: "fall",
+        notes: "Check auger, belts, and shear pins",
+    },
+    {
+        id: "default-snow-e-inspection",
+        name: "Inspection",
+        type: "seasonal",
+        season: "fall",
+        targetMaintenanceType: "inspection",
+        notes: "Inspect auger, chute, and electrical connections",
+    },
+];
+
+function getDefaultIntervals(vehicle: { type: VehicleType; powertrain?: string }): ServiceInterval[] {
+    const { type, powertrain } = vehicle;
+    const isElectric = powertrain === "electric";
+
     switch (type) {
         case "auto":
         case "motorcycle":
-            return DEFAULT_CAR_INTERVALS;
+            return isElectric ? DEFAULT_CAR_ELECTRIC_INTERVALS : DEFAULT_CAR_INTERVALS;
         case "mower":
-            return DEFAULT_MOWER_INTERVALS;
+            return isElectric ? DEFAULT_MOWER_ELECTRIC_INTERVALS : DEFAULT_MOWER_INTERVALS;
         case "snowblower":
-            return DEFAULT_SNOWBLOWER_INTERVALS;
+            return isElectric ? DEFAULT_SNOWBLOWER_ELECTRIC_INTERVALS : DEFAULT_SNOWBLOWER_INTERVALS;
         case "atv":
         case "utv":
-            return DEFAULT_ATV_INTERVALS;
+            return isElectric ? DEFAULT_ATV_ELECTRIC_INTERVALS : DEFAULT_ATV_INTERVALS;
         case "boat":
-            return DEFAULT_BOAT_INTERVALS;
+            return isElectric ? DEFAULT_BOAT_ELECTRIC_INTERVALS : DEFAULT_BOAT_INTERVALS;
         default:
             return [];
     }
@@ -188,7 +326,7 @@ export function useActionableItems(vehicles: Vehicle[]) {
                         ...vehicle,
                         serviceIntervals: (vehicle.serviceIntervals && vehicle.serviceIntervals.length > 0)
                             ? vehicle.serviceIntervals
-                            : getDefaultIntervals(vehicle.type),
+                            : getDefaultIntervals(vehicle),
                     };
                     perVehicleRef.current[vehicle.id!] = calculateActionItems(vehicleWithDefaults, logs);
 

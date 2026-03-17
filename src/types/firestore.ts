@@ -11,10 +11,15 @@ export type VehicleType =
   | "boat"
   | "other";
 
+/** Powertrain affects which maintenance types apply. Undefined = legacy gas. */
+export type Powertrain = "gas" | "electric" | "hybrid";
+
 export interface Vehicle {
   id?: string;
   name: string;
   type: VehicleType;
+  /** Gas, electric, or hybrid. Omitted for legacy vehicles (treated as gas). */
+  powertrain?: Powertrain;
   year: number;
   make: string;
   model: string;

@@ -225,6 +225,11 @@ export function VehicleDetailView({
           <p className="mt-1 text-gray-600 dark:text-gray-400">
             {vehicle.year} {vehicle.make} {vehicle.model}
             {vehicle.trim ? ` ${vehicle.trim}` : ""}
+            {vehicle.powertrain && vehicle.powertrain !== "gas" && (
+              <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                {vehicle.powertrain.charAt(0).toUpperCase() + vehicle.powertrain.slice(1)}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

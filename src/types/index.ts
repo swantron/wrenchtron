@@ -1,4 +1,4 @@
-export type { Vehicle, VehicleType } from "./firestore";
+export type { Vehicle, VehicleType, Powertrain } from "./firestore";
 export type {
   MaintenanceLog,
   MaintenanceType,

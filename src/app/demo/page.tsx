@@ -20,6 +20,7 @@ function toFormalVehicle(dv: DemoVehicle): Vehicle {
     id: dv.id,
     name: dv.name,
     type: dv.type,
+    powertrain: dv.powertrain,
     year: dv.year,
     make: dv.make,
     model: dv.model,

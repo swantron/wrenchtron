@@ -384,6 +384,18 @@ describe("calculateActionItems", () => {
       });
       expect(calculateActionItems(vehicle, [])).toHaveLength(0);
     });
+
+    it("excludes oil_change for electric mower", () => {
+      const vehicle = makeVehicle({
+        type: "mower",
+        powertrain: "electric",
+        serviceIntervals: [{
+          id: "i1", name: "Oil Change", type: "seasonal",
+          targetMaintenanceType: "oil_change", season: "spring",
+        }],
+      });
+      expect(calculateActionItems(vehicle, [])).toHaveLength(0);
+    });
   });
 
   // --- Result ordering ---
