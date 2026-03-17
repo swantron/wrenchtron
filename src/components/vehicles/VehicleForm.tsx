@@ -39,6 +39,29 @@ const TYPES_WITH_POWERTRAIN: VehicleType[] = ["auto", "motorcycle", "atv", "utv"
 /** Equipment types (mower, snowblower) only support Gas or Electric — no Hybrid. */
 const EQUIPMENT_TYPES: VehicleType[] = ["mower", "snowblower"];
 
+/** Trim placeholder hints per type — helps users know what to enter. */
+const TRIM_PLACEHOLDERS: Partial<Record<VehicleType, string>> = {
+  auto: "e.g. XSE, Limited",
+  motorcycle: "e.g. Touring",
+  atv: "e.g. 4-Seater, EPS",
+  utv: "e.g. 4-Seater, Premium",
+  mower: "e.g. 42\" Deck, 52\" cut",
+  snowblower: "e.g. 28\", SHO",
+  boat: "e.g. Outboard, I/O",
+};
+
+/** Make/Model placeholders for equipment — less car-centric. */
+const MAKE_PLACEHOLDERS: Partial<Record<VehicleType, string>> = {
+  mower: "e.g. Ego, John Deere",
+  snowblower: "e.g. Ariens, Toro",
+  boat: "e.g. Yamaha, Mercury",
+};
+const MODEL_PLACEHOLDERS: Partial<Record<VehicleType, string>> = {
+  mower: "e.g. LM2167, X350",
+  snowblower: "e.g. Deluxe 28, Storm",
+  boat: "e.g. 115 HP, 9.9",
+};
+
 interface VehicleFormProps {
   vehicle?: Vehicle;
 }
@@ -103,6 +126,10 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
     // Equipment doesn't have hybrid — reset to gas if currently hybrid
     if (EQUIPMENT_TYPES.includes(newType) && powertrain === "hybrid") {
       setPowertrain("gas");
+    }
+    // Other type doesn't use Trim
+    if (newType === "other") {
+      setTrim("");
     }
   }, [powertrain]);
 
@@ -355,7 +382,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             type="text"
             value={make}
             onChange={(e) => setMake(e.target.value)}
-            placeholder="e.g. Toyota"
+            placeholder={MAKE_PLACEHOLDERS[type] ?? "e.g. Toyota"}
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
@@ -371,26 +398,28 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             type="text"
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            placeholder="e.g. Camry"
+            placeholder={MODEL_PLACEHOLDERS[type] ?? "e.g. Camry"}
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
           {fieldErrors.model && <p className="mt-1 text-xs text-red-600">{fieldErrors.model}</p>}
         </div>
 
-        <div>
-          <label htmlFor="vf-trim" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Trim
-          </label>
-          <input
-            id="vf-trim"
-            type="text"
-            value={trim}
-            onChange={(e) => setTrim(e.target.value)}
-            placeholder="e.g. XSE"
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+        {type !== "other" && (
+          <div>
+            <label htmlFor="vf-trim" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Trim
+            </label>
+            <input
+              id="vf-trim"
+              type="text"
+              value={trim}
+              onChange={(e) => setTrim(e.target.value)}
+              placeholder={TRIM_PLACEHOLDERS[type] ?? "e.g. Optional variant"}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+        )}
 
         {tracksMileage(type) && (
           <div>

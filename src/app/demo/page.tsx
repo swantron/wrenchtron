@@ -63,55 +63,116 @@ const vehicleOilIntervals: Record<string, number> = {
 function getDemoActionItems(): ActionItem[] {
   const vehicles: Vehicle[] = demoVehicles.map((dv) => {
     const intervals: ServiceInterval[] = [];
+    const isElectric = dv.powertrain === "electric";
 
     if (dv.type === "mower") {
-      intervals.push(
-        {
-          id: "demo-mower-oil",
-          name: "Oil Change",
-          type: "seasonal",
-          season: "spring",
-          notes: "Annual oil change before mowing season",
-        },
-        {
-          id: "demo-mower-blades",
-          name: "Blade Sharpening",
-          type: "seasonal",
-          season: "spring",
-          notes: "Sharpen or replace blades",
-        },
-        {
-          id: "demo-mower-winter",
-          name: "Winterize",
-          type: "seasonal",
-          season: "fall",
-          notes: "Stabilize fuel, remove battery",
-        }
-      );
+      if (isElectric) {
+        intervals.push(
+          {
+            id: "demo-mower-e-battery",
+            name: "Battery Check",
+            type: "time",
+            timeIntervalMonths: 12,
+            targetMaintenanceType: "battery",
+            notes: "Check battery health and connections",
+          },
+          {
+            id: "demo-mower-e-blades",
+            name: "Blade Sharpening",
+            type: "seasonal",
+            season: "spring",
+            targetMaintenanceType: "blade_sharpening",
+            notes: "Sharpen or replace blades",
+          },
+          {
+            id: "demo-mower-e-inspection",
+            name: "Inspection",
+            type: "seasonal",
+            season: "spring",
+            targetMaintenanceType: "inspection",
+            notes: "Inspect deck, wheels, and electrical connections",
+          }
+        );
+      } else {
+        intervals.push(
+          {
+            id: "demo-mower-oil",
+            name: "Oil Change",
+            type: "seasonal",
+            season: "spring",
+            targetMaintenanceType: "oil_change",
+            notes: "Annual oil change before mowing season",
+          },
+          {
+            id: "demo-mower-blades",
+            name: "Blade Sharpening",
+            type: "seasonal",
+            season: "spring",
+            targetMaintenanceType: "blade_sharpening",
+            notes: "Sharpen or replace blades",
+          },
+          {
+            id: "demo-mower-winter",
+            name: "Winterize",
+            type: "seasonal",
+            season: "fall",
+            notes: "Stabilize fuel, remove battery",
+          }
+        );
+      }
     } else if (dv.type === "snowblower") {
-      intervals.push(
-        {
-          id: "demo-snow-oil",
-          name: "Oil Change",
-          type: "seasonal",
-          season: "fall",
-          notes: "Annual oil change before winter",
-        },
-        {
-          id: "demo-snow-auger",
-          name: "Auger/Belt Check",
-          type: "seasonal",
-          season: "fall",
-          notes: "Check auger, belts, and shear pins",
-        },
-        {
-          id: "demo-snow-summer",
-          name: "Summerize",
-          type: "seasonal",
-          season: "spring",
-          notes: "Stabilize fuel, drain carb",
-        }
-      );
+      if (isElectric) {
+        intervals.push(
+          {
+            id: "demo-snow-e-battery",
+            name: "Battery Check",
+            type: "time",
+            timeIntervalMonths: 12,
+            targetMaintenanceType: "battery",
+            notes: "Check battery health and connections",
+          },
+          {
+            id: "demo-snow-e-auger",
+            name: "Auger/Belt Check",
+            type: "seasonal",
+            season: "fall",
+            notes: "Check auger, belts, and shear pins",
+          },
+          {
+            id: "demo-snow-e-inspection",
+            name: "Inspection",
+            type: "seasonal",
+            season: "fall",
+            targetMaintenanceType: "inspection",
+            notes: "Inspect auger, chute, and electrical connections",
+          }
+        );
+      } else {
+        intervals.push(
+          {
+            id: "demo-snow-oil",
+            name: "Oil Change",
+            type: "seasonal",
+            season: "fall",
+            targetMaintenanceType: "oil_change",
+            notes: "Annual oil change before winter",
+          },
+          {
+            id: "demo-snow-auger",
+            name: "Auger/Belt Check",
+            type: "seasonal",
+            season: "fall",
+            notes: "Check auger, belts, and shear pins",
+          },
+          {
+            id: "demo-snow-summer",
+            name: "Summerize",
+            type: "seasonal",
+            season: "spring",
+            notes: "Stabilize fuel, drain carb",
+          }
+        );
+      }
     } else {
       intervals.push(
         {
@@ -153,7 +214,7 @@ function getDemoActionItems(): ActionItem[] {
       );
     }
 
-    if (dv.type === "mower" || dv.type === "snowblower") {
+    if ((dv.type === "mower" || dv.type === "snowblower") && !isElectric) {
       intervals.push({
         id: `demo-${dv.id}-plugs`,
         name: "Spark Plugs",
@@ -168,6 +229,7 @@ function getDemoActionItems(): ActionItem[] {
       id: dv.id,
       name: dv.name,
       type: dv.type,
+      powertrain: dv.powertrain,
       year: dv.year,
       make: dv.make,
       model: dv.model,
@@ -178,6 +240,7 @@ function getDemoActionItems(): ActionItem[] {
       updatedAt: Timestamp.now(),
       serviceIntervals: intervals,
       estimatedAnnualMileage: dv.estimatedAnnualMileage,
+      photoPath: dv.image,
     };
   });
 
