@@ -282,6 +282,19 @@ describe("calculateActionItems", () => {
       const items = calculateActionItems(vehicle, [log]);
       expect(items.filter(i => i.serviceName === "Winterize")).toHaveLength(0);
     });
+
+    it("does not return Summerize when logged this spring (Mar 17)", () => {
+      vi.setSystemTime(new Date("2026-03-18T12:00:00Z")); // March 18, after the log
+      const vehicle = makeVehicle({
+        serviceIntervals: [{
+          id: "i1", name: "Summerize", type: "seasonal", season: "spring",
+          targetMaintenanceType: "summerize",
+        }],
+      });
+      const log = makeLog({ maintenanceType: "summerize", date: ts(new Date("2026-03-17")) });
+      const items = calculateActionItems(vehicle, [log]);
+      expect(items.filter(i => i.serviceName === "Summerize")).toHaveLength(0);
+    });
   });
 
   // --- Monthly intervals ---

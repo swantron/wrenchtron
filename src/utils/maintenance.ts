@@ -124,6 +124,22 @@ export function calculateActionItems(
         const lastDate = lastLog ? lastLog.date.toDate() : vehicle.createdAt.toDate();
         const lastMileage = lastLog ? lastLog.mileage : 0;
 
+        // Early skip: summerize/winterize recently done (handles both seasonal and month-type intervals)
+        const isSummerizeOrWinterize =
+            interval.targetMaintenanceType === "summerize" || interval.targetMaintenanceType === "winterize" ||
+            /summerize|winterize/.test(interval.name.toLowerCase());
+        if (isSummerizeOrWinterize && lastLog) {
+            const lastMonth = lastDate.getMonth();
+            const lastYear = lastDate.getFullYear();
+            const nowYear = new Date().getFullYear();
+            const doneThisYear =
+                (interval.targetMaintenanceType === "summerize" || /summerize/.test(interval.name.toLowerCase()))
+                    ? lastMonth >= 2 && lastMonth <= 4 && lastYear >= nowYear  // spring
+                    : lastMonth >= 8 && lastMonth <= 10 && lastYear >= nowYear; // fall
+            const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+            if (doneThisYear || lastDate >= sixMonthsAgo) continue;
+        }
+
         let status: ActionItem["status"] = "upcoming";
         let reason = "";
         let dueDate: Date | undefined;
