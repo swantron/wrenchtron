@@ -36,6 +36,9 @@ const powertrainOptions: { value: Powertrain; label: string }[] = [
 
 const TYPES_WITH_POWERTRAIN: VehicleType[] = ["auto", "motorcycle", "atv", "utv", "mower", "snowblower", "boat"];
 
+/** Equipment types (mower, snowblower) only support Gas or Electric — no Hybrid. */
+const EQUIPMENT_TYPES: VehicleType[] = ["mower", "snowblower"];
+
 interface VehicleFormProps {
   vehicle?: Vehicle;
 }
@@ -51,9 +54,12 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [type, setType] = useState<VehicleType>(
     vehicle?.type && KNOWN_VEHICLE_TYPES.has(vehicle.type) ? vehicle.type : "auto"
   );
-  const [powertrain, setPowertrain] = useState<Powertrain>(
-    vehicle?.powertrain ?? "gas"
-  );
+  const [powertrain, setPowertrain] = useState<Powertrain>(() => {
+    const p = vehicle?.powertrain ?? "gas";
+    // Equipment (mower, snowblower) doesn't support hybrid — treat as gas
+    if (EQUIPMENT_TYPES.includes(vehicle?.type ?? "auto") && p === "hybrid") return "gas";
+    return p;
+  });
   const [year, setYear] = useState(vehicle?.year?.toString() ?? "");
   const [make, setMake] = useState(vehicle?.make ?? "");
   const [model, setModel] = useState(vehicle?.model ?? "");
@@ -79,6 +85,26 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const [dirty, setDirty] = useState(false);
 
   useUnsavedChanges(dirty);
+
+  const handleTypeChange = useCallback((newType: VehicleType) => {
+    setType(newType);
+    // Clear fields that no longer apply when switching type
+    if (!isRoadVehicle(newType)) {
+      setEngine("");
+      setTransmission("");
+      setDrivetrain("");
+      setVin("");
+      setLicensePlate("");
+    }
+    if (!tracksMileage(newType)) {
+      setCurrentMileage("");
+      setEstimatedAnnualMileage("");
+    }
+    // Equipment doesn't have hybrid — reset to gas if currently hybrid
+    if (EQUIPMENT_TYPES.includes(newType) && powertrain === "hybrid") {
+      setPowertrain("gas");
+    }
+  }, [powertrain]);
 
   useEffect(() => {
     const fieldIdMap: Record<string, string> = {
@@ -264,7 +290,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           <select
             id="vf-type"
             value={type}
-            onChange={(e) => setType(e.target.value as VehicleType)}
+            onChange={(e) => handleTypeChange(e.target.value as VehicleType)}
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           >
             {vehicleTypes.map((vt) => (
@@ -286,14 +312,19 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
               onChange={(e) => setPowertrain(e.target.value as Powertrain)}
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             >
-              {powertrainOptions.map((opt) => (
+              {(EQUIPMENT_TYPES.includes(type)
+                ? powertrainOptions.filter((o) => o.value !== "hybrid")
+                : powertrainOptions
+              ).map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-xs text-gray-500">
-              Electric and hybrid vehicles have different maintenance needs.
+              {EQUIPMENT_TYPES.includes(type)
+                ? "Electric mowers and snowblowers have different maintenance needs."
+                : "Electric and hybrid vehicles have different maintenance needs."}
             </p>
           </div>
         )}
