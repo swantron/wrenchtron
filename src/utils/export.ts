@@ -26,6 +26,8 @@ const TYPE_LABELS: Record<MaintenanceType, string> = {
   inspection: "Inspection",
   blade_sharpening: "Blade Sharpening",
   blade_replacement: "Blade Replacement",
+  summerize: "Summerize",
+  winterize: "Winterize",
   other: "Other",
 };
 

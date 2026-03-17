@@ -79,9 +79,7 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                         {/* Action Button */}
                         <div className="mt-4 flex justify-end">
                             <Link
-                                href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.serviceName
-                                    .toLowerCase()
-                                    .replace(/ /g, "_")}`}
+                                href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.targetMaintenanceType ?? item.serviceName.toLowerCase().replace(/ /g, "_")}`}
                                 className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${item.status === "overdue"
                                     ? "bg-red-600 text-white hover:bg-red-700"
                                     : item.status === "due_soon"

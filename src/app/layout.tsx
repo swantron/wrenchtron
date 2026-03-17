@@ -21,6 +21,7 @@ export const viewport: Viewport = {
 
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ChunkLoadErrorHandler } from "@/components/ChunkLoadErrorHandler";
 
 export default function RootLayout({
   children,
@@ -49,6 +50,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <AuthProvider>
+          <ChunkLoadErrorHandler />
           <ThemeProvider>
             <ToastProvider>{children}</ToastProvider>
           </ThemeProvider>

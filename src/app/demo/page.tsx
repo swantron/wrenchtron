@@ -162,6 +162,7 @@ function getDemoActionItems(): ActionItem[] {
             name: "Auger/Belt Check",
             type: "seasonal",
             season: "fall",
+            targetMaintenanceType: "inspection",
             notes: "Check auger, belts, and shear pins",
           },
           {
@@ -169,6 +170,7 @@ function getDemoActionItems(): ActionItem[] {
             name: "Summerize",
             type: "seasonal",
             season: "spring",
+            targetMaintenanceType: "summerize",
             notes: "Stabilize fuel, drain carb",
           }
         );

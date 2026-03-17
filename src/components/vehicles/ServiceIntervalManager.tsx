@@ -49,18 +49,18 @@ const SUGGESTED_SERVICES_GAS: Partial<Record<VehicleType, SuggestedService[]>> =
     mower: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
         { name: "Blade Sharpening", type: "seasonal", targetMaintenanceType: "blade_sharpening", season: "spring" },
-        { name: "Winterize", type: "seasonal", season: "fall" },
+        { name: "Winterize", type: "seasonal", targetMaintenanceType: "winterize", season: "fall" },
         { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
     ],
     snowblower: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "fall" },
-        { name: "Auger Belt Check", type: "seasonal", season: "fall" },
-        { name: "Summerize", type: "seasonal", season: "spring" },
+        { name: "Auger Belt Check", type: "seasonal", targetMaintenanceType: "inspection", season: "fall" },
+        { name: "Summerize", type: "seasonal", targetMaintenanceType: "summerize", season: "spring" },
         { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
     ],
     boat: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
-        { name: "Winterize", type: "seasonal", season: "fall" },
+        { name: "Winterize", type: "seasonal", targetMaintenanceType: "winterize", season: "fall" },
         { name: "Propeller Check", type: "time", timeIntervalMonths: 12 },
     ],
 };
@@ -160,6 +160,8 @@ const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
     { value: "inspection", label: "Inspection" },
     { value: "blade_sharpening", label: "Blade Sharpening" },
     { value: "blade_replacement", label: "Blade Replacement" },
+    { value: "summerize", label: "Summerize" },
+    { value: "winterize", label: "Winterize" },
     { value: "other", label: "Other" },
 ];
 

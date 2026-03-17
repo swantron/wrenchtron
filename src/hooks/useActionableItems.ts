@@ -122,6 +122,7 @@ const DEFAULT_BOAT_INTERVALS: ServiceInterval[] = [
         name: "Winterize",
         type: "seasonal",
         season: "fall",
+        targetMaintenanceType: "winterize",
         notes: "Winterize engine and systems",
     },
 ];
@@ -167,6 +168,7 @@ const DEFAULT_MOWER_INTERVALS: ServiceInterval[] = [
         name: "Winterize",
         type: "seasonal",
         season: "fall",
+        targetMaintenanceType: "winterize",
         notes: "Stabilize fuel, remove battery",
     },
 ];
@@ -212,6 +214,7 @@ const DEFAULT_SNOWBLOWER_INTERVALS: ServiceInterval[] = [
         name: "Auger/Belt Check",
         type: "seasonal",
         season: "fall",
+        targetMaintenanceType: "inspection",
         notes: "Check auger, belts, and shear pins",
     },
     {
@@ -219,6 +222,7 @@ const DEFAULT_SNOWBLOWER_INTERVALS: ServiceInterval[] = [
         name: "Summerize",
         type: "seasonal",
         season: "spring",
+        targetMaintenanceType: "summerize",
         notes: "Stabilize fuel, drain carb",
     },
 ];

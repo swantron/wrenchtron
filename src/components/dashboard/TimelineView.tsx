@@ -132,7 +132,7 @@ export function TimelineView({ items }: TimelineViewProps) {
 
                                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50">
                                     <Link
-                                        href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.serviceName.toLowerCase().replace(/ /g, "_")}`}
+                                        href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.targetMaintenanceType ?? item.serviceName.toLowerCase().replace(/ /g, "_")}`}
                                         className="block w-full rounded-lg bg-gray-50 py-2 text-center text-xs font-bold uppercase tracking-wider text-gray-600 transition-colors hover:bg-gray-100 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-gray-700"
                                     >
                                         Log Service

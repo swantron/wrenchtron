@@ -17,6 +17,8 @@ export type MaintenanceType =
   | "inspection"
   | "blade_sharpening"
   | "blade_replacement"
+  | "summerize"
+  | "winterize"
   | "other";
 
 export interface OilChangeDetails {

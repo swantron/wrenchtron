@@ -37,6 +37,8 @@ export interface ActionItem {
     vehicleId: string;
     vehicleName: string;
     serviceName: string;
+    /** Preferred maintenance type for "Log Service" link — use when available. */
+    targetMaintenanceType?: MaintenanceType;
     status: "overdue" | "due_soon" | "upcoming";
     reason: string;
     dueDate?: Date;
@@ -256,6 +258,7 @@ export function calculateActionItems(
                 vehicleId: vehicle.id || "",
                 vehicleName: vehicle.name,
                 serviceName: interval.name,
+                targetMaintenanceType: interval.targetMaintenanceType as MaintenanceType | undefined,
                 status,
                 reason,
                 dueMileage,
@@ -311,6 +314,7 @@ export function calculateActionItems(
             vehicleId: vehicle.id || "",
             vehicleName: vehicle.name,
             serviceName: interval.name,
+            targetMaintenanceType: interval.targetMaintenanceType as MaintenanceType | undefined,
             status,
             reason,
             dueMileage,
