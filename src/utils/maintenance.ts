@@ -245,10 +245,18 @@ export function calculateActionItems(
             // Off-season: don't surface the item at all
             if (!isSeason) continue;
 
-            // In-season: check if already done within the last 6 months
-            const sixMonthsAgo = new Date();
-            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-            if (lastDate >= sixMonthsAgo) continue; // recently serviced — skip
+            // In-season: check if already done this season or within last 6 months
+            const lastMonth = lastDate.getMonth();
+            const lastYear = lastDate.getFullYear();
+            const nowYear = now.getFullYear();
+            let doneThisSeason = false;
+            if (interval.season === "spring" && lastMonth >= 2 && lastMonth <= 4) doneThisSeason = lastYear >= nowYear;
+            if (interval.season === "summer" && lastMonth >= 5 && lastMonth <= 7) doneThisSeason = lastYear >= nowYear;
+            if (interval.season === "fall" && lastMonth >= 8 && lastMonth <= 10) doneThisSeason = lastYear >= nowYear;
+            if (interval.season === "winter" && (lastMonth === 11 || lastMonth <= 1)) doneThisSeason = lastYear >= nowYear;
+            // Also accept if done within last 6 months (handles edge cases)
+            const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+            if (doneThisSeason || lastDate >= sixMonthsAgo) continue; // recently serviced — skip
 
             const optionalPrefix = interval.isOptional ? "(Optional) " : "";
             status = "due_soon";
