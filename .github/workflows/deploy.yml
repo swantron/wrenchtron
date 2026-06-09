@@ -50,3 +50,15 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: wrenchtron-db057
           channelId: live
+
+  # Post-deploy gate: drive synthetic golden-signal traffic at the live URL and
+  # confirm the telemetry landed in the watchtron control plane (black-box —
+  # availability, p95 and route coverage). No-ops if the secrets aren't set yet.
+  watchtron-verify:
+    needs: build-and-deploy
+    uses: swantron/watchtron/.github/workflows/verify.yml@main
+    with:
+      service: wrenchtron
+    secrets:
+      otlp_endpoint: ${{ secrets.WATCHTRON_OTLP_ENDPOINT }}
+      token: ${{ secrets.WATCHTRON_TOKEN }}
