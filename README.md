@@ -1,5 +1,7 @@
 # Wrenchtron
 
+[![watchtron](https://img.shields.io/endpoint?url=https%3A%2F%2Fwatch.swantron.com%2Fbadge%2Fwrenchtron)](https://watch.swantron.com/)
+
 **Live app:** [wrenchtron.com](https://wrenchtron.com) · [Demo (no login required)](https://wrenchtron.com/demo)
 
 A vehicle maintenance tracker for mixed fleets — cars, trucks, ATVs, mowers, snowblowers, boats. Tracks service history, calculates what's due next, and surfaces NHTSA safety recalls automatically.
