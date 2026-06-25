@@ -12,10 +12,12 @@ const navLinks = [
   { href: "/about", label: "About" },
 ];
 
-export function NavBar({ isDemo }: { isDemo?: boolean }) {
+export function NavBar({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActiveTab?: string }) {
   const { user: authUser } = useAuth();
   const user = isDemo ? { displayName: "Demo User", email: "demo@wrenchtron.com" } : authUser;
   const pathname = usePathname();
+
+  const demoTab = demoActiveTab ?? "garage";
 
   return (
     <nav className="sticky top-0 z-50 hidden border-b border-gray-100 bg-white/80 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80 md:block">
@@ -39,7 +41,11 @@ export function NavBar({ isDemo }: { isDemo?: boolean }) {
                   : link.href;
 
                 const isActive = isDemo
-                  ? pathname === "/demo" && (link.href === "/vehicles" || link.href === "/hub")
+                  ? link.href === "/vehicles"
+                    ? demoTab === "garage"
+                    : link.href === "/hub"
+                      ? demoTab === "hub"
+                      : pathname === link.href
                   : link.href === "/vehicles"
                     ? pathname.startsWith("/vehicles")
                     : link.href === "/hub"

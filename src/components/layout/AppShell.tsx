@@ -6,23 +6,25 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 export function AppShell({
   children,
-  isDemo
+  isDemo,
+  demoActiveTab,
 }: {
   children: React.ReactNode;
   isDemo?: boolean;
+  demoActiveTab?: string;
 }) {
   const isOnline = useOnlineStatus();
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-gray-950">
-      <NavBar isDemo={isDemo} />
+      <NavBar isDemo={isDemo} demoActiveTab={demoActiveTab} />
       {!isOnline && (
         <div className="flex items-center justify-center gap-2 bg-amber-500 px-4 py-2 text-sm font-semibold text-white">
           You are offline. Changes will sync when reconnected.
         </div>
       )}
       <main className="pb-24 md:pb-0">{children}</main>
-      <MobileNav isDemo={isDemo} />
+      <MobileNav isDemo={isDemo} demoActiveTab={demoActiveTab} />
     </div>
   );
 }

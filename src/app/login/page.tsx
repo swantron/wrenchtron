@@ -4,6 +4,7 @@ import { LoginButton } from "@/components/auth/LoginButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -19,9 +20,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] p-6 dark:bg-gray-950">
       <div className="relative mb-12 flex flex-col items-center text-center">
         <div className="absolute -inset-4 rounded-full bg-blue-500/10 blur-2xl" />
-        <h1 className="relative text-5xl font-black tracking-tight text-gray-900 dark:text-white sm:text-7xl">
+        <Link href="/" className="relative text-5xl font-black tracking-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 transition-colors sm:text-7xl">
           Wrenchtron
-        </h1>
+        </Link>
         <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-gray-400">
           Secure Machine Access
         </p>
@@ -39,7 +40,7 @@ export default function LoginPage() {
 
       <div className="mt-12 text-center">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-          Built on the Serverless Triad
+          Free &middot; Private &middot; No subscription
         </p>
       </div>
     </div>

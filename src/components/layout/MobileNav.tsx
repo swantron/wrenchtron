@@ -44,10 +44,20 @@ const navItems = [
   },
 ];
 
-export function MobileNav({ isDemo }: { isDemo?: boolean }) {
+export function MobileNav({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActiveTab?: string }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const isAuthenticated = isDemo || !!user;
+
+  const demoTab = demoActiveTab ?? "garage";
+
+  const getHref = (item: (typeof navItems)[0]) => {
+    if (!isDemo) return item.href;
+    if (item.href === "/vehicles") return "/demo?tab=garage";
+    if (item.href === "/hub") return "/demo?tab=hub";
+    if (item.href === "/vehicles/new") return "/login";
+    return item.href;
+  };
 
   const filteredItems = navItems.filter(item => {
     if (item.label === "Add" && !isAuthenticated) return false;
@@ -55,6 +65,11 @@ export function MobileNav({ isDemo }: { isDemo?: boolean }) {
   });
 
   const isActive = (item: (typeof navItems)[0]) => {
+    if (isDemo) {
+      if (item.href === "/vehicles") return demoTab === "garage";
+      if (item.href === "/hub") return demoTab === "hub";
+      return false;
+    }
     if (item.href === "/vehicles") return pathname.startsWith("/vehicles");
     if (item.href === "/hub") return pathname.startsWith("/hub");
     if (item.href === "/about") return pathname === "/about";
@@ -67,7 +82,7 @@ export function MobileNav({ isDemo }: { isDemo?: boolean }) {
         {filteredItems.map((item) => (
           <Link
             key={item.href}
-            href={item.href}
+            href={getHref(item)}
             className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-black uppercase tracking-widest transition-all ${isActive(item)
               ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
               : "text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300"
