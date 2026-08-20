@@ -35,6 +35,7 @@ const typeLabels: Record<MaintenanceType, string> = {
   inspection: "Inspection",
   blade_sharpening: "Blade Sharpening",
   blade_replacement: "Blade Replacement",
+  belt_replacement: "Belt Replacement",
   summerize: "Summerize",
   winterize: "Winterize",
   other: "Other",

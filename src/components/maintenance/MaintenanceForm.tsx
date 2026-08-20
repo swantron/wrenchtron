@@ -23,7 +23,7 @@ import type {
   PartDetails,
 } from "@/types/maintenance";
 
-const PART_TYPES: MaintenanceType[] = ["air_filter", "cabin_filter", "spark_plugs", "wiper_blades", "blade_sharpening", "blade_replacement", "summerize", "winterize"];
+const PART_TYPES: MaintenanceType[] = ["air_filter", "cabin_filter", "spark_plugs", "wiper_blades", "blade_sharpening", "blade_replacement", "belt_replacement", "summerize", "winterize"];
 
 const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
   { value: "oil_change", label: "Oil Change" },
@@ -44,6 +44,7 @@ const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
   { value: "winterize", label: "Winterize" },
   { value: "blade_sharpening", label: "Blade Sharpening" },
   { value: "blade_replacement", label: "Blade Replacement" },
+  { value: "belt_replacement", label: "Belt Replacement" },
   { value: "other", label: "Other" },
 ];
 

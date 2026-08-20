@@ -17,6 +17,7 @@ export type MaintenanceType =
   | "inspection"
   | "blade_sharpening"
   | "blade_replacement"
+  | "belt_replacement"
   | "summerize"
   | "winterize"
   | "other";
