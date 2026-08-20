@@ -6,6 +6,7 @@ import { updateVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useVehicles } from "@/hooks/useVehicles";
 import { VEHICLE_TYPE_LABELS } from "@/utils/vehicleUtils";
+import { isMaintenanceTypeApplicable } from "@/utils/maintenance";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface SuggestedService {
@@ -38,11 +39,13 @@ const SUGGESTED_SERVICES_GAS: Partial<Record<VehicleType, SuggestedService[]>> =
     atv: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
         { name: "Air Filter", type: "seasonal", targetMaintenanceType: "air_filter", season: "spring" },
+        { name: "Drive Belt", type: "time", targetMaintenanceType: "belt_replacement", timeIntervalMonths: 24 },
         { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
     ],
     utv: [
         { name: "Oil Change", type: "seasonal", targetMaintenanceType: "oil_change", season: "spring" },
         { name: "Air Filter", type: "seasonal", targetMaintenanceType: "air_filter", season: "spring" },
+        { name: "Drive Belt", type: "time", targetMaintenanceType: "belt_replacement", timeIntervalMonths: 24 },
         { name: "Spark Plugs", type: "time", targetMaintenanceType: "spark_plugs", timeIntervalMonths: 36 },
         { name: "Inspection", type: "time", targetMaintenanceType: "inspection", timeIntervalMonths: 12 },
     ],
@@ -158,6 +161,7 @@ const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
     { value: "wiper_blades", label: "Wiper Blades" },
     { value: "alignment", label: "Alignment" },
     { value: "inspection", label: "Inspection" },
+    { value: "belt_replacement", label: "Belt Replacement" },
     { value: "blade_sharpening", label: "Blade Sharpening" },
     { value: "blade_replacement", label: "Blade Replacement" },
     { value: "summerize", label: "Summerize" },
@@ -444,7 +448,11 @@ export function ServiceIntervalManager({ vehicle, onIntervalsChange }: ServiceIn
                                 className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                             >
                                 <option value="">— None (use name matching) —</option>
-                                {MAINTENANCE_TYPES.map((mt) => (
+                                {MAINTENANCE_TYPES.filter(
+                                    (mt) =>
+                                        mt.value === targetMaintenanceType ||
+                                        isMaintenanceTypeApplicable(vehicle, mt.value),
+                                ).map((mt) => (
                                     <option key={mt.value} value={mt.value}>
                                         {mt.label}
                                     </option>

@@ -87,6 +87,14 @@ const DEFAULT_ATV_INTERVALS: ServiceInterval[] = [
         targetMaintenanceType: "air_filter",
         notes: "Inspect and replace air filter",
     },
+    {
+        id: "default-atv-belt",
+        name: "Drive Belt",
+        type: "time",
+        timeIntervalMonths: 24,
+        targetMaintenanceType: "belt_replacement",
+        notes: "Inspect CVT / drive belt; replace when worn or glazed",
+    },
 ];
 
 const DEFAULT_ATV_ELECTRIC_INTERVALS: ServiceInterval[] = [

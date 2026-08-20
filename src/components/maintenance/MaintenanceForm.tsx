@@ -7,12 +7,13 @@ import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { addMaintenanceLog, updateMaintenanceLog } from "@/lib/firebase/firestore";
 import { tracksMileage } from "@/utils/vehicleUtils";
+import { isMaintenanceTypeApplicable } from "@/utils/maintenance";
 import { OilChangeFields } from "./OilChangeFields";
 import { TireFields } from "./TireFields";
 import { BrakeFields } from "./BrakeFields";
 import { PartFields } from "./PartFields";
 import { ReceiptUpload } from "./ReceiptUpload";
-import type { VehicleType } from "@/types/firestore";
+import type { VehicleType, Powertrain } from "@/types/firestore";
 import { maintenanceFormSchema } from "@/lib/validation/maintenanceSchema";
 import type {
   MaintenanceLog,
@@ -27,13 +28,14 @@ const PART_TYPES: MaintenanceType[] = ["air_filter", "cabin_filter", "spark_plug
 
 const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
   { value: "oil_change", label: "Oil Change" },
+  { value: "belt_replacement", label: "Belt Replacement" },
+  { value: "air_filter", label: "Air Filter" },
+  { value: "spark_plugs", label: "Spark Plugs" },
   { value: "tire_rotation", label: "Tire Rotation" },
   { value: "tire_replacement", label: "Tire Replacement" },
   { value: "brake_pads", label: "Brake Pads" },
   { value: "brake_rotors", label: "Brake Rotors" },
-  { value: "air_filter", label: "Air Filter" },
   { value: "cabin_filter", label: "Cabin Filter" },
-  { value: "spark_plugs", label: "Spark Plugs" },
   { value: "transmission_fluid", label: "Transmission Fluid" },
   { value: "coolant_flush", label: "Coolant Flush" },
   { value: "battery", label: "Battery" },
@@ -44,18 +46,24 @@ const maintenanceTypes: { value: MaintenanceType; label: string }[] = [
   { value: "winterize", label: "Winterize" },
   { value: "blade_sharpening", label: "Blade Sharpening" },
   { value: "blade_replacement", label: "Blade Replacement" },
-  { value: "belt_replacement", label: "Belt Replacement" },
   { value: "other", label: "Other" },
 ];
 
 interface MaintenanceFormProps {
   vehicleId: string;
   vehicleType?: VehicleType;
+  powertrain?: Powertrain;
   initialType?: MaintenanceType;
   initialData?: MaintenanceLog;
 }
 
-export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialData }: MaintenanceFormProps) {
+export function MaintenanceForm({
+  vehicleId,
+  vehicleType,
+  powertrain,
+  initialType,
+  initialData,
+}: MaintenanceFormProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -63,6 +71,13 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const requiresMileage = tracksMileage(vehicleType ?? "auto");
+  const vehicleMeta = { type: vehicleType ?? "auto", powertrain };
+  const availableTypes = maintenanceTypes.filter(
+    (mt) =>
+      mt.value === "other" ||
+      mt.value === initialData?.maintenanceType ||
+      isMaintenanceTypeApplicable(vehicleMeta, mt.value),
+  );
 
   const [maintenanceType, setMaintenanceType] =
     useState<MaintenanceType>(initialData?.maintenanceType ?? initialType ?? "oil_change");
@@ -179,7 +194,7 @@ export function MaintenanceForm({ vehicleId, vehicleType, initialType, initialDa
             }
             className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           >
-            {maintenanceTypes.map((mt) => (
+            {availableTypes.map((mt) => (
               <option key={mt.value} value={mt.value}>
                 {mt.label}
               </option>

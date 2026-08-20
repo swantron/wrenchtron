@@ -5,9 +5,11 @@ import { MaintenanceLog, MaintenanceDetails, MaintenanceType } from "../types/ma
 const INAPPLICABLE_BY_TYPE: Partial<Record<VehicleType, MaintenanceType[]>> = {
     mower:      ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
     snowblower: ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "brake_pads", "brake_rotors"],
-    atv:        ["tire_rotation", "cabin_filter"],
-    utv:        ["tire_rotation", "cabin_filter"],
-    boat:       ["tire_rotation", "tire_replacement", "cabin_filter", "alignment"],
+    atv:        ["tire_rotation", "cabin_filter", "blade_sharpening", "blade_replacement"],
+    utv:        ["tire_rotation", "cabin_filter", "blade_sharpening", "blade_replacement"],
+    boat:       ["tire_rotation", "tire_replacement", "cabin_filter", "alignment", "blade_sharpening", "blade_replacement"],
+    auto:       ["blade_sharpening", "blade_replacement"],
+    motorcycle: ["blade_sharpening", "blade_replacement", "cabin_filter", "wiper_blades"],
 };
 
 // ICE-specific maintenance that electric vehicles don't need.
@@ -15,10 +17,17 @@ const ELECTRIC_INAPPLICABLE: MaintenanceType[] = [
     "oil_change", "spark_plugs", "air_filter", "transmission_fluid", "coolant_flush",
 ];
 
-function getInapplicableTypes(vehicle: { type: VehicleType; powertrain?: string }): MaintenanceType[] {
+export function getInapplicableTypes(vehicle: { type: VehicleType; powertrain?: string }): MaintenanceType[] {
     const base = INAPPLICABLE_BY_TYPE[vehicle.type] ?? [];
     const electric = vehicle.powertrain === "electric" ? ELECTRIC_INAPPLICABLE : [];
     return [...new Set([...base, ...electric])];
+}
+
+export function isMaintenanceTypeApplicable(
+    vehicle: { type: VehicleType; powertrain?: string },
+    type: MaintenanceType,
+): boolean {
+    return !getInapplicableTypes(vehicle).includes(type);
 }
 
 function isIntervalInapplicable(

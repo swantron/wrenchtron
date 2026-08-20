@@ -11,7 +11,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useVehicles } from "@/hooks/useVehicles";
 import { getVehicle } from "@/lib/firebase/firestore";
-import type { VehicleType } from "@/types/firestore";
+import type { VehicleType, Powertrain } from "@/types/firestore";
 import type { MaintenanceType } from "@/types/maintenance";
 
 function NewMaintenanceContent() {
@@ -20,12 +20,16 @@ function NewMaintenanceContent() {
   const { vehicles, loading: vehiclesLoading } = useVehicles();
   const vehicleId = searchParams.get("vehicleId");
   const typeParam = searchParams.get("type") as MaintenanceType | null;
-  const [vehicle, setVehicle] = useState<{ name: string; type: VehicleType } | null>(null);
+  const [vehicle, setVehicle] = useState<{
+    name: string;
+    type: VehicleType;
+    powertrain?: Powertrain;
+  } | null>(null);
 
   useEffect(() => {
     if (!user || !vehicleId) return;
     getVehicle(user.uid, vehicleId).then((v) => {
-      if (v) setVehicle({ name: v.name, type: v.type });
+      if (v) setVehicle({ name: v.name, type: v.type, powertrain: v.powertrain });
     });
   }, [user, vehicleId]);
 
@@ -85,6 +89,7 @@ function NewMaintenanceContent() {
         <MaintenanceForm
           vehicleId={vehicleId}
           vehicleType={vehicle?.type}
+          powertrain={vehicle?.powertrain}
           initialType={typeParam ?? undefined}
         />
       </div>

@@ -9,6 +9,7 @@ import { getMaintenanceLog, getVehicle } from "@/lib/firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { MaintenanceLog } from "@/types/maintenance";
+import type { Powertrain, VehicleType } from "@/types/firestore";
 
 function EditMaintenanceContent() {
     const { user } = useAuth();
@@ -19,6 +20,8 @@ function EditMaintenanceContent() {
 
     const [log, setLog] = useState<MaintenanceLog | null>(null);
     const [vehicleName, setVehicleName] = useState<string | null>(null);
+    const [vehicleType, setVehicleType] = useState<VehicleType | undefined>();
+    const [powertrain, setPowertrain] = useState<Powertrain | undefined>();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -35,7 +38,11 @@ function EditMaintenanceContent() {
                 } else {
                     router.push(`/vehicles/detail?id=${vehicleId}`);
                 }
-                if (vehicle) setVehicleName(vehicle.name);
+                if (vehicle) {
+                    setVehicleName(vehicle.name);
+                    setVehicleType(vehicle.type);
+                    setPowertrain(vehicle.powertrain);
+                }
             } catch (err) {
                 console.error("Failed to fetch log:", err);
             } finally {
@@ -70,6 +77,8 @@ function EditMaintenanceContent() {
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
                 <MaintenanceForm
                     vehicleId={vehicleId}
+                    vehicleType={vehicleType}
+                    powertrain={powertrain}
                     initialData={log}
                 />
             </div>
