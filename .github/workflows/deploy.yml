@@ -51,6 +51,16 @@ jobs:
           projectId: wrenchtron-db057
           channelId: live
 
+      # action-hosting-deploy only touches Hosting.. Firestore/Storage rules need
+      # their own deploy, same service account.
+      - name: Deploy Firestore + Storage rules
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          npx firebase-tools deploy --only firestore:rules,storage --project wrenchtron-db057
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
   # Post-deploy gate: drive synthetic golden-signal traffic at the live URL and
   # confirm the telemetry landed in the watchtron control plane (black-box —
   # availability, p95 and route coverage). No-ops if the secrets aren't set yet.
