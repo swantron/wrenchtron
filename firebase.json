@@ -9,6 +9,7 @@
     "rules": "firestore.rules"
   },
   "storage": {
+    "bucket": "wrenchtron-db057.firebasestorage.app",
     "rules": "storage.rules"
   }
 }
