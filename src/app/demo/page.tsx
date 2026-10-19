@@ -307,6 +307,12 @@ function DemoContent() {
                   Demo Fleet
                 </p>
               </div>
+              <Link
+                href="/demo/fleet"
+                className="text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              >
+                Running a delivery fleet? See the fleet demo →
+              </Link>
             </div>
 
             {/* Tabs */}

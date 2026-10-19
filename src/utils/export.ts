@@ -9,7 +9,7 @@ import type {
 } from "@/types/maintenance";
 import { MAX_DISPLAY_MILEAGE } from "@/utils/vehicleUtils";
 
-const TYPE_LABELS: Record<MaintenanceType, string> = {
+export const TYPE_LABELS: Record<MaintenanceType, string> = {
   oil_change: "Oil Change",
   tire_rotation: "Tire Rotation",
   tire_replacement: "Tire Replacement",
