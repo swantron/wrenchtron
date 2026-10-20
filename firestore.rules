@@ -25,6 +25,143 @@ service cloud.firestore {
           allow read, write: if request.auth != null && request.auth.uid == userId;
         }
       }
+
+      // Pointers to the fleets this user belongs to. Created alongside the
+      // member doc (fleet creation or invite acceptance), so it can't point at
+      // a fleet the user isn't actually in.
+      match /fleetMemberships/{fleetId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null
+                      && request.auth.uid == userId
+                      && existsAfter(/databases/$(database)/documents/fleets/$(fleetId)/members/$(userId))
+                      && request.resource.data.role
+                           == getAfter(/databases/$(database)/documents/fleets/$(fleetId)/members/$(userId)).data.role;
+      }
+    }
+
+    // ---- Fleets (see FLEET.md) ----
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function memberPath(fleetId) {
+      return /databases/$(database)/documents/fleets/$(fleetId)/members/$(request.auth.uid);
+    }
+
+    function isMember(fleetId) {
+      return signedIn() && exists(memberPath(fleetId));
+    }
+
+    function myRole(fleetId) {
+      return get(memberPath(fleetId)).data.role;
+    }
+
+    function isOwner(fleetId) {
+      return isMember(fleetId) && myRole(fleetId) == 'owner';
+    }
+
+    function isManager(fleetId) {
+      return isMember(fleetId) && myRole(fleetId) in ['owner', 'manager'];
+    }
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /fleets/{fleetId} {
+      allow read: if isMember(fleetId);
+
+      // Created in one batch with the owner's member doc. `plan` is billing
+      // state and is only ever set by an admin from the console.
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && !('plan' in request.resource.data)
+                    && getAfter(memberPath(fleetId)).data.role == 'owner';
+
+      allow update: if isManager(fleetId) && changedOnly(['name', 'sites', 'updatedAt']);
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if isMember(fleetId);
+
+        // Two ways in: the owner bootstrapping a brand-new fleet, or accepting
+        // an invite addressed to your verified email (which is consumed in the
+        // same batch).
+        allow create: if signedIn() && uid == request.auth.uid && (
+          (
+            request.resource.data.role == 'owner'
+            && !exists(/databases/$(database)/documents/fleets/$(fleetId))
+            && getAfter(/databases/$(database)/documents/fleets/$(fleetId)).data.ownerUid == request.auth.uid
+          ) || (
+            request.auth.token.email_verified == true
+            && exists(/databases/$(database)/documents/fleets/$(fleetId)/invites/$(myEmail()))
+            && request.resource.data.role
+                 == get(/databases/$(database)/documents/fleets/$(fleetId)/invites/$(myEmail())).data.role
+            && !existsAfter(/databases/$(database)/documents/fleets/$(fleetId)/invites/$(myEmail()))
+          )
+        );
+
+        // Only the owner changes roles, and nobody becomes or stops being owner here.
+        allow update: if isOwner(fleetId)
+                      && resource.data.role != 'owner'
+                      && request.resource.data.role in ['manager', 'tech']
+                      && request.resource.data.uid == resource.data.uid;
+
+        // Owner removes anyone but themself; managers remove techs; anyone but
+        // the owner can leave.
+        allow delete: if resource.data.role != 'owner' && (
+          isOwner(fleetId)
+          || (isManager(fleetId) && resource.data.role == 'tech')
+          || uid == request.auth.uid
+        );
+      }
+
+      match /invites/{email} {
+        allow read: if isManager(fleetId) || (signedIn() && email == myEmail());
+        allow create: if isManager(fleetId)
+                      && email == email.lower()
+                      && request.resource.data.email == email
+                      && (request.resource.data.role == 'tech'
+                          || (request.resource.data.role == 'manager' && isOwner(fleetId)));
+        allow update: if false;
+        allow delete: if isManager(fleetId) || (signedIn() && email == myEmail());
+      }
+
+      match /schedules/{scheduleId} {
+        allow read: if isMember(fleetId);
+        allow write: if isManager(fleetId);
+      }
+
+      match /vehicles/{vehicleId} {
+        allow read: if isMember(fleetId);
+        allow create, delete: if isManager(fleetId);
+        // Techs can record what they saw (odometer, van status) and keep the
+        // per-type service summary in step with the logs they write.
+        allow update: if isManager(fleetId)
+                      || (isMember(fleetId)
+                          && changedOnly(['currentMileage', 'status', 'statusNote', 'serviceSummary', 'updatedAt']));
+
+        match /maintenanceLogs/{logId} {
+          allow read: if isMember(fleetId);
+          allow create: if isMember(fleetId)
+                        && request.resource.data.loggedBy.uid == request.auth.uid
+                        && request.resource.data.createdAt == request.time;
+          // Authors can fix their own entry for a day; after that it's the record.
+          allow update: if isManager(fleetId) || (
+            isMember(fleetId)
+            && resource.data.loggedBy.uid == request.auth.uid
+            && request.time < resource.data.createdAt + duration.value(24, 'h')
+            && request.resource.data.loggedBy == resource.data.loggedBy
+            && request.resource.data.createdAt == resource.data.createdAt
+          );
+          allow delete: if isManager(fleetId);
+        }
+      }
     }
   }
 }
