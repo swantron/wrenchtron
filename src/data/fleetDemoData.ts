@@ -74,7 +74,7 @@ interface ModelSpec {
 const MODELS: ModelSpec[] = [
   {
     make: "Ford",
-    model: "Transit 250 High Roof",
+    model: "Transit 250",
     powertrain: "gas",
     tireSize: "235/65R16C",
     oilBrand: "Motorcraft",
@@ -85,7 +85,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     make: "Ram",
-    model: "ProMaster 2500 High Roof",
+    model: "ProMaster 2500",
     powertrain: "gas",
     tireSize: "225/75R16C",
     oilBrand: "Mopar",
@@ -300,12 +300,12 @@ function generateVan(site: SiteSpec, index: number, now: Date): FleetVan {
   });
 
   // Mileage-driven services walk backward from the most recent one
-  const rotation = (date: Date, note?: string) => {
+  const rotation = (date: Date, withOil = false) => {
     const tread = `${pick(rng, [6, 7, 7, 8, 9])}/32`;
     addLog("tire_rotation", date, (m) => ({
-      cost: note ? 0 : cents(rng, 30, 45),
+      // Free when done alongside an oil change
+      cost: withOil ? 0 : cents(rng, 30, 45),
       details: { treadDepth: tread },
-      notes: note,
       photos: [
         odometer(m),
         { id: "", kind: "tire", caption: "Tread depth, LF", tireSize: spec.tireSize, treadDepth: tread },
@@ -339,7 +339,7 @@ function generateVan(site: SiteSpec, index: number, now: Date): FleetVan {
               : [invoice(shop, cost, date, [`Oil & filter — ${spec.oilWeight} synthetic`, "Multi-point check"])]),
           ],
         }));
-        rotation(date, "Rotated with oil service.");
+        rotation(date, true);
       } else {
         rotation(date);
       }

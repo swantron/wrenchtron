@@ -128,12 +128,16 @@ const RENDERERS: Record<PhotoKind, (props: { photo: FleetPhoto }) => React.JSX.E
 export function ServicePhoto({
   photo,
   takenAt,
+  showCaption = false,
   className = "",
 }: {
   photo: FleetPhoto;
   takenAt: Date;
+  showCaption?: boolean;
   className?: string;
 }) {
+  const fxId = useId();
+
   if (photo.src) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={photo.src} alt={photo.caption} className={`h-full w-full object-cover ${className}`} />;
@@ -142,14 +146,29 @@ export function ServicePhoto({
   const Renderer = RENDERERS[photo.kind];
   return (
     <svg viewBox="0 0 320 240" role="img" aria-label={photo.caption} className={`h-full w-full ${className}`}>
-      <Renderer photo={photo} />
-      <rect x="0" y="214" width="320" height="26" fill="#000" opacity="0.45" />
-      <text x="10" y="231" fontFamily="ui-monospace, monospace" fontSize="10" fill="#fde68a">
+      <defs>
+        <radialGradient id={`${fxId}-v`} cx="50%" cy="45%" r="75%">
+          <stop offset="60%" stopColor="#000" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.45" />
+        </radialGradient>
+        <filter id={`${fxId}-g`}>
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
+          <feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.18 0" />
+        </filter>
+      </defs>
+      <g transform="rotate(-1.2 160 120) scale(1.03) translate(-5 -4)">
+        <Renderer photo={photo} />
+      </g>
+      <rect width="320" height="240" fill={`url(#${fxId}-v)`} />
+      <rect width="320" height="240" filter={`url(#${fxId}-g)`} />
+      <text x="308" y="230" textAnchor="end" fontFamily="ui-monospace, monospace" fontSize="11" fill="#fbbf24" opacity="0.9">
         {stamp(takenAt)}
       </text>
-      <text x="310" y="231" textAnchor="end" fontFamily="system-ui" fontSize="10" fill="#fff">
-        {photo.caption}
-      </text>
+      {showCaption && (
+        <text x="12" y="230" fontFamily="system-ui" fontSize="11" fill="#fff">
+          {photo.caption}
+        </text>
+      )}
     </svg>
   );
 }

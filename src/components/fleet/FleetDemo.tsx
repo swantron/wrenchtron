@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
-import { AppShell } from "@/components/layout/AppShell";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ServicePhoto } from "@/components/fleet/ServicePhoto";
 import {
   generateFleet,
@@ -16,18 +17,37 @@ import {
   type VanStatus,
 } from "@/data/fleetDemoData";
 import { calculateActionItems, type ActionItem } from "@/utils/maintenance";
-import { formatRelativeTime } from "@/utils/vehicleUtils";
 import { formatCost } from "@/utils/format";
 import { TYPE_LABELS } from "@/utils/export";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const CONTACT_HREF = "mailto:joe@swantron.com?subject=Wrenchtron%20for%20our%20fleet";
+
+// ---- Derived data ----
+
+/** One trip to the shop: every service logged for a van on the same day at the same place. */
+interface Visit {
+  id: string;
+  date: Date;
+  mileage: number;
+  shop: string;
+  tech: string;
+  location: FleetLocation;
+  logs: FleetLog[];
+  photos: FleetPhoto[];
+  cost: number;
+  notes: string[];
+}
 
 interface VanSummary {
   van: FleetVan;
   items: ActionItem[];
-  worst: ActionItem["status"] | null;
+  next: ActionItem | undefined;
+  /** Days until the most urgent item is due (negative = overdue). */
+  urgency: number;
+  visits: Visit[];
   photoCount: number;
 }
 
@@ -43,8 +63,8 @@ function toVehicle(van: FleetVan, now: Date): Vehicle {
     currentMileage: van.currentMileage,
     estimatedAnnualMileage: van.estimatedAnnualMileage,
     isActive: true,
-    // Odometer was just synced, so no projection on top of it
     createdAt: Timestamp.fromDate(van.addedAt),
+    // Odometer was just synced, so no projection on top of it
     updatedAt: Timestamp.fromDate(now),
     serviceIntervals: van.serviceIntervals,
   };
@@ -66,14 +86,90 @@ function toLogs(van: FleetVan): MaintenanceLog[] {
   }));
 }
 
+function groupVisits(van: FleetVan): Visit[] {
+  const visits: Visit[] = [];
+  for (const log of van.logs) {
+    const prev = visits[visits.length - 1];
+    if (prev && prev.date.toDateString() === log.date.toDateString() && prev.shop === log.shop) {
+      prev.logs.push(log);
+      prev.cost += log.cost;
+      if (log.notes) prev.notes.push(log.notes);
+      // One odometer shot per visit is enough
+      prev.photos.push(...log.photos.filter((p) => p.kind !== "odometer"));
+      continue;
+    }
+    visits.push({
+      id: log.id,
+      date: log.date,
+      mileage: log.mileage,
+      shop: log.shop,
+      tech: log.tech,
+      location: log.location,
+      logs: [log],
+      photos: [...log.photos],
+      cost: log.cost,
+      notes: log.notes ? [log.notes] : [],
+    });
+  }
+  return visits;
+}
+
+function daysUntil(item: ActionItem, dailyMiles: number): number {
+  const byMiles = item.remainingMiles !== undefined ? item.remainingMiles / dailyMiles : Infinity;
+  const byDays = item.remainingDays ?? Infinity;
+  return Math.min(byMiles, byDays);
+}
+
 function summarize(van: FleetVan, now: Date): VanSummary {
-  const items = calculateActionItems(toVehicle(van, now), toLogs(van));
+  const daily = van.estimatedAnnualMileage / 365;
+  const items = calculateActionItems(toVehicle(van, now), toLogs(van)).sort(
+    (a, b) => daysUntil(a, daily) - daysUntil(b, daily)
+  );
+  const visits = groupVisits(van);
   return {
     van,
     items,
-    worst: items[0]?.status ?? null,
-    photoCount: van.logs.reduce((n, l) => n + l.photos.length, 0),
+    next: items[0],
+    urgency: items[0] ? daysUntil(items[0], daily) : Infinity,
+    visits,
+    photoCount: visits.reduce((n, v) => n + v.photos.length, 0),
   };
+}
+
+// ---- Formatting ----
+
+function sentenceCase(name: string): string {
+  return name.charAt(0) + name.slice(1).toLowerCase();
+}
+
+function plural(n: number, unit: string): string {
+  return `${n.toLocaleString()} ${unit}${n === 1 ? "" : "s"}`;
+}
+
+/** Compact due label using whichever limit (miles or days) comes first. */
+function dueLabel(item: ActionItem, dailyMiles: number): string {
+  const byMiles = item.remainingMiles !== undefined ? item.remainingMiles / dailyMiles : Infinity;
+  const byDays = item.remainingDays ?? Infinity;
+  const useMiles = byMiles <= byDays;
+  const value = useMiles ? item.remainingMiles! : item.remainingDays!;
+  const amount = useMiles ? `${Math.abs(value).toLocaleString()} mi` : plural(Math.abs(value), "day");
+  return value < 0 ? `${amount} overdue` : `in ${amount}`;
+}
+
+function shortDate(date: Date, withYear = false): string {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(withYear && { year: "numeric" }) });
+}
+
+function ago(date: Date, now: Date): string {
+  const days = Math.floor((now.getTime() - date.getTime()) / DAY_MS);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  return shortDate(date);
+}
+
+function visitTitle(visit: Visit): string {
+  return visit.logs.map((l) => TYPE_LABELS[l.maintenanceType]).join(" + ");
 }
 
 // The fleet is anchored to the viewer's clock, so render client-only to avoid hydration drift
@@ -82,47 +178,38 @@ function useIsClient() {
   return useSyncExternalStore(noopSubscribe, () => true, () => false);
 }
 
+// ---- Small pieces ----
+
+const DOT: Record<ActionItem["status"], string> = {
+  overdue: "bg-red-500",
+  due_soon: "bg-amber-400",
+  upcoming: "bg-stone-300 dark:bg-stone-600",
+};
+
 const VAN_STATUS: Record<VanStatus, { label: string; className: string }> = {
-  in_service: {
-    label: "In service",
-    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  },
-  at_shop: {
-    label: "At shop",
-    className: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  },
-  down: {
-    label: "Down",
-    className: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  },
+  in_service: { label: "In service", className: "text-stone-500 dark:text-stone-400" },
+  at_shop: { label: "At shop", className: "text-amber-700 dark:text-amber-400 font-medium" },
+  down: { label: "Down", className: "text-red-600 dark:text-red-400 font-medium" },
 };
 
-const DUE_TEXT: Record<ActionItem["status"], string> = {
-  overdue: "text-red-600 dark:text-red-400",
-  due_soon: "text-amber-600 dark:text-amber-400",
-  upcoming: "text-gray-500 dark:text-gray-400",
-};
-
-function StatusBadge({ status }: { status: VanStatus }) {
-  const s = VAN_STATUS[status];
+function DueCell({ summary }: { summary: VanSummary }) {
+  const { next, van } = summary;
+  if (!next) return <span className="text-stone-400">—</span>;
+  const daily = van.estimatedAnnualMileage / 365;
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${s.className}`}>{s.label}</span>
-  );
-}
-
-function StatTile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
-      <p className="mt-2 text-3xl font-black tabular-nums text-gray-900 dark:text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">{sub}</p>}
-    </div>
+    <span className="inline-flex items-center gap-2">
+      <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[next.status]}`} />
+      <span className="text-stone-900 dark:text-stone-100">{sentenceCase(next.serviceName)}</span>
+      <span className={next.status === "overdue" ? "text-red-600 dark:text-red-400" : "text-stone-500 dark:text-stone-400"}>
+        {dueLabel(next, daily)}
+      </span>
+    </span>
   );
 }
 
 interface LightboxState {
   photo: FleetPhoto;
-  log: FleetLog;
+  visit: Visit;
   unit: string;
 }
 
@@ -135,248 +222,234 @@ function Lightbox({ state, onClose }: { state: LightboxState; onClose: () => voi
     return () => document.removeEventListener("keydown", handle);
   }, [onClose]);
 
-  const { photo, log, unit } = state;
+  const { photo, visit, unit } = state;
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={photo.caption}
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
-        <div className="aspect-[4/3] bg-black">
-          <ServicePhoto photo={photo} takenAt={log.date} />
+      <figure className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="aspect-[4/3] overflow-hidden rounded-md bg-black">
+          <ServicePhoto photo={photo} takenAt={visit.date} showCaption />
         </div>
-        <div className="flex items-start justify-between gap-4 p-5">
-          <div>
-            <p className="text-lg font-black text-gray-900 dark:text-white">{photo.caption}</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {unit} · {TYPE_LABELS[log.maintenanceType]} · {log.date.toLocaleDateString()} ·{" "}
-              {log.mileage.toLocaleString()} mi
-            </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Logged by <span className="font-semibold text-gray-700 dark:text-gray-300">{log.tech}</span> · {log.shop}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
+        <figcaption className="mt-3 flex items-start justify-between gap-4 text-sm text-stone-300">
+          <span>
+            <span className="font-medium text-white">{unit}</span> · {visitTitle(visit)} · {shortDate(visit.date, true)} ·{" "}
+            {visit.mileage.toLocaleString()} mi
+            <br />
+            Logged by {visit.tech} · {visit.shop}
+          </span>
+          <button onClick={onClose} className="shrink-0 text-stone-400 underline-offset-4 hover:text-white hover:underline">
             Close
           </button>
-        </div>
-      </div>
+        </figcaption>
+      </figure>
     </div>
   );
 }
 
-function PhotoStrip({
-  log,
+function Thumbs({
+  visit,
   unit,
   onOpen,
-  max,
+  size = "sm",
 }: {
-  log: FleetLog;
+  visit: Visit;
   unit: string;
   onOpen: (s: LightboxState) => void;
-  max?: number;
+  size?: "sm" | "md";
 }) {
-  const photos = max ? log.photos.slice(0, max) : log.photos;
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-      {photos.map((photo) => (
+    <div className="flex flex-wrap gap-1.5">
+      {visit.photos.map((photo) => (
         <button
           key={photo.id}
-          onClick={() => onOpen({ photo, log, unit })}
-          className="aspect-[4/3] overflow-hidden rounded-lg ring-1 ring-gray-200 transition hover:ring-2 hover:ring-blue-500 dark:ring-gray-700"
+          onClick={() => onOpen({ photo, visit, unit })}
+          className={`${size === "md" ? "w-32 sm:w-36" : "w-16"} aspect-[4/3] overflow-hidden rounded-[3px] outline-offset-2 hover:outline hover:outline-2 hover:outline-stone-900 dark:hover:outline-stone-100`}
           aria-label={`View photo: ${photo.caption}`}
+          title={photo.caption}
         >
-          <ServicePhoto photo={photo} takenAt={log.date} />
+          <ServicePhoto photo={photo} takenAt={visit.date} />
         </button>
       ))}
     </div>
   );
 }
 
-function ProofFeed({
+// ---- Views ----
+
+function FleetHeader() {
+  return (
+    <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="flex items-baseline gap-3">
+          <Link href="/" className="font-semibold tracking-tight text-stone-900 dark:text-white">
+            Wrenchtron
+          </Link>
+          <span className="text-sm text-stone-500 dark:text-stone-400">Fleet demo</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <a href={CONTACT_HREF} className="text-sm font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white">
+            Get in touch
+          </a>
+          <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-900 dark:hover:text-white" />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function RecentWork({
   summaries,
+  now,
   onOpen,
   onSelect,
 }: {
   summaries: VanSummary[];
+  now: Date;
   onOpen: (s: LightboxState) => void;
   onSelect: (id: string) => void;
 }) {
   const recent = summaries
-    .flatMap((s) => s.van.logs.map((log) => ({ log, van: s.van })))
-    .sort((a, b) => b.log.date.getTime() - a.log.date.getTime())
+    .flatMap((s) => s.visits.map((visit) => ({ visit, van: s.van })))
+    .sort((a, b) => b.visit.date.getTime() - a.visit.date.getTime())
     .slice(0, 8);
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <h2 className="text-lg font-black text-gray-900 dark:text-white">Proof feed</h2>
-      <p className="text-sm text-gray-500 dark:text-gray-400">Latest work across every location, with photos.</p>
-      <div className="mt-4 space-y-5">
-        {recent.map(({ log, van }) => (
-          <div key={log.id}>
-            <div className="mb-2 flex items-baseline justify-between gap-2">
-              <button onClick={() => onSelect(van.id)} className="text-left text-sm font-bold text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
-                {van.unit} · {TYPE_LABELS[log.maintenanceType]}
+    <section>
+      <h2 className="text-sm font-semibold text-stone-900 dark:text-white">Recent work</h2>
+      <p className="text-sm text-stone-500 dark:text-stone-400">Photos come in with every job, from every site.</p>
+      <ol className="mt-4 divide-y divide-stone-200 dark:divide-stone-800">
+        {recent.map(({ visit, van }) => (
+          <li key={`${van.id}-${visit.id}`} className="py-3">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <button
+                onClick={() => onSelect(van.id)}
+                className="text-left font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white"
+              >
+                {van.unit}
               </button>
-              <span className="shrink-0 text-xs text-gray-400">{formatRelativeTime(log.date)}</span>
+              <span className="shrink-0 tabular-nums text-stone-400">{ago(visit.date, now)}</span>
             </div>
-            <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-              {van.location} · {log.tech} · {log.photos.length} photos
+            <p className="mb-2 text-sm text-stone-600 dark:text-stone-400">
+              {visitTitle(visit)} · {visit.tech}, {visit.location}
             </p>
-            <PhotoStrip log={log} unit={van.unit} onOpen={onOpen} max={3} />
-          </div>
+            <Thumbs visit={visit} unit={van.unit} onOpen={onOpen} />
+          </li>
         ))}
-      </div>
+      </ol>
     </section>
   );
 }
 
+type SortKey = "unit" | "due";
+
 function FleetTable({
   summaries,
+  sort,
+  onSort,
   onSelect,
+  now,
 }: {
   summaries: VanSummary[];
+  sort: SortKey;
+  onSort: (s: SortKey) => void;
   onSelect: (id: string) => void;
+  now: Date;
 }) {
   if (summaries.length === 0) {
-    return <p className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">No vans match.</p>;
+    return <p className="py-10 text-center text-sm text-stone-500">No vans match.</p>;
   }
 
-  return (
-    <div className="divide-y divide-gray-100 dark:divide-gray-800">
-      <div className="hidden grid-cols-[1.4fr_0.8fr_0.8fr_1.6fr_0.8fr] gap-4 px-4 pb-2 text-xs font-bold uppercase tracking-widest text-gray-400 md:grid">
-        <span>Van</span>
-        <span>Status</span>
-        <span className="text-right">Odometer</span>
-        <span>Next due</span>
-        <span className="text-right">Last service</span>
-      </div>
-      {summaries.map(({ van, items, photoCount }) => {
-        const next = items[0];
-        const last = van.logs[0];
-        return (
-          <button
-            key={van.id}
-            onClick={() => onSelect(van.id)}
-            className="grid w-full grid-cols-2 gap-x-4 gap-y-1 px-4 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800/60 md:grid-cols-[1.4fr_0.8fr_0.8fr_1.6fr_0.8fr] md:items-center"
-          >
-            <span>
-              <span className="block font-bold text-gray-900 dark:text-white">{van.unit}</span>
-              <span className="block text-xs text-gray-500 dark:text-gray-400">
-                {van.location} · {van.make} {van.model}
-              </span>
-            </span>
-            <span className="justify-self-end md:justify-self-start">
-              <StatusBadge status={van.status} />
-            </span>
-            <span className="text-sm tabular-nums text-gray-700 dark:text-gray-300 md:text-right">
-              {van.currentMileage.toLocaleString()} mi
-            </span>
-            <span className={`col-span-2 text-sm md:col-span-1 ${next ? DUE_TEXT[next.status] : "text-gray-400"}`}>
-              {next ? (
-                <>
-                  <span className="font-semibold">{next.serviceName}</span> — {next.reason}
-                </>
-              ) : (
-                "Nothing scheduled"
-              )}
-            </span>
-            <span className="col-span-2 text-xs text-gray-500 dark:text-gray-400 md:col-span-1 md:text-right">
-              {last ? `${formatRelativeTime(last.date)} · ${photoCount} photos` : "—"}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+  const sortButton = (key: SortKey, label: string) => (
+    <button
+      onClick={() => onSort(key)}
+      className={`font-medium hover:text-stone-900 dark:hover:text-white ${sort === key ? "text-stone-900 dark:text-white" : ""}`}
+    >
+      {label}
+      {sort === key && " ↓"}
+    </button>
   );
-}
-
-function VanDetail({
-  summary,
-  onBack,
-  onOpen,
-}: {
-  summary: VanSummary;
-  onBack: () => void;
-  onOpen: (s: LightboxState) => void;
-}) {
-  const { van, items } = summary;
-  const totalCost = van.logs.reduce((n, l) => n + l.cost, 0);
 
   return (
-    <div>
-      <button onClick={onBack} className="mb-6 text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">
-        ← Back to fleet
-      </button>
+    <>
+      {/* Desktop table */}
+      <table className="hidden w-full whitespace-nowrap text-sm md:table">
+        <thead>
+          <tr className="border-b border-stone-200 text-left text-xs text-stone-500 dark:border-stone-800 dark:text-stone-400">
+            <th className="py-2 pr-4 font-medium">{sortButton("unit", "Unit")}</th>
+            <th className="py-2 pr-4 font-medium">Vehicle</th>
+            <th className="py-2 pr-4 font-medium">Site</th>
+            <th className="py-2 pr-4 text-right font-medium">Odometer</th>
+            <th className="py-2 pr-4 font-medium">{sortButton("due", "Next due")}</th>
+            <th className="py-2 pr-4 font-medium">Status</th>
+            <th className="py-2 text-right font-medium">Last service</th>
+          </tr>
+        </thead>
+        <tbody>
+          {summaries.map((s) => {
+            const { van } = s;
+            const status = VAN_STATUS[van.status];
+            return (
+              <tr
+                key={van.id}
+                onClick={() => onSelect(van.id)}
+                className="cursor-pointer border-b border-stone-100 hover:bg-stone-100/70 dark:border-stone-900 dark:hover:bg-stone-900"
+              >
+                <td className="py-2.5 pr-4 font-medium tabular-nums text-stone-900 dark:text-white">
+                  <button onClick={() => onSelect(van.id)} className="hover:underline">
+                    {van.unit}
+                  </button>
+                </td>
+                <td className="py-2.5 pr-4 text-stone-600 dark:text-stone-400">
+                  {van.make} {van.model}
+                </td>
+                <td className="py-2.5 pr-4 text-stone-600 dark:text-stone-400">{van.location}</td>
+                <td className="py-2.5 pr-4 text-right tabular-nums text-stone-600 dark:text-stone-400">
+                  {van.currentMileage.toLocaleString()}
+                </td>
+                <td className="py-2.5 pr-4">
+                  <DueCell summary={s} />
+                </td>
+                <td className={`py-2.5 pr-4 ${status.className}`} title={van.statusNote}>
+                  {status.label}
+                </td>
+                <td className="py-2.5 text-right tabular-nums text-stone-500 dark:text-stone-400">
+                  {van.logs[0] ? ago(van.logs[0].date, now) : "—"}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">{van.unit}</h1>
-            <StatusBadge status={van.status} />
-          </div>
-          <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-            {van.year} {van.make} {van.model} · {van.plate} · {van.location}
-          </p>
-          {van.statusNote && <p className="mt-1 text-sm font-semibold text-amber-600 dark:text-amber-400">{van.statusNote}</p>}
-        </div>
-        <div className="flex gap-6 text-right">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Odometer</p>
-            <p className="text-xl font-black tabular-nums text-gray-900 dark:text-white">{van.currentMileage.toLocaleString()} mi</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Spend on record</p>
-            <p className="text-xl font-black tabular-nums text-gray-900 dark:text-white">{formatCost(totalCost)}</p>
-          </div>
-        </div>
-      </div>
-
-      <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="text-lg font-black text-gray-900 dark:text-white">Service schedule</h2>
-        <ul className="mt-3 divide-y divide-gray-100 dark:divide-gray-800">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-baseline justify-between gap-4 py-2 text-sm">
-              <span className="font-semibold text-gray-900 dark:text-white">{item.serviceName}</span>
-              <span className={DUE_TEXT[item.status]}>{item.reason}</span>
+      {/* Mobile list */}
+      <ul className="divide-y divide-stone-200 dark:divide-stone-800 md:hidden">
+        {summaries.map((s) => {
+          const { van } = s;
+          const status = VAN_STATUS[van.status];
+          return (
+            <li key={van.id}>
+              <button onClick={() => onSelect(van.id)} className="w-full py-3 text-left text-sm">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="font-medium text-stone-900 dark:text-white">{van.unit}</span>
+                  <span className={status.className}>{status.label}</span>
+                </span>
+                <span className="mt-0.5 block text-stone-500 dark:text-stone-400">
+                  {van.model} · {van.location} · {van.currentMileage.toLocaleString()} mi
+                </span>
+                <span className="mt-1 block">
+                  <DueCell summary={s} />
+                </span>
+              </button>
             </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-lg font-black text-gray-900 dark:text-white">Service history</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Every entry carries its own proof: odometer, parts installed, and the invoice.
-        </p>
-        <div className="mt-4 space-y-4">
-          {van.logs.map((log) => (
-            <article key={log.id} className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">{TYPE_LABELS[log.maintenanceType]}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {log.date.toLocaleDateString()} · {log.mileage.toLocaleString()} mi · {log.shop}
-                  </p>
-                  <p className="text-xs text-gray-400">Logged by {log.tech}</p>
-                </div>
-                <p className="text-lg font-black tabular-nums text-gray-900 dark:text-white">{formatCost(log.cost)}</p>
-              </div>
-              {log.notes && <p className="mt-2 text-sm italic text-gray-600 dark:text-gray-400">&ldquo;{log.notes}&rdquo;</p>}
-              <div className="mt-4">
-                <PhotoStrip log={log} unit={van.unit} onOpen={onOpen} />
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 
@@ -397,95 +470,218 @@ function FleetOverview({
 }) {
   const [query, setQuery] = useState("");
   const [attentionOnly, setAttentionOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>("unit");
 
   const scoped = location ? summaries.filter((s) => s.van.location === location) : summaries;
+  const needsAttention = (s: VanSummary) =>
+    s.van.status !== "in_service" || s.next?.status === "overdue" || s.next?.status === "due_soon";
   const q = query.trim().toLowerCase();
   const visible = scoped
-    .filter((s) => !attentionOnly || s.van.status !== "in_service" || s.worst === "overdue" || s.worst === "due_soon")
-    .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q));
+    .filter((s) => !attentionOnly || needsAttention(s))
+    .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q))
+    .sort((a, b) => (sort === "due" ? a.urgency - b.urgency : a.van.unit.localeCompare(b.van.unit, undefined, { numeric: true })));
 
   const thirtyDaysAgo = now.getTime() - 30 * DAY_MS;
   const photos30 = scoped.reduce(
-    (n, s) => n + s.van.logs.filter((l) => l.date.getTime() >= thirtyDaysAgo).reduce((m, l) => m + l.photos.length, 0),
+    (n, s) => n + s.visits.filter((v) => v.date.getTime() >= thirtyDaysAgo).reduce((m, v) => m + v.photos.length, 0),
     0
   );
-  const inService = scoped.filter((s) => s.van.status === "in_service").length;
-  const overdue = scoped.reduce((n, s) => n + s.items.filter((i) => i.status === "overdue").length, 0);
-  const dueSoon = scoped.reduce((n, s) => n + s.items.filter((i) => i.status === "due_soon").length, 0);
+  const offRoad = scoped.filter((s) => s.van.status !== "in_service").length;
+  const overdueVans = scoped.filter((s) => s.next?.status === "overdue").length;
+  const dueSoonVans = scoped.filter((s) => s.next?.status === "due_soon").length;
+  const attentionCount = scoped.filter(needsAttention).length;
+
+  const stats: Array<[number, string]> = [
+    [scoped.length, "vans"],
+    [offRoad, "off the road"],
+    [overdueVans, "overdue"],
+    [dueSoonVans, "due soon"],
+    [photos30, "photos, last 30 days"],
+  ];
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">Fleet</h1>
-        <p className="text-sm font-bold uppercase tracking-widest text-gray-400">Demo Delivery Co. · sample data</p>
-        <p className="mt-3 max-w-2xl text-base font-medium text-gray-600 dark:text-gray-300">
-          Every service on every van, with photo proof: the odometer, the part that went in, and the invoice. See it
-          from anywhere, whether the work happened in Bozeman, Billings, or Helena.
+      <div className="mb-8 max-w-2xl">
+        <p className="text-sm text-stone-500 dark:text-stone-400">Demo Delivery Co. — sample data</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-900 dark:text-white sm:text-3xl">
+          Know what was done to every van, and see the proof.
+        </h1>
+        <p className="mt-3 text-stone-600 dark:text-stone-300">
+          Whoever does the work snaps the odometer, the part, and the invoice. You see it from Bozeman, whether the van
+          was serviced in the yard, at a partner shop in Billings, or by a mobile tech in Helena.
         </p>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {[null, ...FLEET_LOCATIONS].map((loc) => {
-          const count = loc ? summaries.filter((s) => s.van.location === loc).length : summaries.length;
-          const active = location === loc;
-          return (
-            <button
-              key={loc ?? "all"}
-              onClick={() => onLocation(loc)}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${active
-                ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                : "bg-gray-100 text-gray-600 hover:text-gray-900 dark:bg-gray-800/60 dark:text-gray-400 dark:hover:text-white"
-                }`}
-            >
-              {loc ?? "All locations"} <span className="opacity-60">{count}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="In service" value={`${inService}/${scoped.length}`} sub={`${scoped.length - inService} at shop or down`} />
-        <StatTile label="Overdue" value={overdue} sub="services past due" />
-        <StatTile label="Due soon" value={dueSoon} sub="within 30 days / 500 mi" />
-        <StatTile label="Photos" value={photos30} sub="logged in the last 30 days" />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <section className="rounded-2xl border border-gray-200 bg-white py-4 dark:border-gray-800 dark:bg-gray-900">
-          <div className="mb-3 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search unit, plate, model"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:max-w-xs"
-            />
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
-              <input type="checkbox" checked={attentionOnly} onChange={(e) => setAttentionOnly(e.target.checked)} className="h-4 w-4 rounded" />
-              Needs attention only
-            </label>
+      <dl className="mb-8 flex flex-wrap gap-x-8 gap-y-3 border-y border-stone-200 py-4 dark:border-stone-800">
+        {stats.map(([value, label]) => (
+          <div key={label} className="flex items-baseline gap-1.5">
+            <dt className="sr-only">{label}</dt>
+            <dd className="text-xl font-semibold tabular-nums text-stone-900 dark:text-white">{value}</dd>
+            <span aria-hidden className="text-sm text-stone-500 dark:text-stone-400">{label}</span>
           </div>
-          <FleetTable summaries={visible} onSelect={onSelect} />
+        ))}
+      </dl>
+
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <section className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <nav className="flex gap-4 text-sm" aria-label="Site">
+              {[null, ...FLEET_LOCATIONS].map((loc) => {
+                const active = location === loc;
+                const count = loc ? summaries.filter((s) => s.van.location === loc).length : summaries.length;
+                return (
+                  <button
+                    key={loc ?? "all"}
+                    onClick={() => onLocation(loc)}
+                    className={`border-b-2 pb-1 ${active
+                      ? "border-stone-900 font-medium text-stone-900 dark:border-white dark:text-white"
+                      : "border-transparent text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
+                      }`}
+                  >
+                    {loc ?? "All sites"} <span className="tabular-nums text-stone-400">{count}</span>
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="flex w-full items-center gap-3 sm:w-auto">
+              <label className="flex shrink-0 items-center gap-1.5 text-sm text-stone-600 dark:text-stone-300">
+                <input
+                  type="checkbox"
+                  checked={attentionOnly}
+                  onChange={(e) => setAttentionOnly(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-stone-900 dark:accent-white"
+                />
+                Needs attention ({attentionCount})
+              </label>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Unit, plate, model"
+                aria-label="Search vans"
+                className="w-full min-w-0 rounded border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-900 placeholder-stone-400 focus:border-stone-900 focus:outline-none dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-stone-300 sm:w-44"
+              />
+            </div>
+          </div>
+          <FleetTable summaries={visible} sort={sort} onSort={setSort} onSelect={onSelect} now={now} />
         </section>
 
-        <ProofFeed summaries={scoped} onOpen={onOpen} onSelect={onSelect} />
+        <aside className="min-w-0">
+          <RecentWork summaries={scoped} now={now} onOpen={onOpen} onSelect={onSelect} />
+        </aside>
       </div>
 
-      <div className="mt-16 overflow-hidden rounded-[2rem] bg-gray-900 p-1 shadow-2xl">
-        <div className="rounded-[1.8rem] border border-white/5 bg-gray-800/50 p-10 text-center">
-          <h3 className="text-2xl font-black text-white">Want this for your fleet?</h3>
-          <p className="mx-auto mt-4 max-w-md text-lg font-medium text-gray-400">
-            Send a list of VINs and we&apos;ll load your vans. Bring your own photos from day one.
-          </p>
-          <a
-            href="mailto:joe@swantron.com?subject=Wrenchtron%20for%20our%20fleet"
-            className="mt-8 inline-block rounded-2xl bg-white px-10 py-4 text-sm font-black uppercase tracking-widest text-gray-900 transition-all hover:bg-gray-100 active:scale-95"
-          >
-            Get in touch
-          </a>
-        </div>
+      <div className="mt-16 border-t border-stone-200 pt-8 dark:border-stone-800">
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-white">Want this for your fleet?</h2>
+        <p className="mt-1 max-w-xl text-stone-600 dark:text-stone-300">
+          Send a list of VINs and I&apos;ll load your vans with the right service schedule. Your team starts logging
+          with photos from their phones on day one.
+        </p>
+        <a
+          href={CONTACT_HREF}
+          className="mt-4 inline-block rounded bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
+        >
+          Get in touch
+        </a>
       </div>
     </>
+  );
+}
+
+function VanDetail({
+  summary,
+  onBack,
+  onOpen,
+}: {
+  summary: VanSummary;
+  onBack: () => void;
+  onOpen: (s: LightboxState) => void;
+}) {
+  const { van, items, visits } = summary;
+  const daily = van.estimatedAnnualMileage / 365;
+  const totalCost = visits.reduce((n, v) => n + v.cost, 0);
+  const status = VAN_STATUS[van.status];
+
+  return (
+    <div>
+      <button onClick={onBack} className="mb-6 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white">
+        ← All vans
+      </button>
+
+      <div className="flex flex-col gap-4 border-b border-stone-200 pb-6 dark:border-stone-800 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-white">{van.unit}</h1>
+          <p className="mt-1 text-stone-600 dark:text-stone-400">
+            {van.year} {van.make} {van.model} · {van.plate} · {van.location}
+          </p>
+          <p className={`mt-1 text-sm ${status.className}`}>
+            {status.label}
+            {van.statusNote && ` — ${van.statusNote}`}
+          </p>
+        </div>
+        <dl className="flex gap-8 text-sm">
+          <div>
+            <dt className="text-stone-500 dark:text-stone-400">Odometer</dt>
+            <dd className="text-lg font-semibold tabular-nums text-stone-900 dark:text-white">{van.currentMileage.toLocaleString()} mi</dd>
+          </div>
+          <div>
+            <dt className="text-stone-500 dark:text-stone-400">Spent, on record</dt>
+            <dd className="text-lg font-semibold tabular-nums text-stone-900 dark:text-white">{formatCost(totalCost)}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold text-stone-900 dark:text-white">Coming up</h2>
+        <ul className="mt-2 max-w-xl">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center justify-between gap-4 border-b border-stone-100 py-2 text-sm dark:border-stone-900">
+              <span className="inline-flex items-center gap-2 text-stone-900 dark:text-stone-100">
+                <span className={`h-2 w-2 rounded-full ${DOT[item.status]}`} />
+                {sentenceCase(item.serviceName)}
+              </span>
+              <span className={item.status === "overdue" ? "text-red-600 dark:text-red-400" : "text-stone-500 dark:text-stone-400"}>
+                {dueLabel(item, daily)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-semibold text-stone-900 dark:text-white">History</h2>
+        <ol className="mt-2">
+          {visits.map((visit) => (
+            <li
+              key={visit.id}
+              className="grid gap-x-6 gap-y-2 border-b border-stone-200 py-5 dark:border-stone-800 sm:grid-cols-[8rem_minmax(0,1fr)]"
+            >
+              <div className="text-sm">
+                <p className="font-medium text-stone-900 dark:text-white">{shortDate(visit.date, true)}</p>
+                <p className="tabular-nums text-stone-500 dark:text-stone-400">{visit.mileage.toLocaleString()} mi</p>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-baseline justify-between gap-4">
+                  <p className="font-medium text-stone-900 dark:text-white">{visitTitle(visit)}</p>
+                  <p className="shrink-0 tabular-nums text-stone-900 dark:text-white">{formatCost(visit.cost)}</p>
+                </div>
+                <p className="text-sm text-stone-500 dark:text-stone-400">
+                  {visit.shop} · logged by {visit.tech}
+                </p>
+                {visit.notes.map((note) => (
+                  <p key={note} className="mt-1 text-sm text-stone-700 dark:text-stone-300">
+                    {note}
+                  </p>
+                ))}
+                <div className="mt-3">
+                  <Thumbs visit={visit} unit={van.unit} onOpen={onOpen} size="md" />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
   );
 }
 
@@ -515,8 +711,9 @@ export function FleetDemo() {
   };
 
   return (
-    <AppShell isDemo={true} demoActiveTab="fleet">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
+      <FleetHeader />
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         {!isClient ? (
           <div className="flex justify-center py-24">
             <LoadingSpinner />
@@ -533,8 +730,8 @@ export function FleetDemo() {
             onOpen={setLightbox}
           />
         )}
-      </div>
+      </main>
       {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
-    </AppShell>
+    </div>
   );
 }
