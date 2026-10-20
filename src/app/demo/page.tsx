@@ -12,7 +12,7 @@ import type { MaintenanceLog, MaintenanceType } from "@/types/maintenance";
 import { AppShell } from "@/components/layout/AppShell";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { VehicleDetailView } from "@/components/vehicles/VehicleDetailView";
-import { demoVehicles, demoLogs, type DemoVehicle } from "@/data/demoData";
+import { demoVehicles, demoLogs, demoDate, type DemoVehicle } from "@/data/demoData";
 
 // Helper to convert DemoVehicle to formal Vehicle type for the Card component
 function toFormalVehicle(dv: DemoVehicle): Vehicle {
@@ -41,7 +41,7 @@ function toMaintenanceLogs(vehicleId: string): MaintenanceLog[] {
   return (demoLogs[vehicleId] || []).map((dl) => ({
     id: dl.id,
     maintenanceType: dl.maintenanceType as MaintenanceType,
-    date: Timestamp.fromDate(new Date(dl.date + "T00:00:00")),
+    date: Timestamp.fromDate(demoDate(dl.date)),
     mileage: dl.mileage,
     cost: dl.cost,
     shop: dl.shop,

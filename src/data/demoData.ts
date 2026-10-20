@@ -28,6 +28,17 @@ export interface DemoLog {
   details: Record<string, string | number | boolean | undefined>;
 }
 
+// The sample history below was written as of this date. Shift it forward so the
+// demo garage looks the same whenever it's viewed instead of going stale.
+const DEMO_AUTHORED = new Date("2026-02-01T00:00:00");
+
+export function demoDate(date: string): Date {
+  const shiftDays = Math.floor((Date.now() - DEMO_AUTHORED.getTime()) / (24 * 60 * 60 * 1000));
+  const d = new Date(date + "T00:00:00");
+  d.setDate(d.getDate() + shiftDays);
+  return d;
+}
+
 export const demoVehicles: DemoVehicle[] = [
   {
     id: "f150",

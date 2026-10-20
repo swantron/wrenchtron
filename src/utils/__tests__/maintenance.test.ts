@@ -481,3 +481,38 @@ describe("calculateActionItems", () => {
     });
   });
 });
+
+describe("mileage interval with no service history", () => {
+  it("does not count from 0 mi when nothing has been logged", () => {
+    const vehicle = makeVehicle({
+      currentMileage: 187432,
+      serviceIntervals: [
+        { id: "i1", name: "Tire Rotation", type: "mileage", mileageInterval: 6000, targetMaintenanceType: "tire_rotation" },
+        {
+          id: "i2", name: "Tire Replacement", type: "mileage", targetMaintenanceType: "tire_replacement",
+          isComponentBased: true, componentInstallationType: "tire_replacement", totalLifeMileage: 60000,
+        },
+      ],
+    });
+    const items = calculateActionItems(vehicle, []);
+    expect(items).toHaveLength(2);
+    for (const item of items) {
+      expect(item.status).toBe("upcoming");
+      expect(item.remainingMiles).toBeUndefined();
+      expect(item.reason).toMatch(/No record yet/);
+    }
+  });
+
+  it("still applies the time limit of a composite interval from when the vehicle was added", () => {
+    const vehicle = makeVehicle({
+      currentMileage: 187432,
+      createdAt: ts(monthsAgo(8)),
+      serviceIntervals: [
+        { id: "i1", name: "Oil Change", type: "composite", mileageInterval: 5000, timeIntervalMonths: 6, targetMaintenanceType: "oil_change" },
+      ],
+    });
+    const [item] = calculateActionItems(vehicle, []);
+    expect(item.status).toBe("overdue");
+    expect(item.remainingMiles).toBeUndefined();
+  });
+});

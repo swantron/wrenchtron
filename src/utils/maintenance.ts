@@ -167,6 +167,8 @@ export function calculateActionItems(
         // --- Component Life Logic (e.g. Tire Replacement) ---
         let baseMileage = lastMileage;
         let baseDate = lastDate;
+        // Without a log there is no known mileage to count from — don't assume 0 mi
+        let hasMileageBase = !!lastLog;
 
         if (interval.isComponentBased && interval.componentInstallationType) {
             // Find MOST RECENT installation log
@@ -177,6 +179,7 @@ export function calculateActionItems(
             if (installationLog) {
                 baseMileage = installationLog.mileage;
                 baseDate = installationLog.date.toDate();
+                hasMileageBase = true;
             }
         }
 
@@ -190,7 +193,7 @@ export function calculateActionItems(
         const usesTime = interval.type === "time" || interval.type === "composite";
 
         // Mileage Trigger
-        if (usesMileage && interval.mileageInterval) {
+        if (usesMileage && interval.mileageInterval && hasMileageBase) {
             dueMileage = lastMileage + interval.mileageInterval;
             remainingMiles = dueMileage - currentMileage;
             isMileageOverdue = remainingMiles < 0;
@@ -208,7 +211,7 @@ export function calculateActionItems(
         }
 
         // Total Life Mileage (Component-based)
-        if (usesMileage && interval.totalLifeMileage) {
+        if (usesMileage && interval.totalLifeMileage && hasMileageBase) {
             const lifeDueMileage = baseMileage + interval.totalLifeMileage;
             const lifeRemainingMiles = lifeDueMileage - currentMileage;
             if (lifeRemainingMiles < 0) {
@@ -339,6 +342,8 @@ export function calculateActionItems(
                 reason = remainingMiles === 0 ? `${optionalPrefix}Due now` : `${optionalPrefix}Due in ${remainingMiles} miles`;
             } else if (remainingDays !== undefined) {
                 reason = remainingDays === 0 ? `${optionalPrefix}Due today` : `${optionalPrefix}Due in ${remainingDays} days`;
+            } else if (usesMileage && !hasMileageBase) {
+                reason = `${optionalPrefix}No record yet — log the last one to start tracking`;
             }
         }
 

@@ -470,7 +470,7 @@ function FleetOverview({
 }) {
   const [query, setQuery] = useState("");
   const [attentionOnly, setAttentionOnly] = useState(false);
-  const [sort, setSort] = useState<SortKey>("unit");
+  const [sort, setSort] = useState<SortKey>("due");
 
   const scoped = location ? summaries.filter((s) => s.van.location === location) : summaries;
   const needsAttention = (s: VanSummary) =>
@@ -625,7 +625,9 @@ function VanDetail({
             <dd className="text-lg font-semibold tabular-nums text-stone-900 dark:text-white">{van.currentMileage.toLocaleString()} mi</dd>
           </div>
           <div>
-            <dt className="text-stone-500 dark:text-stone-400">Spent, on record</dt>
+            <dt className="text-stone-500 dark:text-stone-400">
+              Spent since {van.addedAt.toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+            </dt>
             <dd className="text-lg font-semibold tabular-nums text-stone-900 dark:text-white">{formatCost(totalCost)}</dd>
           </div>
         </dl>
