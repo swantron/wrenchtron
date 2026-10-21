@@ -567,7 +567,7 @@ function FleetOverview({
         </section>
 
         <aside className="min-w-0">
-          <RecentWork summaries={scoped} now={now} onOpen={onOpen} onSelect={onSelect} />
+          <RecentWork summaries={visible} now={now} onOpen={onOpen} onSelect={onSelect} />
         </aside>
       </div>
 

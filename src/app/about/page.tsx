@@ -13,10 +13,11 @@ export default function AboutPage() {
                             About <span className="text-blue-600">Wrenchtron</span>
                         </h1>
                         <p className="mt-8 text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
-                            Wrenchtron runs entirely on the client—no servers, no backend.
-                            Firebase handles auth, data (Firestore), and file storage;
-                            Next.js exports a fully static bundle. This architecture ensures
-                            the app stays fast, secure, and—most importantly—costs $0.00 to run.
+                            Wrenchtron tracks service history and tells you what&apos;s due next,
+                            for a household garage or a delivery fleet. It&apos;s a static Next.js
+                            app on Firebase: Google sign-in, Firestore for your records, and Cloud
+                            Storage for photos and receipts. Your records are visible only to you,
+                            or to the members of your fleet.
                         </p>
                     </section>
 

@@ -7,6 +7,8 @@ interface ActionableItemsProps {
 
 export function ActionableItems({ items }: ActionableItemsProps) {
     if (items.length === 0) return null;
+    // Upcoming and "no record yet" items are listed but don't need attention
+    const needsAttention = items.filter((i) => i.status === "overdue" || i.status === "due_soon").length;
 
     return (
         <div className="mb-8">
@@ -16,7 +18,9 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                         Upcoming Maintenance
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {items.length} items require your attention
+                        {needsAttention === 0
+                            ? "Nothing needs attention right now"
+                            : `${needsAttention} ${needsAttention === 1 ? "item needs" : "items need"} attention`}
                     </p>
                 </div>
             </div>

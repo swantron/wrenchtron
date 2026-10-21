@@ -58,7 +58,7 @@ function LandingPage() {
             href="/login"
             className="rounded-2xl bg-blue-600 px-10 py-5 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-500/30 active:scale-95"
           >
-            Start Your Fleet
+            Get Started
           </Link>
           <Link
             href="/demo"
@@ -67,6 +67,12 @@ function LandingPage() {
             View Demo
           </Link>
         </div>
+        <Link
+          href="/demo/fleet"
+          className="mt-8 text-sm font-semibold text-gray-500 underline-offset-4 hover:text-gray-900 hover:underline dark:text-gray-400 dark:hover:text-white"
+        >
+          Running a delivery fleet? See the fleet demo →
+        </Link>
 
         {/* Decorative Grid Background */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">

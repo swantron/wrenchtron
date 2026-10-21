@@ -9,6 +9,8 @@ import type { Vehicle } from "@/types/firestore";
 
 interface RecallPanelProps {
   vehicle: Vehicle;
+  /** Sample data: no link to edit the vehicle. */
+  readOnly?: boolean;
 }
 
 function summarizeByComponent(recalls: NHTSARecall[]): string {
@@ -24,7 +26,7 @@ function summarizeByComponent(recalls: NHTSARecall[]): string {
   return parts.join(", ");
 }
 
-export function RecallPanel({ vehicle }: RecallPanelProps) {
+export function RecallPanel({ vehicle, readOnly = false }: RecallPanelProps) {
   const { user } = useAuth();
   const { recalls, loading, error } = useRecalls(vehicle.vin, vehicle.make, vehicle.model, vehicle.year);
   const [listExpanded, setListExpanded] = useState(false);
@@ -60,12 +62,14 @@ export function RecallPanel({ vehicle }: RecallPanelProps) {
         <p className="text-sm text-gray-400 dark:text-gray-500">
           Add a VIN to check for open NHTSA recalls.
         </p>
-        <Link
-          href={`/vehicles/edit?id=${vehicle.id}`}
-          className="mt-2 inline-block text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
-        >
-          Add VIN →
-        </Link>
+        {!readOnly && (
+          <Link
+            href={`/vehicles/edit?id=${vehicle.id}`}
+            className="mt-2 inline-block text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Add VIN →
+          </Link>
+        )}
       </div>
     );
   }

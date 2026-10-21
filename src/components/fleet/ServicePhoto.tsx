@@ -47,18 +47,18 @@ function Invoice({ photo }: { photo: FleetPhoto }) {
     <>
       <rect width="320" height="240" fill="#78716c" />
       <g transform="rotate(-4 160 120)">
-        <rect x="70" y="14" width="180" height="222" fill="#fafaf9" />
-        <text x="84" y="40" fontFamily="system-ui" fontSize="11" fontWeight="800" fill="#111">{photo.shop}</text>
-        <text x="84" y="54" fontFamily="system-ui" fontSize="8" fill="#6b7280">
+        <rect x="70" y="8" width="180" height="194" fill="#fafaf9" />
+        <text x="84" y="32" fontFamily="system-ui" fontSize="11" fontWeight="800" fill="#111">{photo.shop}</text>
+        <text x="84" y="46" fontFamily="system-ui" fontSize="8" fill="#6b7280">
           INVOICE · {photo.date ? stamp(photo.date) : ""}
         </text>
-        <line x1="84" y1="62" x2="236" y2="62" stroke="#d6d3d1" />
+        <line x1="84" y1="54" x2="236" y2="54" stroke="#d6d3d1" />
         {(photo.lines ?? []).map((line, i) => (
-          <text key={i} x="84" y={80 + i * 16} fontFamily="system-ui" fontSize="8.5" fill="#374151">{line}</text>
+          <text key={i} x="84" y={72 + i * 16} fontFamily="system-ui" fontSize="8.5" fill="#374151">{line}</text>
         ))}
-        <line x1="84" y1="182" x2="236" y2="182" stroke="#d6d3d1" />
-        <text x="84" y="200" fontFamily="system-ui" fontSize="10" fontWeight="700" fill="#111">TOTAL</text>
-        <text x="236" y="200" textAnchor="end" fontFamily="system-ui" fontSize="12" fontWeight="800" fill="#111">
+        <line x1="84" y1="166" x2="236" y2="166" stroke="#d6d3d1" />
+        <text x="84" y="184" fontFamily="system-ui" fontSize="10" fontWeight="700" fill="#111">TOTAL</text>
+        <text x="236" y="184" textAnchor="end" fontFamily="system-ui" fontSize="12" fontWeight="800" fill="#111">
           ${((photo.total ?? 0) / 100).toFixed(2)}
         </text>
       </g>

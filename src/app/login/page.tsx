@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 
+/** Only same-site paths — never an open redirect to another host. */
+function safeNext(next: string | null): string {
+  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/vehicles";
+}
+
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/vehicles");
+      router.push(safeNext(new URLSearchParams(window.location.search).get("next")));
     }
   }, [user, loading, router]);
 
@@ -28,7 +33,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-[2rem] border border-gray-100 bg-white p-10 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-8 text-center">
           <p className="text-lg font-bold text-gray-900 dark:text-white">Sign In</p>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Your vehicles, service history, and what’s due next</p>
+          <p className="mt-1 text-balance text-sm text-gray-500 dark:text-gray-400">Your vehicles, service history, and what’s due next</p>
         </div>
         <div className="flex justify-center">
           <LoginButton />

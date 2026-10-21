@@ -11,7 +11,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      // Come back here after signing in (e.g. /fleet, not the household garage)
+      const next = window.location.pathname + window.location.search;
+      router.push(`/login?next=${encodeURIComponent(next)}`);
     }
   }, [user, loading, router]);
 

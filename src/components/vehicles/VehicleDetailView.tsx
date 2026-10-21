@@ -88,12 +88,15 @@ export function VehicleDetailView({
   vehicleId,
   vehicle: initialVehicle,
   logs: initialLogs,
-  onBack
+  onBack,
+  readOnly = false,
 }: {
   vehicleId: string;
   vehicle?: Vehicle;
   logs?: MaintenanceLog[];
   onBack?: () => void;
+  /** Sample data (demo): hide every control that would edit or delete. */
+  readOnly?: boolean;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -304,7 +307,7 @@ export function VehicleDetailView({
         <div className="space-y-6 lg:col-span-1">
           <ServiceStatusPanel vehicle={vehicle} logs={logs} />
 
-          {isRoadVehicle(vehicle.type) && <RecallPanel vehicle={vehicle} />}
+          {isRoadVehicle(vehicle.type) && <RecallPanel vehicle={vehicle} readOnly={readOnly} />}
 
           {(formatMileage(vehicle.currentMileage, vehicle.type) || isRoadVehicle(vehicle.type)) && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -347,9 +350,9 @@ export function VehicleDetailView({
             </h2>
             <div className="flex shrink-0 items-center gap-2">
               {logs.length > 0 && <ExportMenu vehicle={vehicle} logs={logs} />}
-              {!vehicle.isArchived && (
+              {!vehicle.isArchived && !readOnly && (
                 <Link
-                  href={onBack ? "/login" : `/maintenance/new?vehicleId=${vehicleId}`}
+                  href={`/maintenance/new?vehicleId=${vehicleId}`}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
                 >
                   Log Service
@@ -358,7 +361,7 @@ export function VehicleDetailView({
             </div>
           </div>
           <div className="mt-6">
-            <LogList vehicleId={vehicleId} logs={initialLogs} />
+            <LogList vehicleId={vehicleId} logs={initialLogs} readOnly={readOnly} />
           </div>
         </div>
       </div>

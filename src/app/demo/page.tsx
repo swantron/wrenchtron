@@ -60,8 +60,9 @@ const vehicleOilIntervals: Record<string, number> = {
   rzr: 50,
 };
 
-function getDemoActionItems(): ActionItem[] {
-  const vehicles: Vehicle[] = demoVehicles.map((dv) => {
+/** Demo vehicles with their service schedules — shared by the cards, hub, and detail view. */
+function getDemoVehicles(): Vehicle[] {
+  return demoVehicles.map((dv) => {
     const intervals: ServiceInterval[] = [];
     const isElectric = dv.powertrain === "electric";
 
@@ -227,25 +228,11 @@ function getDemoActionItems(): ActionItem[] {
       });
     }
 
-    return {
-      id: dv.id,
-      name: dv.name,
-      type: dv.type,
-      powertrain: dv.powertrain,
-      year: dv.year,
-      make: dv.make,
-      model: dv.model,
-      trim: dv.trim,
-      currentMileage: dv.currentMileage,
-      isActive: true,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-      serviceIntervals: intervals,
-      estimatedAnnualMileage: dv.estimatedAnnualMileage,
-      photoPath: dv.image,
-    };
+    return { ...toFormalVehicle(dv), serviceIntervals: intervals };
   });
+}
 
+function getDemoActionItems(vehicles: Vehicle[]): ActionItem[] {
   let allItems: ActionItem[] = [];
 
   vehicles.forEach((vehicle) => {
@@ -280,8 +267,8 @@ function DemoContent() {
     router.push(`/demo?tab=${tab}`, { scroll: false });
   };
 
-  const actionItems = getDemoActionItems();
-  const vehicles = demoVehicles.map(v => toFormalVehicle(v));
+  const vehicles = getDemoVehicles();
+  const actionItems = getDemoActionItems(vehicles);
 
   const selectedVehicle = selectedId ? vehicles.find(v => v.id === selectedId) : null;
   const selectedLogs = selectedId ? toMaintenanceLogs(selectedId) : [];
@@ -295,6 +282,7 @@ function DemoContent() {
             vehicle={selectedVehicle}
             logs={selectedLogs}
             onBack={() => setSelectedId(null)}
+            readOnly
           />
         ) : (
           <>
@@ -396,11 +384,11 @@ function DemoContent() {
                   </svg>
                 </div>
                 <h3 className="text-2xl font-black text-white">
-                  Unlock Full Capability
+                  Track your own vehicles
                 </h3>
                 <p className="mx-auto mt-4 max-w-sm text-lg font-medium text-gray-400">
-                  Track fuel efficiency, store maintenance receipts, and manage
-                  multiple fleets in one premium dashboard.
+                  Sign in to log service with photos and receipts, and see
+                  what&apos;s due across everything you own.
                 </p>
                 <Link
                   href="/login"
