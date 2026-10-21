@@ -1,6 +1,6 @@
 # wrenchtron fleet — build plan
 
-**Status:** phase 1 code written; rules tests not yet run (need Java for the emulator) and rules not deployed (Oct 2026)
+**Status:** phase 1 done. Rules deployed and tested (43 emulator tests, run in CI before deploy). Phase 2 next (Oct 2026)
 **Goal:** a delivery fleet can run a paid pilot on real data: the owner loads the vans, techs and partner shops log work with photos from a phone, and the owner sees the board from anywhere.
 **Reference UI:** `/demo/fleet` (sample data). The real fleet app should look and behave like it.
 

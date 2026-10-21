@@ -21,6 +21,17 @@ jobs:
 
       - run: npm test
 
+      # Security rules are the only backend and this workflow deploys them, so
+      # they're tested against the emulator before anything ships.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm install -g firebase-tools@15
+
+      - run: npm run test:rules
+
   build-and-deploy:
     runs-on: ubuntu-latest
     needs: test

@@ -50,3 +50,8 @@ next-env.d.ts
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+
+# firebase emulator logs
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
