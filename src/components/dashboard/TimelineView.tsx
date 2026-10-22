@@ -1,9 +1,11 @@
-import { ActionItem } from "@/utils/maintenance";
+import { ActionItem, nextDueDate } from "@/utils/maintenance";
 import Link from "next/link";
 import { useMemo } from "react";
 
 interface TimelineViewProps {
     items: ActionItem[];
+    /** Sample data: no Log Service buttons. */
+    readOnly?: boolean;
 }
 
 interface TimelineGroup {
@@ -12,7 +14,7 @@ interface TimelineGroup {
     isOverdue?: boolean;
 }
 
-export function TimelineView({ items }: TimelineViewProps) {
+export function TimelineView({ items, readOnly = false }: TimelineViewProps) {
     const groups = useMemo(() => {
         const overdue: ActionItem[] = [];
         const upcoming: Record<string, ActionItem[]> = {};
@@ -20,8 +22,8 @@ export function TimelineView({ items }: TimelineViewProps) {
 
         // Sort items by date first
         const sortedItems = [...items].sort((a, b) => {
-            const dateA = a.projectedDate || a.dueDate;
-            const dateB = b.projectedDate || b.dueDate;
+            const dateA = nextDueDate(a);
+            const dateB = nextDueDate(b);
             if (!dateA && !dateB) return 0;
             if (!dateA) return 1;
             if (!dateB) return -1;
@@ -34,7 +36,7 @@ export function TimelineView({ items }: TimelineViewProps) {
                 return;
             }
 
-            const date = item.projectedDate || item.dueDate;
+            const date = nextDueDate(item);
             if (!date) {
                 noDate.push(item);
                 return;
@@ -120,16 +122,17 @@ export function TimelineView({ items }: TimelineViewProps) {
                                     <h4 className="font-bold text-gray-900 dark:text-white">{item.serviceName}</h4>
                                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.reason}</p>
 
-                                    {(item.projectedDate || item.dueDate) && (
+                                    {nextDueDate(item) && (
                                         <div className="mt-3 flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
                                             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
-                                            {(item.projectedDate || item.dueDate)!.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                            {nextDueDate(item)!.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                         </div>
                                     )}
                                 </div>
 
+                                {!readOnly && (
                                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50">
                                     <Link
                                         href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.targetMaintenanceType ?? item.serviceName.toLowerCase().replace(/ /g, "_")}`}
@@ -138,6 +141,7 @@ export function TimelineView({ items }: TimelineViewProps) {
                                         Log Service
                                     </Link>
                                 </div>
+                                )}
                             </div>
                         ))}
                     </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { calculateActionItems, calculateProjectedMileage } from "@/utils/maintenance";
+import { calculateActionItems, calculateProjectedMileage, getFullSchedule, nextDueDate } from "@/utils/maintenance";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
 import type { Timestamp } from "firebase/firestore";
@@ -514,5 +514,42 @@ describe("mileage interval with no service history", () => {
     const [item] = calculateActionItems(vehicle, []);
     expect(item.status).toBe("overdue");
     expect(item.remainingMiles).toBeUndefined();
+  });
+});
+
+describe("nextDueDate", () => {
+  const jan = new Date("2027-01-01");
+  const may = new Date("2027-05-01");
+
+  it("takes whichever of the calendar date and mileage projection comes first", () => {
+    expect(nextDueDate({ dueDate: jan, projectedDate: may })).toBe(jan);
+    expect(nextDueDate({ dueDate: may, projectedDate: jan })).toBe(jan);
+  });
+
+  it("falls back to whichever one exists", () => {
+    expect(nextDueDate({ dueDate: jan })).toBe(jan);
+    expect(nextDueDate({ projectedDate: may })).toBe(may);
+    expect(nextDueDate({})).toBeUndefined();
+  });
+});
+
+describe("getFullSchedule with no service history", () => {
+  it("doesn't project mileage from 0 mi", () => {
+    const vehicle = makeVehicle({
+      currentMileage: 187432,
+      estimatedAnnualMileage: 5000,
+      serviceIntervals: [
+        { id: "i1", name: "Tire Rotation", type: "mileage", mileageInterval: 6000, targetMaintenanceType: "tire_rotation" },
+        { id: "i2", name: "Oil Change", type: "composite", mileageInterval: 3000, timeIntervalMonths: 6, targetMaintenanceType: "oil_change" },
+      ],
+    });
+    const schedule = getFullSchedule(vehicle, []);
+    const rotation = schedule.find((e) => e.intervalId === "i1")!;
+    const oil = schedule.find((e) => e.intervalId === "i2")!;
+    expect(rotation.nextLabel).toBe("No record yet");
+    expect(rotation.nextDate).toBeUndefined();
+    // Composite falls back to its time limit only
+    expect(oil.nextLabel).not.toContain("mi");
+    expect(oil.nextDate).toBeDefined();
   });
 });

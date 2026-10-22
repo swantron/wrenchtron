@@ -1,11 +1,13 @@
-import { ActionItem } from "@/utils/maintenance";
+import { ActionItem, nextDueDate } from "@/utils/maintenance";
 import Link from "next/link";
 
 interface ActionableItemsProps {
     items: ActionItem[];
+    /** Sample data: no Log Service buttons. */
+    readOnly?: boolean;
 }
 
-export function ActionableItems({ items }: ActionableItemsProps) {
+export function ActionableItems({ items, readOnly = false }: ActionableItemsProps) {
     if (items.length === 0) return null;
     // Upcoming and "no record yet" items are listed but don't need attention
     const needsAttention = items.filter((i) => i.status === "overdue" || i.status === "due_soon").length;
@@ -73,14 +75,15 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                             >
                                 {item.reason}
                             </p>
-                            {(item.dueDate || item.projectedDate) && (
+                            {nextDueDate(item) && (
                                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Target Date: {(item.dueDate || item.projectedDate)!.toLocaleDateString()}
+                                    Target Date: {nextDueDate(item)!.toLocaleDateString()}
                                 </p>
                             )}
                         </div>
 
                         {/* Action Button */}
+                        {!readOnly && (
                         <div className="mt-4 flex justify-end">
                             <Link
                                 href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.targetMaintenanceType ?? item.serviceName.toLowerCase().replace(/ /g, "_")}`}
@@ -94,6 +97,7 @@ export function ActionableItems({ items }: ActionableItemsProps) {
                                 Log Service
                             </Link>
                         </div>
+                        )}
                     </div>
                 ))}
             </div>

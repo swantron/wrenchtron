@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Vehicle } from "@/types/firestore";
 import type { MaintenanceLog } from "@/types/maintenance";
-import { calculateActionItems, getFullSchedule } from "@/utils/maintenance";
+import { calculateActionItems, getFullSchedule, nextDueDate } from "@/utils/maintenance";
 
 interface ServiceStatusPanelProps {
   vehicle: Vehicle;
@@ -34,20 +34,26 @@ export function ServiceStatusPanel({ vehicle, logs }: ServiceStatusPanelProps) {
       ) : (
         <div className="space-y-4">
           {items.map(item => {
+            const nextDate = nextDueDate(item);
+            // Nothing logged and nothing to count from: unknown, not "all good"
+            const unknown = !item.lastLog && !nextDate;
             const dot = item.status === "overdue"
               ? "bg-red-500"
               : item.status === "due_soon"
               ? "bg-amber-500"
+              : unknown
+              ? "bg-gray-300 dark:bg-gray-600"
               : "bg-green-500";
 
-            const nextDate = item.projectedDate ?? item.dueDate;
             const nextLabel = nextDate
-              ? nextDate.toLocaleDateString("default", { month: "short", year: "numeric" })
+              ? `Next ~${nextDate.toLocaleDateString("default", { month: "short", year: "numeric" })}`
+              : unknown
+              ? "No record yet"
               : "—";
 
             const lastLine = item.lastLog
               ? `Last: ${item.lastLog.date.toLocaleDateString("default", { month: "short", day: "numeric", year: "numeric" })} @ ${item.lastLog.mileage.toLocaleString()} mi${item.lastLog.shop ? ` · ${item.lastLog.shop}` : ""}`
-              : "No history";
+              : "Log the last one to start tracking";
 
             return (
               <div key={item.id} className="flex flex-col gap-0.5">
@@ -59,7 +65,7 @@ export function ServiceStatusPanel({ vehicle, logs }: ServiceStatusPanelProps) {
                     </span>
                   </div>
                   <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
-                    Next ~{nextLabel}
+                    {nextLabel}
                   </span>
                 </div>
                 <p className="pl-4 text-xs text-gray-400 dark:text-gray-500">{lastLine}</p>

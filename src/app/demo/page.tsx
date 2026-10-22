@@ -349,7 +349,7 @@ function DemoContent() {
             {activeTab === "hub" && (
               <>
                 {actionItems.length > 0 && (
-                  <ActionableItems items={actionItems} />
+                  <ActionableItems items={actionItems} readOnly />
                 )}
 
                 <div className="mt-6">
@@ -364,7 +364,7 @@ function DemoContent() {
               </>
             )}
 
-            {activeTab === "timeline" && <TimelineView items={actionItems} />}
+            {activeTab === "timeline" && <TimelineView items={actionItems} readOnly />}
 
             <div className="mt-16 overflow-hidden rounded-[2rem] bg-gray-900 p-1 shadow-2xl">
               <div className="rounded-[1.8rem] bg-gray-800/50 p-12 text-center border border-white/5">

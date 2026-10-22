@@ -70,6 +70,13 @@ export interface ActionItem {
     };
 }
 
+/** When an item is next due: whichever comes first of the calendar date and the mileage projection. */
+export function nextDueDate(item: Pick<ActionItem, "dueDate" | "projectedDate">): Date | undefined {
+    const { dueDate, projectedDate } = item;
+    if (dueDate && projectedDate) return dueDate < projectedDate ? dueDate : projectedDate;
+    return dueDate ?? projectedDate;
+}
+
 export function calculateProjectedMileage(vehicle: Vehicle): number {
     if (!vehicle.estimatedAnnualMileage || vehicle.estimatedAnnualMileage <= 0) {
         return vehicle.currentMileage;
@@ -453,6 +460,8 @@ export function getFullSchedule(vehicle: Vehicle, logs: MaintenanceLog[]): Sched
         const lastLog = relevantLogs[0];
         const lastDate = lastLog ? lastLog.date.toDate() : vehicle.createdAt.toDate();
         const lastMileage = lastLog ? lastLog.mileage : 0;
+        // Same rule as calculateActionItems: no log means no known mileage to count from
+        const hasMileageBase = !!lastLog;
 
         let nextDate: Date | undefined;
         let nextLabel = "—";
@@ -461,6 +470,8 @@ export function getFullSchedule(vehicle: Vehicle, logs: MaintenanceLog[]): Sched
             nextDate = new Date(lastDate);
             nextDate.setMonth(nextDate.getMonth() + interval.timeIntervalMonths);
             nextLabel = `~${nextDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+        } else if (interval.type === "mileage" && interval.mileageInterval && !hasMileageBase) {
+            nextLabel = "No record yet";
         } else if (interval.type === "mileage" && interval.mileageInterval) {
             const dueMileage = lastMileage + interval.mileageInterval;
             if (vehicle.estimatedAnnualMileage && vehicle.estimatedAnnualMileage > 0) {
@@ -479,7 +490,7 @@ export function getFullSchedule(vehicle: Vehicle, logs: MaintenanceLog[]): Sched
                 timeNextDate.setMonth(timeNextDate.getMonth() + interval.timeIntervalMonths);
                 nextDate = timeNextDate;
             }
-            if (interval.mileageInterval) {
+            if (interval.mileageInterval && hasMileageBase) {
                 const dueMileage = lastMileage + interval.mileageInterval;
                 if (timeNextDate) {
                     nextLabel = `~${timeNextDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })} or @ ${dueMileage.toLocaleString()} mi`;

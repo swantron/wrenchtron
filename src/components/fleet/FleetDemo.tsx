@@ -187,7 +187,8 @@ const DOT: Record<ActionItem["status"], string> = {
 };
 
 const VAN_STATUS: Record<VanStatus, { label: string; className: string }> = {
-  in_service: { label: "In service", className: "text-stone-500 dark:text-stone-400" },
+  // Most vans are in service; only the exceptions get a label
+  in_service: { label: "", className: "" },
   at_shop: { label: "At shop", className: "text-amber-700 dark:text-amber-400 font-medium" },
   down: { label: "Down", className: "text-red-600 dark:text-red-400 font-medium" },
 };
@@ -347,6 +348,16 @@ function RecentWork({
 
 type SortKey = "unit" | "due";
 
+type Focus = "off_road" | "overdue" | "due_soon";
+
+const FOCUS_FILTERS: Record<Focus, (s: VanSummary) => boolean> = {
+  off_road: (s) => s.van.status !== "in_service",
+  overdue: (s) => s.next?.status === "overdue",
+  due_soon: (s) => s.next?.status === "due_soon",
+};
+
+const STATUS_RANK: Record<VanStatus, number> = { down: 0, at_shop: 1, in_service: 2 };
+
 function FleetTable({
   summaries,
   sort,
@@ -470,6 +481,7 @@ function FleetOverview({
 }) {
   const [query, setQuery] = useState("");
   const [attentionOnly, setAttentionOnly] = useState(false);
+  const [focus, setFocus] = useState<Focus | null>(null);
   const [sort, setSort] = useState<SortKey>("due");
 
   const scoped = location ? summaries.filter((s) => s.van.location === location) : summaries;
@@ -478,25 +490,29 @@ function FleetOverview({
   const q = query.trim().toLowerCase();
   const visible = scoped
     .filter((s) => !attentionOnly || needsAttention(s))
+    .filter((s) => !focus || FOCUS_FILTERS[focus](s))
     .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q))
-    .sort((a, b) => (sort === "due" ? a.urgency - b.urgency : a.van.unit.localeCompare(b.van.unit, undefined, { numeric: true })));
+    .sort((a, b) =>
+      sort === "due"
+        ? // Vans that can't run come first, then whatever is due soonest
+          STATUS_RANK[a.van.status] - STATUS_RANK[b.van.status] || a.urgency - b.urgency
+        : a.van.unit.localeCompare(b.van.unit, undefined, { numeric: true })
+    );
 
   const thirtyDaysAgo = now.getTime() - 30 * DAY_MS;
   const photos30 = scoped.reduce(
     (n, s) => n + s.visits.filter((v) => v.date.getTime() >= thirtyDaysAgo).reduce((m, v) => m + v.photos.length, 0),
     0
   );
-  const offRoad = scoped.filter((s) => s.van.status !== "in_service").length;
-  const overdueVans = scoped.filter((s) => s.next?.status === "overdue").length;
-  const dueSoonVans = scoped.filter((s) => s.next?.status === "due_soon").length;
   const attentionCount = scoped.filter(needsAttention).length;
+  const count = (f: Focus) => scoped.filter(FOCUS_FILTERS[f]).length;
 
-  const stats: Array<[number, string]> = [
-    [scoped.length, "vans"],
-    [offRoad, "off the road"],
-    [overdueVans, "overdue"],
-    [dueSoonVans, "due soon"],
-    [photos30, "photos, last 30 days"],
+  const stats: Array<{ value: number; label: string; focus?: Focus }> = [
+    { value: scoped.length, label: "vans" },
+    { value: count("off_road"), label: "off the road", focus: "off_road" },
+    { value: count("overdue"), label: "overdue", focus: "overdue" },
+    { value: count("due_soon"), label: "due soon", focus: "due_soon" },
+    { value: photos30, label: "photos, last 30 days" },
   ];
 
   return (
@@ -513,13 +529,37 @@ function FleetOverview({
       </div>
 
       <dl className="mb-8 flex flex-wrap gap-x-8 gap-y-3 border-y border-stone-200 py-4 dark:border-stone-800">
-        {stats.map(([value, label]) => (
-          <div key={label} className="flex items-baseline gap-1.5">
-            <dt className="sr-only">{label}</dt>
-            <dd className="text-xl font-semibold tabular-nums text-stone-900 dark:text-white">{value}</dd>
-            <span aria-hidden className="text-sm text-stone-500 dark:text-stone-400">{label}</span>
-          </div>
-        ))}
+        {stats.map(({ value, label, focus: key }) => {
+          const content = (
+            <>
+              <dt className="sr-only">{label}</dt>
+              <dd className="text-xl font-semibold tabular-nums text-stone-900 dark:text-white">{value}</dd>
+              <span aria-hidden className="text-sm text-stone-500 dark:text-stone-400">{label}</span>
+            </>
+          );
+          if (!key) {
+            return (
+              <div key={label} className="flex items-baseline gap-1.5">
+                {content}
+              </div>
+            );
+          }
+          const active = focus === key;
+          return (
+            <button
+              key={label}
+              onClick={() => setFocus(active ? null : key)}
+              aria-pressed={active}
+              title={active ? "Show all vans" : `Show only vans ${label}`}
+              className={`flex items-baseline gap-1.5 border-b-2 pb-0.5 ${active
+                ? "border-stone-900 dark:border-white"
+                : "border-transparent hover:border-stone-300 dark:hover:border-stone-600"
+                }`}
+            >
+              {content}
+            </button>
+          );
+        })}
       </dl>
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -614,10 +654,12 @@ function VanDetail({
           <p className="mt-1 text-stone-600 dark:text-stone-400">
             {van.year} {van.make} {van.model} · {van.plate} · {van.location}
           </p>
-          <p className={`mt-1 text-sm ${status.className}`}>
-            {status.label}
-            {van.statusNote && ` — ${van.statusNote}`}
-          </p>
+          {van.status !== "in_service" && (
+            <p className={`mt-1 text-sm ${status.className}`}>
+              {status.label}
+              {van.statusNote && ` — ${van.statusNote}`}
+            </p>
+          )}
         </div>
         <dl className="flex gap-8 text-sm">
           <div>
