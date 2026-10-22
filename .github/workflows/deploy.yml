@@ -36,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push'
+    # id-token lets the job sign in to Google Cloud without a stored key
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v6
 
@@ -55,32 +59,26 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      # Keyless: GitHub's OIDC token is exchanged for short-lived credentials
+      # for github-deploy@, which can only deploy hosting and rules. The trust
+      # only accepts this repo (by numeric id) on main. No long-lived key.
+      - uses: google-github-actions/auth@v2
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: wrenchtron-db057
-          channelId: live
+          workload_identity_provider: projects/386582948349/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-deploy@wrenchtron-db057.iam.gserviceaccount.com
 
-      # action-hosting-deploy only touches Hosting.. Firestore/Storage rules need
-      # their own deploy, same service account. Separate steps so a permission
-      # gap on one target (e.g. Storage's API not enabled for this service
-      # account) can't block the other from deploying.
-      - name: Write Firebase service account
-        run: echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - run: npm install -g firebase-tools@15
 
+      - name: Deploy hosting
+        run: firebase deploy --only hosting --project wrenchtron-db057 --non-interactive
+
+      # One target per step so a failure says which one. No continue-on-error:
+      # a rules deploy that fails must fail the run, not pass silently.
       - name: Deploy Firestore rules
-        run: npx firebase-tools deploy --only firestore:rules --project wrenchtron-db057
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: firebase deploy --only firestore:rules --project wrenchtron-db057 --non-interactive
 
       - name: Deploy Storage rules
-        run: npx firebase-tools deploy --only storage --project wrenchtron-db057
-        continue-on-error: true
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: firebase deploy --only storage --project wrenchtron-db057 --non-interactive
 
   # Post-deploy gate: drive synthetic golden-signal traffic at the live URL and
   # confirm the telemetry landed in the watchtron control plane (black-box —
