@@ -14,10 +14,10 @@ export default function AboutPage() {
                         </h1>
                         <p className="mt-8 text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
                             Wrenchtron tracks service history and tells you what&apos;s due next,
-                            for a household garage or a delivery fleet. It&apos;s a static Next.js
-                            app on Firebase: Google sign-in, Firestore for your records, and Cloud
-                            Storage for photos and receipts. Your records are visible only to you,
-                            or to the members of your fleet.
+                            for a household garage or a delivery fleet. It runs on Google Cloud:
+                            you sign in with Google, and your records, photos, and receipts are
+                            stored on Google&apos;s infrastructure and encrypted in transit and at
+                            rest. Only you, or the members of your fleet, can see them.
                         </p>
                     </section>
 
