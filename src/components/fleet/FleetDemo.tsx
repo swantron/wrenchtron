@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
@@ -214,38 +214,58 @@ interface LightboxState {
   unit: string;
 }
 
+const LIGHTBOX_KEY = "wrenchtronLightbox";
+
 function Lightbox({ state, onClose }: { state: LightboxState; onClose: () => void }) {
+  // Opening the photo adds a history entry, so the phone's back button closes it
+  // instead of leaving the page. Every other way of closing goes back through that entry.
   useEffect(() => {
-    const handle = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    if (!window.history.state?.[LIGHTBOX_KEY]) {
+      window.history.pushState({ ...window.history.state, [LIGHTBOX_KEY]: true }, "");
+    }
+    const handlePop = () => onClose();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") window.history.back();
     };
-    document.addEventListener("keydown", handle);
-    return () => document.removeEventListener("keydown", handle);
+    window.addEventListener("popstate", handlePop);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("popstate", handlePop);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [onClose]);
+  const close = () => window.history.back();
 
   const { photo, visit, unit } = state;
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
-      onClick={onClose}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm"
+      onClick={close}
       role="dialog"
       aria-modal="true"
       aria-label={photo.caption}
     >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          close();
+        }}
+        aria-label="Close photo"
+        className="absolute right-3 top-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:right-5 sm:top-5"
+      >
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
       <figure className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="aspect-[4/3] overflow-hidden rounded-md bg-black">
           <ServicePhoto photo={photo} takenAt={visit.date} showCaption />
         </div>
-        <figcaption className="mt-3 flex items-start justify-between gap-4 text-sm text-stone-300">
-          <span>
-            <span className="font-medium text-white">{unit}</span> · {visitTitle(visit)} · {shortDate(visit.date, true)} ·{" "}
-            {visit.mileage.toLocaleString()} mi
-            <br />
-            Logged by {visit.tech} · {visit.shop}
-          </span>
-          <button onClick={onClose} className="shrink-0 text-stone-400 underline-offset-4 hover:text-white hover:underline">
-            Close
-          </button>
+        <figcaption className="mt-3 text-sm text-stone-300">
+          <span className="font-medium text-white">{unit}</span> · {visitTitle(visit)} · {shortDate(visit.date, true)} ·{" "}
+          {visit.mileage.toLocaleString()} mi
+          <br />
+          Logged by {visit.tech} · {visit.shop}
         </figcaption>
       </figure>
     </div>
@@ -491,7 +511,7 @@ function FleetOverview({
   const visible = scoped
     .filter((s) => !attentionOnly || needsAttention(s))
     .filter((s) => !focus || FOCUS_FILTERS[focus](s))
-    .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q))
+    .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.vin} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q))
     .sort((a, b) =>
       sort === "due"
         ? // Vans that can't run come first, then whatever is due soonest
@@ -597,7 +617,7 @@ function FleetOverview({
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Unit, plate, model"
+                placeholder="Unit, plate, VIN, model"
                 aria-label="Search vans"
                 className="w-full min-w-0 rounded border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-900 placeholder-stone-400 focus:border-stone-900 focus:outline-none dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-stone-300 sm:w-44"
               />
@@ -653,6 +673,9 @@ function VanDetail({
           <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-white">{van.unit}</h1>
           <p className="mt-1 text-stone-600 dark:text-stone-400">
             {van.year} {van.make} {van.model} · {van.plate} · {van.location}
+          </p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            VIN <span className="font-mono tracking-wide text-stone-700 select-all dark:text-stone-300">{van.vin}</span>
           </p>
           {van.status !== "in_service" && (
             <p className={`mt-1 text-sm ${status.className}`}>
@@ -734,6 +757,7 @@ export function FleetDemo() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
 
   const { now, summaries } = useMemo(() => {
     const now = new Date();
@@ -775,7 +799,7 @@ export function FleetDemo() {
           />
         )}
       </main>
-      {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
+      {lightbox && <Lightbox state={lightbox} onClose={closeLightbox} />}
     </div>
   );
 }

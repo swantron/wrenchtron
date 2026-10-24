@@ -435,7 +435,7 @@ describe("calculateActionItems", () => {
 
       const logs = [
         makeLog({ id: "l1", maintenanceType: "oil_change", mileage: 46000, date: ts(daysAgo(10)) }),
-        makeLog({ id: "l2", maintenanceType: "tire_rotation", mileage: 50000, date: ts(monthsAgo(5).valueOf ? monthsAgo(5) : daysAgo(150)) }),
+        makeLog({ id: "l2", maintenanceType: "tire_rotation", mileage: 50000, date: ts(monthsAgo(5)) }),
         makeLog({ id: "l3", maintenanceType: "air_filter", mileage: 50000, date: ts(daysAgo(30)) }),
       ];
 

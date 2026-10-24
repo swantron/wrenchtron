@@ -51,6 +51,7 @@ export interface FleetVan {
   model: string;
   powertrain: Powertrain;
   plate: string;
+  vin: string;
   currentMileage: number;
   estimatedAnnualMileage: number;
   /** When the van joined the fleet (start of its service history). */
@@ -62,6 +63,8 @@ export interface FleetVan {
 interface ModelSpec {
   make: string;
   model: string;
+  /** VIN positions 1–8: manufacturer prefix plus model/body codes. */
+  vinPrefix: string;
   powertrain: Powertrain;
   tireSize: string;
   oilBrand?: string;
@@ -75,6 +78,7 @@ const MODELS: ModelSpec[] = [
   {
     make: "Ford",
     model: "Transit 250",
+    vinPrefix: "1FTBR1C8",
     powertrain: "gas",
     tireSize: "235/65R16C",
     oilBrand: "Motorcraft",
@@ -86,6 +90,7 @@ const MODELS: ModelSpec[] = [
   {
     make: "Ram",
     model: "ProMaster 2500",
+    vinPrefix: "3C6LRVDG",
     powertrain: "gas",
     tireSize: "225/75R16C",
     oilBrand: "Mopar",
@@ -97,6 +102,7 @@ const MODELS: ModelSpec[] = [
   {
     make: "Rivian",
     model: "EDV 700",
+    vinPrefix: "7FCEHBB1",
     powertrain: "electric",
     tireSize: "245/75R16",
   },
@@ -236,6 +242,24 @@ function plate(rng: () => number): string {
   const letters = "ABCDEFGHJKLMNPRSTUVWXYZ";
   const l = () => letters[Math.floor(rng() * letters.length)];
   return `${l()}${l()}${l()} ${Math.floor(1000 + rng() * 9000)}`;
+}
+
+const VIN_YEAR: Record<number, string> = { 2022: "N", 2023: "P", 2024: "R", 2025: "S" };
+const VIN_VALUES: Record<string, number> = {
+  A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, J: 1, K: 2, L: 3, M: 4, N: 5,
+  P: 7, R: 9, S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
+};
+const VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
+
+/** A VIN with a valid check digit, so it holds up in a decoder. */
+function vin(prefix: string, year: number, unitNumber: number): string {
+  const rng = makeRng(unitNumber * 104729);
+  const plant = "ABCKS"[Math.floor(rng() * 5)];
+  const serial = String(Math.floor(100000 + rng() * 900000));
+  const chars = `${prefix}0${VIN_YEAR[year]}${plant}${serial}`.split("");
+  const sum = chars.reduce((n, c, i) => n + (VIN_VALUES[c] ?? Number(c)) * VIN_WEIGHTS[i], 0);
+  chars[8] = sum % 11 === 10 ? "X" : String(sum % 11);
+  return chars.join("");
 }
 
 function cents(rng: () => number, min: number, max: number): number {
@@ -476,6 +500,7 @@ function generateVan(site: SiteSpec, index: number, now: Date): FleetVan {
     model: spec.model,
     powertrain: spec.powertrain,
     plate: plate(rng),
+    vin: vin(spec.vinPrefix, year, unitNumber),
     currentMileage,
     estimatedAnnualMileage: annual,
     addedAt: historyStart,
