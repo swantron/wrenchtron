@@ -36,6 +36,8 @@ export interface FleetLog {
   tech: string;
   location: FleetLocation;
   notes?: string;
+  /** Shown instead of the maintenance type, e.g. for a driver's damage report. */
+  title?: string;
   details: Record<string, string | number | boolean | undefined>;
   photos: FleetPhoto[];
 }
@@ -488,6 +490,21 @@ function generateVan(site: SiteSpec, index: number, now: Date): FleetVan {
   const repairCount = rng() < 0.45 ? 0 : rng() < 0.7 ? 1 : 2;
   for (let i = 0; i < repairCount; i++) pick(rng, repairs)();
 
+  // Tread wears down between rotations and resets with new tires
+  logs.sort((a, b) => a.date.getTime() - b.date.getTime());
+  const newTires = logs.find((l) => l.maintenanceType === "tire_replacement");
+  // A worn-out set ahead of new tires, otherwise somewhere mid-life
+  let treadBase = newTires
+    ? newTires.mileage - 48000
+    : startMileage - Math.round(makeRng(unitNumber * 31)() * 12000);
+  for (const log of logs) {
+    if (log === newTires) treadBase = log.mileage;
+    if (log.maintenanceType !== "tire_rotation") continue;
+    const worn = Math.floor((log.mileage - treadBase) / 6500);
+    const tread = `${Math.min(11, Math.max(4, 11 - worn))}/32`;
+    log.details.treadDepth = tread;
+    for (const photo of log.photos) if (photo.kind === "tire") photo.treadDepth = tread;
+  }
   logs.sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return {
@@ -509,20 +526,98 @@ function generateVan(site: SiteSpec, index: number, now: Date): FleetVan {
   };
 }
 
-const STATUS_OVERRIDES: Record<string, { status: VanStatus; statusNote: string }> = {
-  "van-117": { status: "at_shop", statusNote: "Front pads + rotors — back tomorrow" },
-  "van-132": { status: "down", statusNote: "Rear bumper damage — waiting on part" },
-  "van-148": { status: "at_shop", statusNote: "Check-engine light — diagnosing" },
-  "van-206": { status: "at_shop", statusNote: "Tire replacement at partner shop" },
-  "van-303": { status: "down", statusNote: "Sliding door off track — mobile tech scheduled" },
+interface StatusOverride {
+  status: VanStatus;
+  statusNote: string;
+  /** The report that took the van off the road, with its photo. */
+  report: { hoursAgo: number; title: string; by: string; notes: string; photo?: Omit<FleetPhoto, "id"> };
+}
+
+const STATUS_OVERRIDES: Record<string, StatusOverride> = {
+  "van-117": {
+    status: "at_shop",
+    statusNote: "Front pads + rotors — back tomorrow",
+    report: {
+      hoursAgo: 26,
+      title: "Brake check",
+      by: "Kayla S.",
+      notes: "Driver reported grinding at stops. Front pads at 2.4 mm, rotors scored. Sent to the shop.",
+      photo: { kind: "brake", caption: "Front pads at 2.4 mm", padMm: 2.4 },
+    },
+  },
+  "van-132": {
+    status: "down",
+    statusNote: "Rear bumper damage — waiting on part",
+    report: {
+      hoursAgo: 52,
+      title: "Damage report",
+      by: "Devon W. (driver)",
+      notes: "Backed into a loading-dock post. Bumper cover cracked, sensor bracket bent. Part ordered.",
+      photo: { kind: "damage", caption: "Rear bumper damage" },
+    },
+  },
+  "van-148": {
+    status: "at_shop",
+    statusNote: "Check-engine light — diagnosing",
+    report: {
+      hoursAgo: 20,
+      title: "Check-engine light",
+      by: "Luis M.",
+      notes: "Light flashing under load. Code scan: P0301, cylinder 1 misfire. Pulled from the route.",
+    },
+  },
+  "van-206": {
+    status: "at_shop",
+    statusNote: "Tire replacement at partner shop",
+    report: {
+      hoursAgo: 30,
+      title: "Tire check",
+      by: "Marcus B. (partner)",
+      notes: "Rears at 3/32, inside edge worn. Four new tires quoted.",
+      photo: { kind: "tire", caption: "Rear tread at 3/32", tireSize: "225/75R16C", treadDepth: "3/32" },
+    },
+  },
+  "van-303": {
+    status: "down",
+    statusNote: "Sliding door off track — mobile tech scheduled",
+    report: {
+      hoursAgo: 40,
+      title: "Damage report",
+      by: "Jess R. (driver)",
+      notes: "Sliding door came off the lower track and won't latch. Van parked at the Helena lot.",
+      photo: { kind: "damage", caption: "Sliding door off track" },
+    },
+  },
 };
+
+function withOverride(van: FleetVan, now: Date): FleetVan {
+  const override = STATUS_OVERRIDES[van.id];
+  if (!override) return van;
+  const { report, ...status } = override;
+  const id = `${van.id}-report`;
+  const log: FleetLog = {
+    id,
+    maintenanceType: "other",
+    title: report.title,
+    date: new Date(now.getTime() - report.hoursAgo * 3600 * 1000),
+    mileage: van.currentMileage,
+    cost: 0,
+    shop: "Reported from the route",
+    tech: report.by,
+    location: van.location,
+    notes: report.notes,
+    details: {},
+    photos: [
+      { id: `${id}-p0`, kind: "odometer", caption: "Odometer at report", mileage: van.currentMileage },
+      ...(report.photo ? [{ ...report.photo, id: `${id}-p1` }] : []),
+    ],
+  };
+  return { ...van, ...status, logs: [log, ...van.logs] };
+}
 
 export function generateFleet(now: Date): FleetVan[] {
   return SITES.flatMap((site) =>
-    Array.from({ length: site.count }, (_, i) => {
-      const van = generateVan(site, i, now);
-      return { ...van, ...STATUS_OVERRIDES[van.id] };
-    })
+    Array.from({ length: site.count }, (_, i) => withOverride(generateVan(site, i, now), now))
   );
 }
 

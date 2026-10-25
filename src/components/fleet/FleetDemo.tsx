@@ -169,7 +169,7 @@ function ago(date: Date, now: Date): string {
 }
 
 function visitTitle(visit: Visit): string {
-  return visit.logs.map((l) => TYPE_LABELS[l.maintenanceType]).join(" + ");
+  return visit.logs.map((l) => l.title ?? TYPE_LABELS[l.maintenanceType]).join(" + ");
 }
 
 // The fleet is anchored to the viewer's clock, so render client-only to avoid hydration drift
@@ -284,12 +284,12 @@ function Thumbs({
   size?: "sm" | "md";
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className={size === "md" ? "grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap" : "flex flex-wrap gap-1.5"}>
       {visit.photos.map((photo) => (
         <button
           key={photo.id}
           onClick={() => onOpen({ photo, visit, unit })}
-          className={`${size === "md" ? "w-32 sm:w-36" : "w-16"} aspect-[4/3] overflow-hidden rounded-[3px] outline-offset-2 hover:outline hover:outline-2 hover:outline-stone-900 dark:hover:outline-stone-100`}
+          className={`${size === "md" ? "sm:w-36" : "w-16"} aspect-[4/3] overflow-hidden rounded-[3px] outline-offset-2 hover:outline hover:outline-2 hover:outline-stone-900 dark:hover:outline-stone-100`}
           aria-label={`View photo: ${photo.caption}`}
           title={photo.caption}
         >
@@ -730,7 +730,7 @@ function VanDetail({
               <div className="min-w-0">
                 <div className="flex items-baseline justify-between gap-4">
                   <p className="font-medium text-stone-900 dark:text-white">{visitTitle(visit)}</p>
-                  <p className="shrink-0 tabular-nums text-stone-900 dark:text-white">{formatCost(visit.cost)}</p>
+                  <p className="shrink-0 tabular-nums text-stone-900 dark:text-white">{visit.cost > 0 && formatCost(visit.cost)}</p>
                 </div>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                   {visit.shop} · logged by {visit.tech}
