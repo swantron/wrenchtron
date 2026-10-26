@@ -186,6 +186,17 @@ const DOT: Record<ActionItem["status"], string> = {
   upcoming: "bg-stone-300 dark:bg-stone-600",
 };
 
+/** "Rear bumper damage — waiting on part" → "Rear bumper damage" */
+function shortReason(note?: string): string | undefined {
+  return note?.split(" — ")[0];
+}
+
+const FOCUS_DOT: Record<Focus, string> = {
+  off_road: "bg-stone-500",
+  overdue: "bg-red-500",
+  due_soon: "bg-amber-400",
+};
+
 const VAN_STATUS: Record<VanStatus, { label: string; className: string }> = {
   // Most vans are in service; only the exceptions get a label
   in_service: { label: "", className: "" },
@@ -342,7 +353,9 @@ function RecentWork({
   return (
     <section>
       <h2 className="text-sm font-semibold text-stone-900 dark:text-white">Recent work</h2>
-      <p className="text-sm text-stone-500 dark:text-stone-400">Photos come in with every job, from every site.</p>
+      <p className="text-sm text-stone-500 dark:text-stone-400">
+        Photos come in with every job, from every site. The ones in this demo are drawn stand-ins.
+      </p>
       <ol className="mt-4 divide-y divide-stone-200 dark:divide-stone-800">
         {recent.map(({ visit, van }) => (
           <li key={`${van.id}-${visit.id}`} className="py-3">
@@ -443,7 +456,13 @@ function FleetTable({
                   {van.currentMileage.toLocaleString()}
                 </td>
                 <td className="py-2.5 pr-4">
-                  <DueCell summary={s} />
+                  {van.status !== "in_service" && van.statusNote ? (
+                    <span className={status.className} title={van.statusNote}>
+                      {shortReason(van.statusNote)}
+                    </span>
+                  ) : (
+                    <DueCell summary={s} />
+                  )}
                 </td>
                 <td className={`py-2.5 pr-4 ${status.className}`} title={van.statusNote}>
                   {status.label}
@@ -473,7 +492,11 @@ function FleetTable({
                   {van.model} · {van.location} · {van.currentMileage.toLocaleString()} mi
                 </span>
                 <span className="mt-1 block">
-                  <DueCell summary={s} />
+                  {van.status !== "in_service" && van.statusNote ? (
+                    <span className={status.className}>{van.statusNote}</span>
+                  ) : (
+                    <DueCell summary={s} />
+                  )}
                 </span>
               </button>
             </li>
@@ -537,18 +560,18 @@ function FleetOverview({
 
   return (
     <>
-      <div className="mb-8 max-w-2xl">
-        <p className="text-sm text-stone-500 dark:text-stone-400">Demo Delivery Co. — sample data</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-900 dark:text-white sm:text-3xl">
+      <div className="mb-5 max-w-2xl sm:mb-8">
+        <p className="text-sm text-stone-500 dark:text-stone-400">Demo Delivery Co. — sample vans, drawn photos</p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-stone-900 dark:text-white sm:text-3xl">
           Know what was done to every van, and see the proof.
         </h1>
-        <p className="mt-3 text-stone-600 dark:text-stone-300">
+        <p className="mt-3 hidden text-stone-600 dark:text-stone-300 sm:block">
           Whoever does the work snaps the odometer, the part, and the invoice. You see it from Bozeman, whether the van
           was serviced in the yard, at a partner shop in Billings, or by a mobile tech in Helena.
         </p>
       </div>
 
-      <dl className="mb-8 flex flex-wrap gap-x-8 gap-y-3 border-y border-stone-200 py-4 dark:border-stone-800">
+      <dl className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-stone-200 py-3 dark:border-stone-800 sm:mb-8 sm:gap-x-6 sm:py-4">
         {stats.map(({ value, label, focus: key }) => {
           const content = (
             <>
@@ -565,18 +588,21 @@ function FleetOverview({
             );
           }
           const active = focus === key;
+          // Filters look like buttons, with the same dot colors as the list
           return (
             <button
               key={label}
               onClick={() => setFocus(active ? null : key)}
               aria-pressed={active}
               title={active ? "Show all vans" : `Show only vans ${label}`}
-              className={`flex items-baseline gap-1.5 border-b-2 pb-0.5 ${active
-                ? "border-stone-900 dark:border-white"
-                : "border-transparent hover:border-stone-300 dark:hover:border-stone-600"
+              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 sm:px-3 ${active
+                ? "border-stone-900 bg-stone-900 dark:border-white dark:bg-white [&_*]:!text-white dark:[&_*]:!text-stone-900"
+                : "border-stone-300 hover:border-stone-500 dark:border-stone-700 dark:hover:border-stone-500"
                 }`}
             >
+              <span aria-hidden className={`h-2 w-2 rounded-full ${FOCUS_DOT[key]}`} />
               {content}
+              {active && <span aria-hidden className="ml-0.5 text-sm">×</span>}
             </button>
           );
         })}
