@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ServicePhoto } from "@/components/fleet/ServicePhoto";
+import { DemoLogSheet, type DemoLogEntry } from "@/components/fleet/DemoLogSheet";
+import { useBackToClose } from "@/components/fleet/useBackToClose";
+import { track } from "@/lib/demoBeacon";
 import {
   generateFleet,
   FLEET_LOCATIONS,
@@ -225,27 +228,10 @@ interface LightboxState {
   unit: string;
 }
 
-const LIGHTBOX_KEY = "wrenchtronLightbox";
-
 function Lightbox({ state, onClose }: { state: LightboxState; onClose: () => void }) {
-  // Opening the photo adds a history entry, so the phone's back button closes it
-  // instead of leaving the page. Every other way of closing goes back through that entry.
-  useEffect(() => {
-    if (!window.history.state?.[LIGHTBOX_KEY]) {
-      window.history.pushState({ ...window.history.state, [LIGHTBOX_KEY]: true }, "");
-    }
-    const handlePop = () => onClose();
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") window.history.back();
-    };
-    window.addEventListener("popstate", handlePop);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      window.removeEventListener("popstate", handlePop);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [onClose]);
-  const close = () => window.history.back();
+  const close = useBackToClose("wrenchtronLightbox", onClose);
+  const photoId = state.photo.id;
+  useEffect(() => track("photo", photoId), [photoId]);
 
   const { photo, visit, unit } = state;
   return (
@@ -313,7 +299,10 @@ function Thumbs({
 
 // ---- Views ----
 
-function FleetHeader() {
+const LOG_BUTTON =
+  "rounded bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200";
+
+function FleetHeader({ onLog }: { onLog: () => void }) {
   return (
     <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -324,7 +313,10 @@ function FleetHeader() {
           <span className="text-sm text-stone-500 dark:text-stone-400">Fleet demo</span>
         </div>
         <div className="flex items-center gap-4">
-          <a href={CONTACT_HREF} className="text-sm font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white">
+          <button onClick={onLog} className={`hidden md:block ${LOG_BUTTON}`}>
+            Log a job
+          </button>
+          <a href={CONTACT_HREF} onClick={() => track("contact")} className="text-sm font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white">
             Get in touch
           </a>
           <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-900 dark:hover:text-white" />
@@ -665,6 +657,7 @@ function FleetOverview({
         </p>
         <a
           href={CONTACT_HREF}
+          onClick={() => track("contact")}
           className="mt-4 inline-block rounded bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
         >
           Get in touch
@@ -678,10 +671,12 @@ function VanDetail({
   summary,
   onBack,
   onOpen,
+  onLog,
 }: {
   summary: VanSummary;
   onBack: () => void;
   onOpen: (s: LightboxState) => void;
+  onLog: () => void;
 }) {
   const { van, items, visits } = summary;
   const daily = van.estimatedAnnualMileage / 365;
@@ -709,6 +704,9 @@ function VanDetail({
               {van.statusNote && ` — ${van.statusNote}`}
             </p>
           )}
+          <button onClick={onLog} className={`mt-4 ${LOG_BUTTON}`}>
+            Log a job on {van.unit}
+          </button>
         </div>
         <dl className="flex gap-8 text-sm">
           <div>
@@ -747,7 +745,10 @@ function VanDetail({
           {visits.map((visit) => (
             <li
               key={visit.id}
-              className="grid gap-x-6 gap-y-2 border-b border-stone-200 py-5 dark:border-stone-800 sm:grid-cols-[8rem_minmax(0,1fr)]"
+              className={`grid gap-x-6 gap-y-2 border-b border-stone-200 py-5 dark:border-stone-800 sm:grid-cols-[8rem_minmax(0,1fr)] ${visit.logs.some((l) => l.id.startsWith("demo-"))
+                ? "-mx-3 rounded bg-amber-50 px-3 dark:bg-amber-950/30"
+                : ""
+                }`}
             >
               <div className="text-sm">
                 <p className="font-medium text-stone-900 dark:text-white">{shortDate(visit.date, true)}</p>
@@ -784,16 +785,48 @@ export function FleetDemo() {
   const searchParams = useSearchParams();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const closeLightbox = useCallback(() => setLightbox(null), []);
+  const [sheet, setSheet] = useState<{ vanId?: string } | null>(null);
+  const [entries, setEntries] = useState<DemoLogEntry[]>([]);
+  // Where to go once the sheet's history entry is gone
+  const afterSheet = useRef<string | null>(null);
 
-  const { now, summaries } = useMemo(() => {
+  const { now, fleet } = useMemo(() => {
     const now = new Date();
-    return { now, summaries: isClient ? generateFleet(now).map((van) => summarize(van, now)) : [] };
+    return { now, fleet: isClient ? generateFleet(now) : [] };
   }, [isClient]);
+
+  // Jobs logged in this visit, on top of the sample fleet
+  const vans = useMemo(
+    () =>
+      fleet.map((van) => {
+        const mine = entries.filter((e) => e.vanId === van.id);
+        if (!mine.length) return van;
+        const merged = mine.reduce<FleetVan>(
+          (v, e) => ({
+            ...v,
+            ...e.status,
+            ...(e.status?.status === "in_service" && { statusNote: undefined }),
+            currentMileage: Math.max(v.currentMileage, e.log.mileage),
+          }),
+          van
+        );
+        return { ...merged, logs: [...mine.map((e) => e.log).reverse(), ...van.logs] };
+      }),
+    [fleet, entries]
+  );
+  const summaries = useMemo(() => vans.map((van) => summarize(van, now)), [vans, now]);
 
   const selectedId = searchParams.get("van");
   const locParam = searchParams.get("loc");
   const location = FLEET_LOCATIONS.find((l) => l === locParam) ?? null;
   const selected = summaries.find((s) => s.van.id === selectedId);
+
+  useEffect(() => {
+    if (isClient) track("open", selectedId ?? undefined);
+  }, [isClient]); // eslint-disable-line react-hooks/exhaustive-deps -- once per page load
+  useEffect(() => {
+    if (selectedId) track("van", selectedId);
+  }, [selectedId]);
 
   const navigate = (params: { van?: string | null; loc?: FleetLocation | null }) => {
     const next = new URLSearchParams();
@@ -804,16 +837,44 @@ export function FleetDemo() {
     router.push(`/demo/fleet${qs ? `?${qs}` : ""}`, { scroll: !!params.van });
   };
 
+  const closeSheet = useCallback(() => {
+    setSheet(null);
+    const vanId = afterSheet.current;
+    afterSheet.current = null;
+    // Show the van the job was logged on, unless that's where we already are
+    if (vanId && vanId !== selectedId) {
+      router.push(`/demo/fleet?van=${vanId}`, { scroll: true });
+    } else if (vanId) {
+      window.scrollTo({ top: 0 });
+    }
+  }, [router, selectedId]);
+
+  const openSheet = (vanId?: string) => {
+    track("log_open", vanId);
+    setSheet({ vanId });
+  };
+
+  const saveEntry = (entry: DemoLogEntry) => {
+    track("log_saved", `${entry.log.title ?? entry.log.maintenanceType}:${entry.log.photos.length}`);
+    setEntries((current) => [...current, entry]);
+    afterSheet.current = entry.vanId;
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
-      <FleetHeader />
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <FleetHeader onLog={() => openSheet(selected?.van.id)} />
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 sm:pt-10 md:pb-10">
         {!isClient ? (
           <div className="flex justify-center py-24">
             <LoadingSpinner />
           </div>
         ) : selected ? (
-          <VanDetail summary={selected} onBack={() => navigate({ van: null })} onOpen={setLightbox} />
+          <VanDetail
+            summary={selected}
+            onBack={() => navigate({ van: null })}
+            onOpen={setLightbox}
+            onLog={() => openSheet(selected.van.id)}
+          />
         ) : (
           <FleetOverview
             summaries={summaries}
@@ -825,6 +886,26 @@ export function FleetDemo() {
           />
         )}
       </main>
+      {isClient && !sheet && (
+        <button
+          onClick={() => openSheet(selected?.van.id)}
+          className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white shadow-lg dark:bg-white dark:text-stone-900 md:hidden"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5A1.5 1.5 0 014.5 7h2.3l1.4-2h7.6l1.4 2h2.3A1.5 1.5 0 0121 8.5v10a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 18.5v-10z" />
+            <circle cx="12" cy="13" r="3.5" />
+          </svg>
+          Log a job
+        </button>
+      )}
+      {sheet && (
+        <DemoLogSheet
+          vans={vans}
+          initialVanId={sheet.vanId}
+          onSave={saveEntry}
+          onClose={closeSheet}
+        />
+      )}
       {lightbox && <Lightbox state={lightbox} onClose={closeLightbox} />}
     </div>
   );

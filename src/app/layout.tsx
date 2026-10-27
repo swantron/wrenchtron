@@ -3,6 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
+  // Lets link previews resolve relative image paths
+  metadataBase: new URL("https://wrenchtron.com"),
   title: "Wrenchtron",
   description: "Vehicle maintenance tracker",
   appleWebApp: {
