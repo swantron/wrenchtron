@@ -123,6 +123,8 @@ const RENDERERS: Record<PhotoKind, (props: { photo: FleetPhoto }) => React.JSX.E
   tire: Tire,
   brake: Brake,
   damage: Damage,
+  // Real uploads always carry a src; this only guards a photo that lost it
+  other: Part,
 };
 
 export function ServicePhoto({

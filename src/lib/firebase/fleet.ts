@@ -1,9 +1,13 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   onSnapshot,
+  orderBy,
+  query,
+  Timestamp,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -11,8 +15,25 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
-import { getFirebaseDb } from "./config";
-import type { Fleet, FleetInvite, FleetMember, FleetMembership, FleetRole, FleetSite } from "@/types/fleet";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getFirebaseDb, getFirebaseStorage } from "./config";
+import { compressImage } from "@/lib/image/compress";
+import type {
+  Fleet,
+  FleetInvite,
+  FleetMember,
+  FleetMembership,
+  FleetRole,
+  FleetSite,
+  FleetLog,
+  FleetLogPhoto,
+  FleetPhotoKind,
+  FleetVehicle,
+  LastVisit,
+  VanStatus,
+} from "@/types/fleet";
+import type { MaintenanceType } from "@/types/maintenance";
+import type { Powertrain, ServiceInterval } from "@/types/firestore";
 
 // ---- Paths ----
 
@@ -47,7 +68,7 @@ export function siteId(name: string, taken: string[] = []): string {
  * doc, and their membership pointer are written in one batch — security rules
  * require all three together.
  */
-export async function createFleet(user: User, name: string, siteNames: string[]): Promise<string> {
+export async function createFleet(user: User, name: string, siteNames: string[], ownerName = ""): Promise<string> {
   const ref = doc(collection(getFirebaseDb(), "fleets"));
   const sites: FleetSite[] = [];
   for (const siteName of siteNames.map((s) => s.trim()).filter(Boolean)) {
@@ -66,7 +87,7 @@ export async function createFleet(user: User, name: string, siteNames: string[])
     uid: user.uid,
     role: "owner",
     email: user.email ?? "",
-    displayName: user.displayName ?? user.email ?? "",
+    displayName: ownerName.trim() || user.displayName || user.email || "",
     joinedAt: serverTimestamp(),
   });
   batch.set(doc(membershipsCollection(user.uid), ref.id), {
@@ -218,13 +239,13 @@ export async function getMyInvite(fleetId: string, user: User): Promise<FleetInv
  * pointer, and deleting the invite go in one batch — security rules require
  * the invite to be consumed so it can't be reused.
  */
-export async function acceptInvite(user: User, fleetId: string, invite: FleetInvite) {
+export async function acceptInvite(user: User, fleetId: string, invite: FleetInvite, displayName: string) {
   const batch = writeBatch(getFirebaseDb());
   batch.set(memberDoc(fleetId, user.uid), {
     uid: user.uid,
     role: invite.role,
     email: invite.email,
-    displayName: user.displayName || invite.email,
+    displayName: displayName.trim() || user.displayName || invite.email,
     ...(invite.siteIds ? { siteIds: invite.siteIds } : {}),
     invitedBy: invite.invitedBy,
     joinedAt: serverTimestamp(),
@@ -250,4 +271,218 @@ export async function leaveFleet(fleetId: string, uid: string) {
 /** Drops a pointer to a fleet you were removed from, so it stops showing up. */
 export async function forgetFleet(uid: string, fleetId: string) {
   await deleteDoc(doc(membershipsCollection(uid), fleetId));
+}
+
+// ---- Sites ----
+
+/** Adds sites by name, skipping ones the fleet already has (case-insensitive). Returns every site. */
+export async function addSites(fleetId: string, current: FleetSite[], names: string[]): Promise<FleetSite[]> {
+  const sites = [...current];
+  for (const name of names.map((n) => n.trim()).filter(Boolean)) {
+    if (sites.some((s) => s.name.toLowerCase() === name.toLowerCase())) continue;
+    sites.push({ id: siteId(name, sites.map((s) => s.id)), name });
+  }
+  if (sites.length !== current.length) {
+    await updateDoc(fleetDoc(fleetId), { sites, updatedAt: serverTimestamp() });
+  }
+  return sites;
+}
+
+// ---- Vehicles ----
+
+function vehiclesCollection(fleetId: string) {
+  return collection(getFirebaseDb(), "fleets", fleetId, "vehicles");
+}
+
+export function subscribeToFleetVehicles(
+  fleetId: string,
+  callback: (vehicles: FleetVehicle[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    vehiclesCollection(fleetId),
+    (snapshot) => callback(snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as FleetVehicle)),
+    (error) => {
+      console.error("Firestore fleet vehicles subscription error:", error);
+      onError?.(error);
+    }
+  );
+}
+
+export interface NewFleetVan {
+  unit: string;
+  vin: string;
+  licensePlate?: string;
+  siteId: string;
+  currentMileage: number;
+  year?: number;
+  make?: string;
+  model?: string;
+  trim?: string;
+  engine?: string;
+  powertrain: Powertrain;
+  scheduleId: string;
+  serviceIntervals: ServiceInterval[];
+}
+
+const IMPORT_BATCH = 400; // under Firestore's 500 writes per batch
+
+/** Creates vans in batches. Each lands in service, carrying its schedule's intervals. */
+export async function importFleetVans(fleetId: string, vans: NewFleetVan[]): Promise<void> {
+  for (let i = 0; i < vans.length; i += IMPORT_BATCH) {
+    const batch = writeBatch(getFirebaseDb());
+    for (const van of vans.slice(i, i + IMPORT_BATCH)) {
+      const data: Record<string, unknown> = {
+        name: van.unit,
+        unit: van.unit,
+        type: "auto",
+        powertrain: van.powertrain,
+        year: van.year ?? 0,
+        make: van.make ?? "",
+        model: van.model ?? "",
+        vin: van.vin,
+        siteId: van.siteId,
+        currentMileage: van.currentMileage,
+        scheduleId: van.scheduleId,
+        serviceIntervals: van.serviceIntervals,
+        status: "in_service",
+        isActive: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      if (van.licensePlate) data.licensePlate = van.licensePlate;
+      if (van.trim) data.trim = van.trim;
+      if (van.engine) data.engine = van.engine;
+      batch.set(doc(vehiclesCollection(fleetId)), data);
+    }
+    await batch.commit();
+  }
+}
+
+/** Any member can mark a van down, at the shop, or back in service. */
+export async function setVanStatus(fleetId: string, vehicleId: string, status: VanStatus, statusNote?: string) {
+  await updateDoc(doc(vehiclesCollection(fleetId), vehicleId), {
+    status,
+    statusNote: status === "in_service" ? deleteField() : statusNote?.trim() || deleteField(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// ---- Logging work ----
+
+export function subscribeToVanLogs(
+  fleetId: string,
+  vehicleId: string,
+  callback: (logs: FleetLog[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    query(collection(vehiclesCollection(fleetId), vehicleId, "maintenanceLogs"), orderBy("date", "desc")),
+    (snapshot) => callback(snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as FleetLog)),
+    (error) => {
+      console.error("Firestore van logs subscription error:", error);
+      onError?.(error);
+    }
+  );
+}
+
+export interface VisitInput {
+  services: { type: MaintenanceType; title?: string }[];
+  date: Date;
+  mileage: number;
+  /** Whole visit, in cents. Recorded on the first service. */
+  cost: number;
+  shop: string;
+  notes?: string;
+  photos: { file: File; kind: FleetPhotoKind }[];
+  /** Set when the visit changes whether the van can run. */
+  status?: { status: VanStatus; statusNote?: string };
+}
+
+/**
+ * Logs one visit: a log per service (sharing a visitId), its photos, and the
+ * van's odometer, service summary, last visit and status, all in one batch so
+ * the board never shows half a visit. Photos upload first; a failed upload
+ * stops the visit before anything is written.
+ */
+export async function logVisit(
+  fleetId: string,
+  vehicle: FleetVehicle,
+  user: User,
+  /** As the fleet knows them (member doc), not the sign-in account's name. */
+  userName: string,
+  input: VisitInput
+): Promise<string> {
+  const logsCollection = collection(vehiclesCollection(fleetId), vehicle.id!, "maintenanceLogs");
+  const refs = input.services.map(() => doc(logsCollection));
+  const visitId = refs[0].id;
+
+  const photos: FleetLogPhoto[] = [];
+  for (const [i, photo] of input.photos.entries()) {
+    const file = await compressImage(photo.file);
+    const path = `fleets/${fleetId}/vehicles/${vehicle.id}/logs/${visitId}/${i + 1}-${photo.kind}.jpg`;
+    const storageRef = ref(getFirebaseStorage(), path);
+    await uploadBytes(storageRef, file, { contentType: file.type || "image/jpeg" });
+    photos.push({ path, url: await getDownloadURL(storageRef), kind: photo.kind });
+  }
+
+  const date = Timestamp.fromDate(input.date);
+  const loggedBy = { uid: user.uid, name: userName || user.displayName || user.email || "Unknown" };
+  const notes = input.notes?.trim() || undefined;
+  const batch = writeBatch(getFirebaseDb());
+
+  input.services.forEach((service, i) => {
+    batch.set(refs[i], {
+      maintenanceType: service.type,
+      ...(service.title ? { title: service.title } : {}),
+      date,
+      mileage: input.mileage,
+      cost: i === 0 ? input.cost : 0,
+      shop: input.shop,
+      ...(notes ? { notes } : {}),
+      details: {},
+      receiptPaths: [],
+      visitId,
+      loggedBy,
+      siteId: vehicle.siteId,
+      // The visit's photos ride on its first service
+      photos: i === 0 ? photos : [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
+
+  const vehicleUpdate: Record<string, unknown> = { updatedAt: serverTimestamp() };
+  if (input.mileage > vehicle.currentMileage) vehicleUpdate.currentMileage = input.mileage;
+  input.services.forEach((service, i) => {
+    const existing = vehicle.serviceSummary?.[service.type];
+    if (!existing || existing.date.toMillis() <= date.toMillis()) {
+      vehicleUpdate[`serviceSummary.${service.type}`] = { date, mileage: input.mileage, logId: refs[i].id };
+    }
+  });
+  if (!vehicle.lastVisit || vehicle.lastVisit.date.toMillis() <= date.toMillis()) {
+    const lastVisit: LastVisit = {
+      visitId,
+      date,
+      mileage: input.mileage,
+      types: input.services.map((s) => s.type),
+      shop: input.shop,
+      loggedBy,
+      siteId: vehicle.siteId,
+      photos,
+    };
+    const title = input.services.find((s) => s.title)?.title;
+    if (title) lastVisit.title = title;
+    if (notes) lastVisit.notes = notes;
+    vehicleUpdate.lastVisit = lastVisit;
+  }
+  if (input.status) {
+    vehicleUpdate.status = input.status.status;
+    vehicleUpdate.statusNote =
+      input.status.status === "in_service" ? deleteField() : input.status.statusNote?.trim() || deleteField();
+  }
+  batch.update(doc(vehiclesCollection(fleetId), vehicle.id!), vehicleUpdate);
+
+  await batch.commit();
+  return visitId;
 }

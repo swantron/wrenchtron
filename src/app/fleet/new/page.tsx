@@ -17,6 +17,8 @@ export default function NewFleetPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [sites, setSites] = useState("");
+  const [ownerName, setOwnerName] = useState<string | null>(null);
+  const yourName = ownerName ?? user?.displayName ?? "";
   const [saving, setSaving] = useState(false);
 
   const siteNames = sites.split("\n").map((s) => s.trim()).filter(Boolean);
@@ -26,7 +28,7 @@ export default function NewFleetPage() {
     if (!user || !name.trim()) return;
     setSaving(true);
     try {
-      const fleetId = await createFleet(user, name, siteNames);
+      const fleetId = await createFleet(user, name, siteNames, yourName);
       setActiveFleet(fleetId);
       router.push("/fleet");
     } catch (error) {
@@ -52,6 +54,18 @@ export default function NewFleetPage() {
             required
             maxLength={80}
             placeholder="Demo Delivery Co."
+            className={inputClass}
+          />
+        </label>
+
+        <label className="block text-sm font-medium text-stone-900 dark:text-white">
+          Your name <span className="font-normal text-stone-500">— shown on work you log</span>
+          <input
+            value={yourName}
+            onChange={(e) => setOwnerName(e.target.value)}
+            maxLength={60}
+            autoComplete="name"
+            placeholder="Joe S."
             className={inputClass}
           />
         </label>

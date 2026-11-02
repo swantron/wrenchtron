@@ -281,6 +281,15 @@ describe("vehicles", () => {
     await assertSucceeds(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), { currentMileage: 41000, status: "at_shop", statusNote: "Brakes" }));
   });
 
+  it("techs keep the service summary and last visit in step with their logs", async () => {
+    await assertSucceeds(
+      updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), {
+        "serviceSummary.oil_change": { date: daysAgo(0), mileage: 41000, logId: "x" },
+        lastVisit: { visitId: "x", date: daysAgo(0), mileage: 41000, types: ["oil_change"], photos: [] },
+      })
+    );
+  });
+
   it("techs can't change anything else on a van", async () => {
     await assertFails(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), { vin: "TAMPERED" }));
     await assertFails(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), { siteId: "billings" }));

@@ -73,6 +73,20 @@ export type ServiceSummary = Partial<
   Record<MaintenanceType, { date: Timestamp; mileage: number; logId: string }>
 >;
 
+/** The van's most recent visit, kept on the vehicle so the board's Recent work needs no log queries. */
+export interface LastVisit {
+  visitId: string;
+  date: Timestamp;
+  mileage: number;
+  types: MaintenanceType[];
+  title?: string;
+  shop: string;
+  loggedBy: { uid: string; name: string };
+  siteId: string;
+  notes?: string;
+  photos: FleetLogPhoto[];
+}
+
 export interface FleetVehicle extends Vehicle {
   unit: string;
   siteId: string;
@@ -80,12 +94,15 @@ export interface FleetVehicle extends Vehicle {
   status: VanStatus;
   statusNote?: string;
   serviceSummary?: ServiceSummary;
+  lastVisit?: LastVisit;
 }
 
 export type FleetPhotoKind = "odometer" | "part" | "invoice" | "tire" | "brake" | "damage" | "other";
 
 export interface FleetLogPhoto {
   path: string;
+  /** Download URL, saved at upload so the board doesn't resolve every thumbnail. */
+  url: string;
   kind: FleetPhotoKind;
   caption?: string;
 }
@@ -93,6 +110,8 @@ export interface FleetLogPhoto {
 export interface FleetLog extends MaintenanceLog {
   /** Groups the services from one shop visit. */
   visitId: string;
+  /** Shown instead of the maintenance type, e.g. "Damage report". */
+  title?: string;
   loggedBy: { uid: string; name: string };
   siteId: string;
   photos: FleetLogPhoto[];

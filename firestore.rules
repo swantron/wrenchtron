@@ -142,10 +142,10 @@ service cloud.firestore {
         allow read: if isMember(fleetId);
         allow create, delete: if isManager(fleetId);
         // Techs can record what they saw (odometer, van status) and keep the
-        // per-type service summary in step with the logs they write.
+        // per-type service summary and last visit in step with the logs they write.
         allow update: if isManager(fleetId)
                       || (isMember(fleetId)
-                          && changedOnly(['currentMileage', 'status', 'statusNote', 'serviceSummary', 'updatedAt']));
+                          && changedOnly(['currentMileage', 'status', 'statusNote', 'serviceSummary', 'lastVisit', 'updatedAt']));
 
         match /maintenanceLogs/{logId} {
           allow read: if isMember(fleetId);

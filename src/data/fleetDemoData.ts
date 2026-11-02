@@ -1,12 +1,14 @@
 import type { Powertrain, ServiceInterval } from "@/types/firestore";
 import type { MaintenanceType } from "@/types/maintenance";
+import { ELECTRIC_VAN, GAS_SEVERE } from "@/data/fleetSchedules";
+import { vinCheckDigit } from "@/utils/vin";
 
 // Synthetic delivery fleet for /demo/fleet. Generated deterministically and
 // anchored to `now` so due/overdue statuses stay realistic whenever it's viewed.
 
 export type FleetLocation = "Bozeman" | "Billings" | "Helena";
 export type VanStatus = "in_service" | "at_shop" | "down";
-export type PhotoKind = "odometer" | "part" | "invoice" | "tire" | "brake" | "damage";
+export type PhotoKind = "odometer" | "part" | "invoice" | "tire" | "brake" | "damage" | "other";
 
 export interface FleetPhoto {
   id: string;
@@ -34,7 +36,7 @@ export interface FleetLog {
   cost: number; // cents
   shop: string;
   tech: string;
-  location: FleetLocation;
+  location: string;
   notes?: string;
   /** Shown instead of the maintenance type, e.g. for a driver's damage report. */
   title?: string;
@@ -45,7 +47,7 @@ export interface FleetLog {
 export interface FleetVan {
   id: string;
   unit: string;
-  location: FleetLocation;
+  location: string;
   status: VanStatus;
   statusNote?: string;
   year: number;
@@ -60,6 +62,11 @@ export interface FleetVan {
   addedAt: Date;
   serviceIntervals: ServiceInterval[];
   logs: FleetLog[]; // newest first
+  /**
+   * Latest log per service type, for due dates, when `logs` is only part of the
+   * history (the real board keeps just each van's last visit).
+   */
+  serviceLogs?: FleetLog[];
 }
 
 interface ModelSpec {
@@ -151,58 +158,6 @@ const SITES: SiteSpec[] = [
   },
 ];
 
-const GAS_INTERVALS: ServiceInterval[] = [
-  {
-    id: "fleet-oil",
-    name: "Oil Change",
-    type: "composite",
-    mileageInterval: 7500,
-    timeIntervalMonths: 6,
-    targetMaintenanceType: "oil_change",
-    notes: "Severe-duty schedule (stop-and-go delivery)",
-  },
-  {
-    id: "fleet-tire",
-    name: "Tire Rotation",
-    type: "mileage",
-    mileageInterval: 7500,
-    targetMaintenanceType: "tire_rotation",
-  },
-  {
-    id: "fleet-inspection",
-    name: "Safety Inspection",
-    type: "time",
-    timeIntervalMonths: 6,
-    targetMaintenanceType: "inspection",
-    notes: "Brakes, lights, tires, wipers, doors",
-  },
-];
-
-const EV_INTERVALS: ServiceInterval[] = [
-  {
-    id: "fleet-ev-tire",
-    name: "Tire Rotation",
-    type: "mileage",
-    mileageInterval: 7500,
-    targetMaintenanceType: "tire_rotation",
-  },
-  {
-    id: "fleet-ev-inspection",
-    name: "Safety Inspection",
-    type: "time",
-    timeIntervalMonths: 6,
-    targetMaintenanceType: "inspection",
-    notes: "Brakes, lights, tires, wipers, doors",
-  },
-  {
-    id: "fleet-ev-cabin",
-    name: "Cabin Air Filter",
-    type: "time",
-    timeIntervalMonths: 12,
-    targetMaintenanceType: "cabin_filter",
-  },
-];
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // mulberry32 — small seeded PRNG so the demo fleet is identical on every load
@@ -247,20 +202,13 @@ function plate(rng: () => number): string {
 }
 
 const VIN_YEAR: Record<number, string> = { 2022: "N", 2023: "P", 2024: "R", 2025: "S" };
-const VIN_VALUES: Record<string, number> = {
-  A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, J: 1, K: 2, L: 3, M: 4, N: 5,
-  P: 7, R: 9, S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
-};
-const VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
-
 /** A VIN with a valid check digit, so it holds up in a decoder. */
 function vin(prefix: string, year: number, unitNumber: number): string {
   const rng = makeRng(unitNumber * 104729);
   const plant = "ABCKS"[Math.floor(rng() * 5)];
   const serial = String(Math.floor(100000 + rng() * 900000));
   const chars = `${prefix}0${VIN_YEAR[year]}${plant}${serial}`.split("");
-  const sum = chars.reduce((n, c, i) => n + (VIN_VALUES[c] ?? Number(c)) * VIN_WEIGHTS[i], 0);
-  chars[8] = sum % 11 === 10 ? "X" : String(sum % 11);
+  chars[8] = vinCheckDigit(chars.join(""));
   return chars.join("");
 }
 
@@ -521,7 +469,7 @@ function generateVan(site: SiteSpec, index: number, now: Date): FleetVan {
     currentMileage,
     estimatedAnnualMileage: annual,
     addedAt: historyStart,
-    serviceIntervals: isEv ? EV_INTERVALS : GAS_INTERVALS,
+    serviceIntervals: (isEv ? ELECTRIC_VAN : GAS_SEVERE).intervals,
     logs,
   };
 }

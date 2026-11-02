@@ -25,6 +25,9 @@ function JoinFleet() {
   // Keyed so a lookup for a previous fleet or account never shows
   const [lookup, setLookup] = useState<{ key: string; invite: FleetInvite | null } | null>(null);
   const [joining, setJoining] = useState(false);
+  // Shown on every job they log, so ask for it rather than showing their email
+  const [name, setName] = useState<string | null>(null);
+  const displayName = name ?? user?.displayName ?? "";
 
   const key = `${fleetId}:${user?.uid}`;
   // A pointer alone doesn't prove access: someone removed keeps theirs. So a
@@ -54,7 +57,7 @@ function JoinFleet() {
     if (!user) return;
     setJoining(true);
     try {
-      await acceptInvite(user, fleetId, invite);
+      await acceptInvite(user, fleetId, invite, displayName);
       showToast(`You've joined ${invite.fleetName || "the fleet"}.`, "success");
       openBoard();
     } catch (error) {
@@ -83,9 +86,9 @@ function JoinFleet() {
   const invite = lookup.invite;
 
   if (!invite && alreadyIn) {
-    const name = memberships.find((m) => m.fleetId === fleetId)?.fleetName;
+    const fleetName = memberships.find((m) => m.fleetId === fleetId)?.fleetName;
     return (
-      <Message title={`You're already in ${name || "this fleet"}`}>
+      <Message title={`You're already in ${fleetName || "this fleet"}`}>
         <button onClick={openBoard} className={`mt-6 ${buttonClass}`}>
           Go to the board
         </button>
@@ -115,11 +118,30 @@ function JoinFleet() {
     <Message title={`Join ${invite.fleetName || "the fleet"}`}>
       {invite.invitedByName ? `${invite.invitedByName} invited you` : "You've been invited"} as{" "}
       {ROLE_WORDS[invite.role]}. You&apos;ll see the fleet&apos;s vans and can log work on them from your phone.
-      <div className="mt-6">
-        <button onClick={() => join(invite)} disabled={joining} className={buttonClass}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void join(invite);
+        }}
+        className="mt-6 max-w-xs space-y-4"
+      >
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Your name</span>
+          <input
+            value={displayName}
+            onChange={(e) => setName(e.target.value)}
+            required
+            maxLength={60}
+            autoComplete="name"
+            placeholder="Kayla S."
+            className="w-full rounded border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 placeholder-stone-400 focus:border-stone-900 focus:outline-none dark:border-stone-700 dark:bg-stone-900 dark:text-white"
+          />
+          <span className="mt-1 block text-xs text-stone-500 dark:text-stone-400">Goes on every job you log.</span>
+        </label>
+        <button type="submit" disabled={joining || !displayName.trim()} className={buttonClass}>
           {joining ? "Joining…" : "Join fleet"}
         </button>
-      </div>
+      </form>
     </Message>
   );
 }

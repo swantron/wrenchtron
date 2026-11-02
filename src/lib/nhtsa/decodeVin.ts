@@ -60,3 +60,59 @@ export async function decodeVin(vin: string): Promise<DecodeVinResult | null> {
     bodyClass: findValue(results, "Body Class") ?? undefined,
   };
 }
+
+export interface BatchDecodeResult extends DecodeVinResult {
+  electric: boolean;
+}
+
+/** "FORD" → "Ford", "MERCEDES-BENZ" → "Mercedes-Benz"; short marques like RAM stay as they are. */
+function displayMake(make: string): string {
+  if (make !== make.toUpperCase() || make.length <= 3) return make;
+  return make.toLowerCase().replace(/(^|[\s-])\w/g, (c) => c.toUpperCase());
+}
+
+const BATCH_SIZE = 50; // NHTSA's limit per request
+
+/**
+ * Decodes many VINs at once with NHTSA's batch endpoint (50 per request).
+ * VINs NHTSA can't place are missing from the map; a failed request leaves
+ * its whole batch out rather than failing the import.
+ */
+export async function decodeVins(vins: string[]): Promise<Map<string, BatchDecodeResult>> {
+  const decoded = new Map<string, BatchDecodeResult>();
+  for (let i = 0; i < vins.length; i += BATCH_SIZE) {
+    const batch = vins.slice(i, i + BATCH_SIZE);
+    try {
+      const res = await fetch("https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVINValuesBatch/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ format: "json", data: batch.join(";") }),
+      });
+      if (!res.ok) continue;
+      const data: { Results?: Record<string, string>[] } = await res.json();
+      for (const r of data.Results ?? []) {
+        const value = (key: string) => (r[key] && r[key] !== "Not Applicable" ? r[key].trim() : undefined);
+        const make = value("Make");
+        if (!make) continue;
+        const year = value("ModelYear") ? parseInt(value("ModelYear")!, 10) : undefined;
+        const engine = [value("DisplacementL") && `${value("DisplacementL")}L`, value("EngineCylinders") && `${value("EngineCylinders")}-Cylinder`]
+          .filter(Boolean)
+          .join(" ");
+        const fuel = `${value("FuelTypePrimary") ?? ""} ${value("ElectrificationLevel") ?? ""}`;
+        decoded.set(r.VIN.toUpperCase(), {
+          make: displayMake(make),
+          model: value("Model"),
+          year: year && year > 1900 && year < 2100 ? year : undefined,
+          trim: value("Trim") ?? value("Series"),
+          engine: engine || undefined,
+          bodyClass: value("BodyClass"),
+          // Rivian's delivery vans don't always decode a fuel type
+          electric: /electric|BEV/i.test(fuel) || make.toUpperCase() === "RIVIAN",
+        });
+      }
+    } catch (error) {
+      console.error("NHTSA batch decode failed:", error);
+    }
+  }
+  return decoded;
+}

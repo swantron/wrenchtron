@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { subscribeToFleet, subscribeToFleetMemberships, subscribeToMember } from "@/lib/firebase/fleet";
-import type { Fleet, FleetMember, FleetMembership } from "@/types/fleet";
+import { subscribeToFleet, subscribeToFleetMemberships, subscribeToFleetVehicles, subscribeToMember } from "@/lib/firebase/fleet";
+import type { Fleet, FleetMember, FleetMembership, FleetVehicle } from "@/types/fleet";
 
 const ACTIVE_FLEET_KEY = "activeFleetId";
 
@@ -16,6 +16,8 @@ export interface FleetContextType {
   member: FleetMember | null;
   /** Membership exists but the fleet can't be read (e.g. the user was removed). */
   noAccess: boolean;
+  /** Every van in the active fleet (one listener for the whole board), or null while loading. */
+  vehicles: FleetVehicle[] | null;
   loading: boolean;
   setActiveFleet: (fleetId: string) => void;
 }
@@ -37,6 +39,7 @@ export function FleetProvider({ children }: { children: React.ReactNode }) {
   // Keyed by fleet id so a stale snapshot from the previous fleet never shows
   const [fleetState, setFleetState] = useState<{ fleetId: string; fleet: Fleet | null; denied: boolean } | null>(null);
   const [memberState, setMemberState] = useState<{ fleetId: string; member: FleetMember | null } | null>(null);
+  const [vehicleState, setVehicleState] = useState<{ fleetId: string; vehicles: FleetVehicle[] } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -75,6 +78,16 @@ export function FleetProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fleetId, user, joinedAt]);
 
+  const isMember = memberState?.fleetId === fleetId && !!memberState.member;
+  useEffect(() => {
+    if (!fleetId || !isMember) return;
+    return subscribeToFleetVehicles(
+      fleetId,
+      (vehicles) => setVehicleState({ fleetId, vehicles }),
+      () => setVehicleState({ fleetId, vehicles: [] })
+    );
+  }, [fleetId, isMember, joinedAt]);
+
   const setActiveFleet = useCallback((id: string) => {
     setChosenId(id);
     try {
@@ -93,6 +106,7 @@ export function FleetProvider({ children }: { children: React.ReactNode }) {
     fleet: fleetReady ? fleetState!.fleet : null,
     member: fleetReady ? memberState!.member : null,
     noAccess: fleetReady && (fleetState!.denied || !memberState!.member),
+    vehicles: vehicleState?.fleetId === fleetId ? vehicleState.vehicles : null,
     loading,
     setActiveFleet,
   };
