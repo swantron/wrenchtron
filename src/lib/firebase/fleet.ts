@@ -1,14 +1,18 @@
 import {
   collection,
+  deleteDoc,
   doc,
-  writeBatch,
+  getDoc,
   onSnapshot,
   serverTimestamp,
+  setDoc,
+  updateDoc,
+  writeBatch,
   type Unsubscribe,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { getFirebaseDb } from "./config";
-import type { Fleet, FleetMember, FleetMembership, FleetSite } from "@/types/fleet";
+import type { Fleet, FleetInvite, FleetMember, FleetMembership, FleetRole, FleetSite } from "@/types/fleet";
 
 // ---- Paths ----
 
@@ -18,6 +22,10 @@ function fleetDoc(fleetId: string) {
 
 function memberDoc(fleetId: string, uid: string) {
   return doc(getFirebaseDb(), "fleets", fleetId, "members", uid);
+}
+
+function inviteDoc(fleetId: string, email: string) {
+  return doc(getFirebaseDb(), "fleets", fleetId, "invites", email.trim().toLowerCase());
 }
 
 function membershipsCollection(uid: string) {
@@ -93,9 +101,18 @@ export function subscribeToFleetMemberships(
   callback: (memberships: FleetMembership[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
+  // A pointer from a batch that hasn't reached the server yet is left out: the
+  // fleet and member docs it was written with don't exist there yet either, so
+  // subscribing to the fleet would be denied (and a denied listener never retries).
   return onSnapshot(
     membershipsCollection(uid),
-    (snapshot) => callback(snapshot.docs.map((d) => ({ ...d.data(), fleetId: d.id }) as FleetMembership)),
+    { includeMetadataChanges: true },
+    (snapshot) =>
+      callback(
+        snapshot.docs
+          .filter((d) => !d.metadata.hasPendingWrites)
+          .map((d) => ({ ...d.data(), fleetId: d.id }) as FleetMembership)
+      ),
     (error) => {
       console.error("Firestore fleet memberships subscription error:", error);
       onError?.(error);
@@ -118,4 +135,119 @@ export function subscribeToMember(
       onError?.(error);
     }
   );
+}
+
+export function subscribeToMembers(
+  fleetId: string,
+  callback: (members: FleetMember[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    collection(getFirebaseDb(), "fleets", fleetId, "members"),
+    (snapshot) => callback(snapshot.docs.map((d) => ({ ...d.data(), uid: d.id }) as FleetMember)),
+    (error) => {
+      console.error("Firestore fleet members subscription error:", error);
+      onError?.(error);
+    }
+  );
+}
+
+/** Owner only. Security rules keep anyone from becoming or ceasing to be owner. */
+export async function setMemberRole(fleetId: string, uid: string, role: Exclude<FleetRole, "owner">) {
+  await updateDoc(memberDoc(fleetId, uid), { role });
+}
+
+/** Removes someone else. Their pointer to the fleet stays; they can clear it from the no-access page. */
+export async function removeMember(fleetId: string, uid: string) {
+  await deleteDoc(memberDoc(fleetId, uid));
+}
+
+// ---- Invites ----
+
+/** The link to text someone you've invited. They sign in with the invited email and land on the join page. */
+export function joinLink(fleetId: string): string {
+  return `${window.location.origin}/fleet/join?f=${encodeURIComponent(fleetId)}`;
+}
+
+export async function createInvite(
+  fleetId: string,
+  fleetName: string,
+  email: string,
+  role: FleetInvite["role"],
+  invitedBy: User
+) {
+  const address = email.trim().toLowerCase();
+  await setDoc(inviteDoc(fleetId, address), {
+    email: address,
+    role,
+    fleetName,
+    invitedBy: invitedBy.uid,
+    invitedByName: invitedBy.displayName ?? invitedBy.email ?? "",
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function deleteInvite(fleetId: string, email: string) {
+  await deleteDoc(inviteDoc(fleetId, email));
+}
+
+export function subscribeToInvites(
+  fleetId: string,
+  callback: (invites: FleetInvite[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    collection(getFirebaseDb(), "fleets", fleetId, "invites"),
+    (snapshot) => callback(snapshot.docs.map((d) => d.data() as FleetInvite)),
+    (error) => {
+      console.error("Firestore fleet invites subscription error:", error);
+      onError?.(error);
+    }
+  );
+}
+
+/** The invite addressed to this user's email, or null. Invitees can read it before they're members. */
+export async function getMyInvite(fleetId: string, user: User): Promise<FleetInvite | null> {
+  if (!user.email) return null;
+  const snap = await getDoc(inviteDoc(fleetId, user.email));
+  return snap.exists() ? (snap.data() as FleetInvite) : null;
+}
+
+/**
+ * Joins the fleet on the role the invite gave. The member doc, the membership
+ * pointer, and deleting the invite go in one batch — security rules require
+ * the invite to be consumed so it can't be reused.
+ */
+export async function acceptInvite(user: User, fleetId: string, invite: FleetInvite) {
+  const batch = writeBatch(getFirebaseDb());
+  batch.set(memberDoc(fleetId, user.uid), {
+    uid: user.uid,
+    role: invite.role,
+    email: invite.email,
+    displayName: user.displayName || invite.email,
+    ...(invite.siteIds ? { siteIds: invite.siteIds } : {}),
+    invitedBy: invite.invitedBy,
+    joinedAt: serverTimestamp(),
+  });
+  batch.set(doc(membershipsCollection(user.uid), fleetId), {
+    fleetId,
+    fleetName: invite.fleetName ?? "",
+    role: invite.role,
+    joinedAt: serverTimestamp(),
+  });
+  batch.delete(inviteDoc(fleetId, invite.email));
+  await batch.commit();
+}
+
+/** Leaving a fleet yourself: the member doc and your own pointer to it. */
+export async function leaveFleet(fleetId: string, uid: string) {
+  const batch = writeBatch(getFirebaseDb());
+  batch.delete(memberDoc(fleetId, uid));
+  batch.delete(doc(membershipsCollection(uid), fleetId));
+  await batch.commit();
+}
+
+/** Drops a pointer to a fleet you were removed from, so it stops showing up. */
+export async function forgetFleet(uid: string, fleetId: string) {
+  await deleteDoc(doc(membershipsCollection(uid), fleetId));
 }

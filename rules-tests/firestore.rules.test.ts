@@ -225,6 +225,17 @@ describe("accepting an invite", () => {
   it("must consume the invite so it can't be reused", async () => {
     await assertFails(acceptBatch(as("newbie", "new@example.com"), "tech", false).commit());
   });
+
+  it("works for someone removed earlier, whose old pointer is still there", async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), "users/newbie/fleetMemberships/f1"), { fleetId: "f1", fleetName: "Demo Delivery", role: "manager", joinedAt: daysAgo(90) })
+    );
+    await assertSucceeds(acceptBatch(as("newbie", "new@example.com")).commit());
+  });
+
+  it("can't rewrite a pointer to a role you don't have", async () => {
+    await assertFails(setDoc(doc(as("tech"), "users/tech/fleetMemberships/f1"), { fleetId: "f1", fleetName: "Demo Delivery", role: "owner", joinedAt: daysAgo(1) }));
+  });
 });
 
 // ---- Members ----

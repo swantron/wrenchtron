@@ -26,12 +26,13 @@ service cloud.firestore {
         }
       }
 
-      // Pointers to the fleets this user belongs to. Created alongside the
+      // Pointers to the fleets this user belongs to. Written alongside the
       // member doc (fleet creation or invite acceptance), so it can't point at
-      // a fleet the user isn't actually in.
+      // a fleet the user isn't actually in. Update covers rejoining: removing
+      // a member leaves their old pointer behind.
       match /fleetMemberships/{fleetId} {
         allow read, delete: if request.auth != null && request.auth.uid == userId;
-        allow create: if request.auth != null
+        allow create, update: if request.auth != null
                       && request.auth.uid == userId
                       && existsAfter(/databases/$(database)/documents/fleets/$(fleetId)/members/$(userId))
                       && request.resource.data.role

@@ -52,6 +52,10 @@ export function FleetProvider({ children }: { children: React.ReactNode }) {
     ? (list.find((m) => m.fleetId === chosenId) ?? list[0])?.fleetId ?? null
     : null;
 
+  // Rejoining rewrites the pointer; resubscribe so a listener denied while the
+  // user was out of the fleet gets another try.
+  const joinedAt = list?.find((m) => m.fleetId === fleetId)?.joinedAt?.toMillis?.() ?? 0;
+
   useEffect(() => {
     if (!fleetId || !user) return;
     const unsubFleet = subscribeToFleet(
@@ -69,7 +73,7 @@ export function FleetProvider({ children }: { children: React.ReactNode }) {
       unsubFleet();
       unsubMember();
     };
-  }, [fleetId, user]);
+  }, [fleetId, user, joinedAt]);
 
   const setActiveFleet = useCallback((id: string) => {
     setChosenId(id);

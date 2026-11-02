@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { useFleet } from "@/components/fleet/FleetProvider";
+import { forgetFleet } from "@/lib/firebase/fleet";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 const PLAN_LABELS = { pilot: "Pilot", active: "Active", lapsed: "Lapsed" } as const;
 
 export default function FleetPage() {
-  const { fleet, member, memberships, noAccess, loading } = useFleet();
+  const { user } = useAuth();
+  const { fleetId, fleet, member, memberships, noAccess, loading } = useFleet();
 
   if (loading) {
     return (
@@ -42,6 +45,14 @@ export default function FleetPage() {
         <p className="mt-2 text-stone-600 dark:text-stone-300">
           You may have been removed from it. Ask the fleet&apos;s owner to invite you again.
         </p>
+        {user && fleetId && (
+          <button
+            onClick={() => forgetFleet(user.uid, fleetId).catch((error) => console.error("Failed to forget fleet:", error))}
+            className="mt-6 rounded border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-500 dark:border-stone-700 dark:text-stone-300"
+          >
+            Remove it from my list
+          </button>
+        )}
       </div>
     );
   }
@@ -71,7 +82,11 @@ export default function FleetPage() {
       <div className="mt-10 max-w-lg">
         <h2 className="font-semibold text-stone-900 dark:text-white">No vans yet</h2>
         <p className="mt-1 text-stone-600 dark:text-stone-300">
-          VIN import, inviting your techs, and the service board are on the way. The board will look like the{" "}
+          VIN import and the service board are on the way. Meanwhile you can{" "}
+          <Link href="/fleet/team" className="underline underline-offset-4">
+            invite your team
+          </Link>
+          . The board will look like the{" "}
           <Link href="/demo/fleet" className="underline underline-offset-4">
             fleet demo
           </Link>

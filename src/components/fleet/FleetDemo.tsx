@@ -307,7 +307,8 @@ function FleetHeader({ onLog }: { onLog: () => void }) {
     <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-baseline gap-3">
-          <Link href="/" className="font-semibold tracking-tight text-stone-900 dark:text-white">
+          {/* Stays in the demo: the home page is the household product */}
+          <Link href="/demo/fleet" className="font-semibold tracking-tight text-stone-900 dark:text-white">
             Wrenchtron
           </Link>
           <span className="text-sm text-stone-500 dark:text-stone-400">Fleet demo</span>
@@ -868,22 +869,28 @@ export function FleetDemo() {
           <div className="flex justify-center py-24">
             <LoadingSpinner />
           </div>
-        ) : selected ? (
-          <VanDetail
-            summary={selected}
-            onBack={() => navigate({ van: null })}
-            onOpen={setLightbox}
-            onLog={() => openSheet(selected.van.id)}
-          />
         ) : (
-          <FleetOverview
-            summaries={summaries}
-            now={now}
-            location={location}
-            onLocation={(loc) => navigate({ loc })}
-            onSelect={(van) => navigate({ van })}
-            onOpen={setLightbox}
-          />
+          <>
+            {selected && (
+              <VanDetail
+                summary={selected}
+                onBack={() => navigate({ van: null })}
+                onOpen={setLightbox}
+                onLog={() => openSheet(selected.van.id)}
+              />
+            )}
+            {/* Stays mounted under a van page so search, filters and sort survive the trip */}
+            <div hidden={!!selected}>
+              <FleetOverview
+                summaries={summaries}
+                now={now}
+                location={location}
+                onLocation={(loc) => navigate({ loc })}
+                onSelect={(van) => navigate({ van })}
+                onOpen={setLightbox}
+              />
+            </div>
+          </>
         )}
       </main>
       {isClient && !sheet && (

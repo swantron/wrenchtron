@@ -45,7 +45,10 @@ export interface FleetInvite {
   email: string;
   role: Exclude<FleetRole, "owner">;
   siteIds?: string[];
+  /** Shown on the join page — the invitee can't read the fleet doc until they've joined. */
+  fleetName?: string;
   invitedBy: string;
+  invitedByName?: string;
   createdAt: Timestamp;
 }
 
