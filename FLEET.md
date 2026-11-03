@@ -1,6 +1,6 @@
 # wrenchtron fleet — build plan
 
-**Status:** phase 1 done. Rules deployed and tested (43 emulator tests, run in CI before deploy). Phase 2 next (Oct 2026)
+**Status:** phases 1–5 done, plus CSV export from phase 6 (Nov 2026), checked end to end on the emulators. Rules: 48 tests, run in CI before deploy. Email-link sign-in needs the provider turned on in the Firebase console. Left: the weekly email (needs the Blaze plan and an email provider).
 **Goal:** a delivery fleet can run a paid pilot on real data: the owner loads the vans, techs and partner shops log work with photos from a phone, and the owner sees the board from anywhere.
 **Reference UI:** `/demo/fleet` (sample data). The real fleet app should look and behave like it.
 
@@ -64,7 +64,11 @@ users/{uid}/fleetMemberships/{fleetId}       // so the app can find a user's fle
 
 **Reads.** The board must not open 80 listeners on log subcollections. Each vehicle doc carries a `serviceSummary` (the latest log per service type). It's written in the same batch as each log, and recomputed from that one van's logs on edit or delete. The board then needs **one listener on `vehicles`**. It feeds the engine with minimal logs built from the summary. Full log history loads only on a van's detail page.
 
-**Photos.** `fleets/{fleetId}/vehicles/{vehicleId}/logs/{logId}/{n}.jpg`, compressed client-side with the existing `browser-image-compression`. Invoices may be PDFs.
+**Recent work** reads each van's `lastVisit` (written in the same batch), so the board still needs only the one listener.
+
+**Schedules** are presets in code (`src/data/fleetSchedules.ts`: gas severe-duty, electric); each van gets a copy of its intervals. A `schedules` collection for editing them fleet-wide waits until a customer asks.
+
+**Photos.** `fleets/{fleetId}/vehicles/{vehicleId}/logs/{visitId}/{n}-{kind}.jpg`, download URL saved with the path, compressed client-side with the existing `browser-image-compression`. Invoices may be PDFs.
 
 ---
 
@@ -98,11 +102,11 @@ Helpers: `isMember(f)`, `role(f)`, `isManager(f)` (owner or manager).
 
 | Route | Who | What |
 |---|---|---|
-| `/fleet` | member | Board: sites, summary line, table sorted by next due, recent work (reuses `/demo/fleet` components) |
-| `/fleet/van?id=` | member | Van detail: coming up, visit history with photos, status change |
-| `/fleet/log?van=` | member | **Phone-first logging:** odometer → services (multi-select) → labeled photos → save as one visit |
-| `/fleet/import` | manager | Paste or upload VINs (+ unit, plate, site), batch-decode via NHTSA, pick a schedule, review, create |
-| `/fleet/settings` | manager | Members and invites, sites, schedules, CSV export |
+| `/fleet` | member | Board: sites, summary line, table sorted by next due, recent work (`FleetBoard.tsx`, shared with `/demo/fleet`) |
+| `/fleet?van=` | member | Van detail: coming up, visit history with photos, status change. On the board's page so filters survive the trip |
+| (sheet on `/fleet`) | member | **Phone-first logging** (`LogVisitSheet`): services (multi-select) → labeled photos → odometer, date, shop, cost → one visit |
+| `/fleet/import` | manager | Paste or upload VINs (+ unit, plate, site, odometer), batch-decode via NHTSA, schedule picked by powertrain, review, create |
+| `/fleet/team` | member | Members and roles; managers invite and share the join link |
 | `/fleet/join?f=` | invitee | Sign in with email, accept invite |
 | `/fleet/new` | anyone signed in | Create a fleet (in the pilot, Joe creates it for the customer) |
 

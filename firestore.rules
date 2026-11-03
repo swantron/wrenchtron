@@ -160,7 +160,12 @@ service cloud.firestore {
             && request.resource.data.loggedBy == resource.data.loggedBy
             && request.resource.data.createdAt == resource.data.createdAt
           );
-          allow delete: if isManager(fleetId);
+          // Managers clear any entry; authors can take back a mistake the same day.
+          allow delete: if isManager(fleetId) || (
+            isMember(fleetId)
+            && resource.data.loggedBy.uid == request.auth.uid
+            && request.time < resource.data.createdAt + duration.value(24, 'h')
+          );
         }
       }
     }

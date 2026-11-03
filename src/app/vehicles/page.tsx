@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { VehicleList } from "@/components/vehicles/VehicleList";
+import { rememberArea } from "@/lib/homeArea";
 
 export default function VehiclesPage() {
+  useEffect(() => rememberArea("garage"), []);
   return (
     <ProtectedRoute>
       <AppShell>

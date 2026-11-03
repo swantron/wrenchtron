@@ -9,7 +9,8 @@ import Link from "next/link";
 
 /** Only same-site paths — never an open redirect to another host. */
 function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/vehicles";
+  // No destination: "/" picks the garage or the fleet
+  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
 }
 
 function readNext(): string {

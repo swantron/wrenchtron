@@ -36,7 +36,9 @@ function isIntervalInapplicable(
 ): boolean {
     const blocked = getInapplicableTypes(vehicle);
     if (blocked.length === 0) return false;
-    if (interval.targetMaintenanceType && blocked.includes(interval.targetMaintenanceType as MaintenanceType)) return true;
+    // A typed interval is judged by its type alone: "Cabin Air Filter" is a
+    // cabin_filter, not the engine air filter an EV doesn't have
+    if (interval.targetMaintenanceType) return blocked.includes(interval.targetMaintenanceType as MaintenanceType);
     const lower = interval.name.toLowerCase();
     return blocked.some(t => lower.includes(t.replace(/_/g, " ")));
 }

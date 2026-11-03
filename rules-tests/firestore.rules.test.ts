@@ -19,7 +19,7 @@ import {
   Timestamp,
   type Firestore,
 } from "firebase/firestore";
-import { ref, uploadBytes } from "firebase/storage";
+import { deleteObject, ref, uploadBytes } from "firebase/storage";
 
 let env: RulesTestEnvironment;
 
@@ -330,9 +330,14 @@ describe("maintenance logs", () => {
     await assertFails(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1/maintenanceLogs/fresh"), { loggedBy: { uid: "tech2", name: "tech2" } }));
   });
 
-  it("only managers delete entries", async () => {
-    await assertFails(deleteDoc(doc(as("tech"), "fleets/f1/vehicles/v1/maintenanceLogs/fresh")));
+  it("managers delete any entry", async () => {
     await assertSucceeds(deleteDoc(doc(as("mgr"), "fleets/f1/vehicles/v1/maintenanceLogs/old")));
+  });
+
+  it("authors can delete their own entry within a day, not after, and not someone else's", async () => {
+    await assertFails(deleteDoc(doc(as("tech2"), "fleets/f1/vehicles/v1/maintenanceLogs/fresh")));
+    await assertFails(deleteDoc(doc(as("tech"), "fleets/f1/vehicles/v1/maintenanceLogs/old")));
+    await assertSucceeds(deleteDoc(doc(as("tech"), "fleets/f1/vehicles/v1/maintenanceLogs/fresh")));
   });
 });
 
@@ -362,5 +367,12 @@ describe("fleet photo storage", () => {
 
   it("only images and PDFs", async () => {
     await assertFails(uploadBytes(ref(storageAs("tech"), "fleets/f1/vehicles/v1/logs/n1/x.exe"), jpeg, { contentType: "application/octet-stream" }));
+  });
+
+  it("only owners and managers delete photos", async () => {
+    const path = "fleets/f1/vehicles/v1/logs/n1/0.jpg";
+    await uploadBytes(ref(storageAs("tech"), path), jpeg, { contentType: "image/jpeg" });
+    await assertFails(deleteObject(ref(storageAs("tech"), path)));
+    await assertSucceeds(deleteObject(ref(storageAs("mgr"), path)));
   });
 });

@@ -409,6 +409,25 @@ describe("calculateActionItems", () => {
       });
       expect(calculateActionItems(vehicle, [])).toHaveLength(0);
     });
+
+    it("keeps a typed cabin air filter on an EV (only the engine air filter is excluded)", () => {
+      const vehicle = makeVehicle({
+        powertrain: "electric",
+        serviceIntervals: [
+          { id: "i1", name: "Cabin Air Filter", type: "time", targetMaintenanceType: "cabin_filter", timeIntervalMonths: 12 },
+          { id: "i2", name: "Engine Air Filter", type: "time", targetMaintenanceType: "air_filter", timeIntervalMonths: 12 },
+        ],
+      });
+      expect(calculateActionItems(vehicle, []).map((i) => i.serviceName)).toEqual(["Cabin Air Filter"]);
+    });
+
+    it("still excludes untyped intervals by name", () => {
+      const vehicle = makeVehicle({
+        powertrain: "electric",
+        serviceIntervals: [{ id: "i1", name: "Oil Change", type: "time", timeIntervalMonths: 6 }],
+      });
+      expect(calculateActionItems(vehicle, [])).toHaveLength(0);
+    });
   });
 
   // --- Result ordering ---

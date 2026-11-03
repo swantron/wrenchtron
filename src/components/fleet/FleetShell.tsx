@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { rememberArea } from "@/lib/homeArea";
 import { signOut } from "@/lib/firebase/auth";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useFleet } from "./FleetProvider";
@@ -11,6 +13,7 @@ const ROLE_LABELS = { owner: "Owner", manager: "Manager", tech: "Tech" } as cons
 export function FleetShell({ children }: { children: React.ReactNode }) {
   const { memberships, fleetId, member, setActiveFleet } = useFleet();
   const pathname = usePathname();
+  useEffect(() => rememberArea("fleet"), []);
   const nav = [
     { href: "/fleet", label: "Board" },
     { href: "/fleet/team", label: "Team" },

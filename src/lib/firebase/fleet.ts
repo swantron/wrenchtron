@@ -4,6 +4,8 @@ import {
   deleteField,
   doc,
   getDoc,
+  getDocs,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -15,9 +17,10 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "./config";
 import { compressImage } from "@/lib/image/compress";
+import { summarizeLogs } from "@/utils/fleetSummary";
 import type {
   Fleet,
   FleetInvite,
@@ -116,6 +119,12 @@ export function subscribeToFleet(
 }
 
 // ---- Membership ----
+
+/** Whether the user belongs to any fleet (decides where "/" sends them the first time). */
+export async function hasFleetMembership(uid: string): Promise<boolean> {
+  const snap = await getDocs(query(membershipsCollection(uid), limit(1)));
+  return !snap.empty;
+}
 
 export function subscribeToFleetMemberships(
   uid: string,
@@ -485,4 +494,87 @@ export async function logVisit(
 
   await batch.commit();
   return visitId;
+}
+
+/** Every log on every van, read once (for export). One query per van, run in parallel. */
+export async function fetchFleetHistory(
+  fleetId: string,
+  vehicles: FleetVehicle[]
+): Promise<{ vehicle: FleetVehicle; log: FleetLog }[]> {
+  const perVan = await Promise.all(
+    vehicles.map(async (vehicle) => {
+      const snap = await getDocs(collection(vehiclesCollection(fleetId), vehicle.id!, "maintenanceLogs"));
+      return snap.docs.map((d) => ({ vehicle, log: { ...d.data(), id: d.id } as FleetLog }));
+    })
+  );
+  return perVan.flat();
+}
+
+/**
+ * Deletes logged work (a visit's logs) and recomputes the van's service summary
+ * and last visit from what's left, in one batch. Managers also remove the
+ * photos; an author taking back a same-day mistake leaves them (Storage only
+ * lets managers delete the proof).
+ */
+export async function deleteLogs(
+  fleetId: string,
+  vehicle: FleetVehicle,
+  allLogs: FleetLog[],
+  logIds: string[],
+  removePhotos: boolean
+): Promise<void> {
+  const doomed = allLogs.filter((l) => logIds.includes(l.id!));
+  const { serviceSummary, lastVisit } = summarizeLogs(allLogs.filter((l) => !logIds.includes(l.id!)));
+
+  const batch = writeBatch(getFirebaseDb());
+  const logsCollection = collection(vehiclesCollection(fleetId), vehicle.id!, "maintenanceLogs");
+  for (const log of doomed) batch.delete(doc(logsCollection, log.id!));
+  batch.update(doc(vehiclesCollection(fleetId), vehicle.id!), {
+    serviceSummary,
+    lastVisit: lastVisit ?? deleteField(),
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+
+  if (removePhotos) {
+    const paths = doomed.flatMap((l) => (l.photos ?? []).map((p) => p.path));
+    // Best effort: the record is already gone, an orphaned file is harmless
+    await Promise.all(paths.map((path) => deleteObject(ref(getFirebaseStorage(), path)).catch(() => {})));
+  }
+}
+
+export interface VanEdit {
+  unit: string;
+  licensePlate: string;
+  siteId: string;
+  currentMileage: number;
+  powertrain: Powertrain;
+  scheduleId: string;
+  serviceIntervals: ServiceInterval[];
+}
+
+/** Managers fix what the import got wrong: unit, plate, site, odometer, schedule. */
+export async function updateFleetVan(fleetId: string, vehicleId: string, edit: VanEdit) {
+  await updateDoc(doc(vehiclesCollection(fleetId), vehicleId), {
+    ...edit,
+    name: edit.unit,
+    licensePlate: edit.licensePlate.trim() || deleteField(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Removes a van and its history (it was sold, or added by mistake). Export
+ * first if the records matter. Photos stay in Storage; the logs pointing at
+ * them are gone.
+ */
+export async function removeFleetVan(fleetId: string, vehicleId: string) {
+  const logs = await getDocs(collection(vehiclesCollection(fleetId), vehicleId, "maintenanceLogs"));
+  const refs = [...logs.docs.map((d) => d.ref), doc(vehiclesCollection(fleetId), vehicleId)];
+  // The van doc goes last, so a partial failure leaves it visible to retry
+  for (let i = 0; i < refs.length; i += IMPORT_BATCH) {
+    const batch = writeBatch(getFirebaseDb());
+    refs.slice(i, i + IMPORT_BATCH).forEach((r) => batch.delete(r));
+    await batch.commit();
+  }
 }

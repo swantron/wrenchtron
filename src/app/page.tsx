@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { hasFleetMembership } from "@/lib/firebase/fleet";
+import { AREA_PATHS, rememberedArea } from "@/lib/homeArea";
 
 function LandingPage() {
   return (
@@ -87,10 +89,17 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  // Back to whichever side they last used; the first time, a fleet member goes to the fleet
   useEffect(() => {
-    if (!loading && user) {
-      router.replace("/vehicles");
+    if (loading || !user) return;
+    const area = rememberedArea();
+    if (area) {
+      router.replace(AREA_PATHS[area]);
+      return;
     }
+    hasFleetMembership(user.uid)
+      .catch(() => false)
+      .then((inFleet) => router.replace(inFleet ? "/fleet" : "/vehicles"));
   }, [user, loading, router]);
 
   if (loading) {

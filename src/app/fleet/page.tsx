@@ -5,11 +5,23 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useFleet } from "@/components/fleet/FleetProvider";
-import { FleetOverview, LOG_BUTTON, Lightbox, summarize, VanDetail, type LightboxState } from "@/components/fleet/FleetBoard";
+import {
+  FleetOverview,
+  LOG_BUTTON,
+  Lightbox,
+  summarize,
+  VanDetail,
+  type LightboxState,
+  type Visit,
+} from "@/components/fleet/FleetBoard";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 import { LogVisitSheet } from "@/components/fleet/LogVisitSheet";
 import { VanStatusControl } from "@/components/fleet/VanStatusControl";
+import { VanEditor } from "@/components/fleet/VanEditor";
+import { FleetExport } from "@/components/fleet/FleetExport";
 import { toBoardVan } from "@/components/fleet/boardData";
-import { forgetFleet, subscribeToVanLogs } from "@/lib/firebase/fleet";
+import { deleteLogs, forgetFleet, subscribeToVanLogs } from "@/lib/firebase/fleet";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { Fleet, FleetLog, FleetMember, FleetVehicle } from "@/types/fleet";
 import type { User } from "firebase/auth";
@@ -145,6 +157,9 @@ function Board({
   const [sheet, setSheet] = useState<{ vanId?: string } | null>(null);
   // Where to go once the sheet's history entry is gone
   const afterSheet = useRef<string | null>(null);
+  const { showToast } = useToast();
+  const [doomed, setDoomed] = useState<Visit | null>(null);
+  const isManager = member.role !== "tech";
 
   const selectedId = searchParams.get("van");
   const siteNames = fleet.sites.map((s) => s.name);
@@ -175,6 +190,30 @@ function Board({
     [selectedVehicle, fleet.sites, vanLogs, now]
   );
 
+  // Managers can delete anything; whoever logged a visit can take it back the same day
+  const canDelete = (visit: Visit) => {
+    if (isManager) return true;
+    const dayAgo = now.getTime() - 24 * 60 * 60 * 1000;
+    return visit.logs.every((l) => {
+      const raw = vanLogs?.find((r) => r.id === l.id);
+      // A pending createdAt is a log from moments ago
+      return raw?.loggedBy.uid === user.uid && (raw.createdAt?.toMillis?.() ?? now.getTime()) > dayAgo;
+    });
+  };
+
+  const confirmDelete = async () => {
+    const visit = doomed;
+    setDoomed(null);
+    if (!visit || !selectedVehicle || !vanLogs) return;
+    try {
+      await deleteLogs(fleetId, selectedVehicle, vanLogs, visit.logs.map((l) => l.id), isManager);
+      showToast("Deleted.", "success");
+    } catch (error) {
+      console.error("Failed to delete visit:", error);
+      showToast("Couldn't delete it. Please try again.", "error");
+    }
+  };
+
   const navigate = (params: { van?: string | null; site?: string | null }) => {
     const next = new URLSearchParams();
     const site = params.site === undefined ? location : params.site;
@@ -202,13 +241,34 @@ function Board({
           onOpen={setLightbox}
           onLog={() => setSheet({ vanId: selectedVehicle.id })}
           historyLoading={vanLogs === null}
+          visitAction={(visit) =>
+            vanLogs && canDelete(visit) ? (
+              <button
+                onClick={() => setDoomed(visit)}
+                className="text-stone-400 underline-offset-4 hover:text-red-600 hover:underline dark:hover:text-red-400"
+              >
+                Delete
+              </button>
+            ) : null
+          }
           actions={
-            <VanStatusControl
-              fleetId={fleetId}
-              vehicleId={selectedVehicle.id!}
-              status={selectedVehicle.status ?? "in_service"}
-              statusNote={selectedVehicle.statusNote}
-            />
+            <>
+              <VanStatusControl
+                fleetId={fleetId}
+                vehicleId={selectedVehicle.id!}
+                status={selectedVehicle.status ?? "in_service"}
+                statusNote={selectedVehicle.statusNote}
+              />
+              {isManager && (
+                <VanEditor
+                  key={selectedVehicle.id}
+                  fleetId={fleetId}
+                  vehicle={selectedVehicle}
+                  sites={fleet.sites}
+                  onRemoved={() => navigate({ van: null })}
+                />
+              )}
+            </>
           }
         />
       )}
@@ -238,6 +298,7 @@ function Board({
               </button>
             </div>
           }
+          footer={member.role !== "tech" ? <FleetExport fleetId={fleetId} fleet={fleet} vehicles={vehicles} /> : undefined}
           recentNote="The latest visit on each van, newest first."
           activity="serviced"
         />
@@ -270,6 +331,19 @@ function Board({
         />
       )}
       {lightbox && <Lightbox state={lightbox} onClose={closeLightbox} />}
+      <ConfirmDialog
+        open={!!doomed}
+        title="Delete this visit?"
+        description={
+          isManager
+            ? "It comes out of the van's history, with its photos, and the due dates are worked out again from what's left."
+            : "It comes out of the van's history and the due dates are worked out again. You can only do this the day you logged it."
+        }
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setDoomed(null)}
+      />
     </div>
   );
 }

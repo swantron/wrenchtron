@@ -19,7 +19,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // ---- Derived data ----
 
 /** One trip to the shop: every service logged for a van on the same day at the same place. */
-interface Visit {
+export interface Visit {
   id: string;
   date: Date;
   mileage: number;
@@ -647,6 +647,7 @@ export function VanDetail({
   onOpen,
   onLog,
   actions,
+  visitAction,
   historyLoading = false,
 }: {
   summary: VanSummary;
@@ -655,6 +656,8 @@ export function VanDetail({
   onLog?: () => void;
   /** Extra controls under the van's name, e.g. changing its status. */
   actions?: React.ReactNode;
+  /** A control on each visit in the history, e.g. deleting it. */
+  visitAction?: (visit: Visit) => React.ReactNode;
   historyLoading?: boolean;
 }) {
   const { van, items, visits } = summary;
@@ -747,6 +750,7 @@ export function VanDetail({
                 </div>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                   {visit.shop} · logged by {visit.tech}
+                  {visitAction && <span className="ml-3">{visitAction(visit)}</span>}
                 </p>
                 {visit.notes.map((note) => (
                   <p key={note} className="mt-1 text-sm text-stone-700 dark:text-stone-300">
