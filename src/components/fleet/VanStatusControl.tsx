@@ -36,7 +36,8 @@ export function VanStatusControl({
   const apply = async (next: VanStatus, nextNote?: string) => {
     setSaving(true);
     try {
-      await setVanStatus(fleetId, vehicleId, next, nextNote);
+      const sent = await setVanStatus(fleetId, vehicleId, next, nextNote);
+      if (!sent) showToast("Saved on this phone. Everyone else sees it once you have signal.", "info");
       setEditing(null);
     } catch (error) {
       console.error("Failed to change van status:", error);

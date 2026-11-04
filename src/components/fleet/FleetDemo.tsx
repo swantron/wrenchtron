@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { DemoLogSheet, type DemoLogEntry } from "@/components/fleet/DemoLogSheet";
 import {
   FleetOverview,
   LOG_BUTTON,
+  showBoardView,
   Lightbox,
   summarize,
   useIsClient,
@@ -77,7 +78,6 @@ const DEMO_FOOTER = (
 
 export function FleetDemo() {
   const isClient = useIsClient();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const closeLightbox = useCallback(() => setLightbox(null), []);
@@ -130,7 +130,7 @@ export function FleetDemo() {
     if (loc) next.set("loc", loc);
     if (params.van) next.set("van", params.van);
     const qs = next.toString();
-    router.push(`/demo/fleet${qs ? `?${qs}` : ""}`, { scroll: !!params.van });
+    showBoardView(`/demo/fleet${qs ? `?${qs}` : ""}`, !!params.van);
   };
 
   const closeSheet = useCallback(() => {
@@ -139,11 +139,11 @@ export function FleetDemo() {
     afterSheet.current = null;
     // Show the van the job was logged on, unless that's where we already are
     if (vanId && vanId !== selectedId) {
-      router.push(`/demo/fleet?van=${vanId}`, { scroll: true });
+      showBoardView(`/demo/fleet?van=${vanId}`, true);
     } else if (vanId) {
       window.scrollTo({ top: 0 });
     }
-  }, [router, selectedId]);
+  }, [selectedId]);
 
   const openSheet = (vanId?: string) => {
     track("log_open", vanId);

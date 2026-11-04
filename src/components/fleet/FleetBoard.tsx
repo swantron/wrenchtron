@@ -105,6 +105,20 @@ function groupVisits(van: FleetVan): Visit[] {
   return visits;
 }
 
+/**
+ * Moves between views of the same board (van, site) by changing the query
+ * string. history.pushState updates useSearchParams without fetching anything,
+ * so this keeps working with no signal. router.push fetches the page payload
+ * first, and offline that falls back to a full load: the browser's error page.
+ */
+export function showBoardView(url: string, scrollTop: boolean) {
+  window.history.pushState(null, "", url);
+  if (scrollTop) window.scrollTo({ top: 0 });
+}
+
+/** Sort comparator that survives Infinity (Infinity - Infinity is NaN, which scrambles a sort). */
+const compare = (x: number, y: number) => (x === y ? 0 : x < y ? -1 : 1);
+
 function daysUntil(item: ActionItem, dailyMiles: number): number {
   if (!item.lastLog) return Infinity;
   const byMiles = item.remainingMiles !== undefined ? item.remainingMiles / dailyMiles : Infinity;
@@ -118,7 +132,7 @@ export function summarize(van: FleetVan, now: Date): VanSummary {
     // With nothing logged, the engine counts from the day the van was added,
     // which would be a guess dressed up as a due date. Say "no record" instead.
     .map((item) => (item.lastLog ? item : { ...item, status: "upcoming" as const }))
-    .sort((a, b) => Number(!a.lastLog) - Number(!b.lastLog) || daysUntil(a, daily) - daysUntil(b, daily));
+    .sort((a, b) => Number(!a.lastLog) - Number(!b.lastLog) || compare(daysUntil(a, daily), daysUntil(b, daily)));
   const visits = groupVisits(van);
   return {
     van,
@@ -459,7 +473,7 @@ function FleetTable({
                   <span className={status.className}>{status.label}</span>
                 </span>
                 <span className="mt-0.5 block text-stone-500 dark:text-stone-400">
-                  {van.model} · {van.location} · {van.currentMileage.toLocaleString()} mi
+                  {[van.model, van.location, `${van.currentMileage.toLocaleString()} mi`].filter(Boolean).join(" · ")}
                 </span>
                 <span className="mt-1 block">
                   {van.status !== "in_service" && van.statusNote ? (
@@ -520,12 +534,12 @@ export function FleetOverview({
     .filter((s) => !attentionOnly || needsAttention(s))
     .filter((s) => !focus || FOCUS_FILTERS[focus](s))
     .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.vin} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q))
-    .sort((a, b) =>
-      sort === "due"
-        ? // Vans that can't run come first, then whatever is due soonest
-          STATUS_RANK[a.van.status] - STATUS_RANK[b.van.status] || a.urgency - b.urgency
-        : a.van.unit.localeCompare(b.van.unit, undefined, { numeric: true })
-    );
+    .sort((a, b) => {
+      const byUnit = a.van.unit.localeCompare(b.van.unit, undefined, { numeric: true });
+      if (sort !== "due") return byUnit;
+      // Vans that can't run come first, then whatever is due soonest, then unit
+      return STATUS_RANK[a.van.status] - STATUS_RANK[b.van.status] || compare(a.urgency, b.urgency) || byUnit;
+    });
 
   const thirtyDaysAgo = now.getTime() - 30 * DAY_MS;
   const photos30 = scoped.reduce(

@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import { hasFleetMembership } from "@/lib/firebase/fleet";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { VehicleList } from "@/components/vehicles/VehicleList";
 import { rememberArea } from "@/lib/homeArea";
 
 export default function VehiclesPage() {
+  const { user } = useAuth();
+  // Fleet members who wander in here get a way back to the board
+  const [inFleet, setInFleet] = useState(false);
   useEffect(() => rememberArea("garage"), []);
+  useEffect(() => {
+    if (!user) return;
+    hasFleetMembership(user.uid).then(setInFleet, () => setInFleet(false));
+  }, [user]);
   return (
     <ProtectedRoute>
       <AppShell>
@@ -18,9 +27,15 @@ export default function VehiclesPage() {
               <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">
                 Garage
               </h1>
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                Fleet
-              </p>
+              {inFleet ? (
+                <Link href="/fleet" className="text-sm font-bold text-blue-600 uppercase tracking-widest hover:underline dark:text-blue-400">
+                  Fleet board →
+                </Link>
+              ) : (
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+                  Your vehicles
+                </p>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <Link

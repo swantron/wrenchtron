@@ -1,5 +1,6 @@
 import type { FleetLog, FleetSite, FleetVehicle } from "@/types/fleet";
 import { TYPE_LABELS } from "@/utils/export";
+import { localDate } from "@/utils/format";
 
 // "Your data, any time": every van and every logged job as CSV, with links to
 // the photos. Opens in Excel or Google Sheets.
@@ -19,11 +20,6 @@ export function csvCell(value: string | number | undefined | null): string {
 export function toCsv(headers: string[], rows: (string | number | undefined | null)[][]): string {
   // Leading BOM so Excel reads the file as UTF-8
   return "\uFEFF" + [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
-}
-
-/** Local YYYY-MM-DD, which every spreadsheet sorts correctly. */
-export function localDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function isoDate(ts: { toDate?: () => Date } | null | undefined): string {

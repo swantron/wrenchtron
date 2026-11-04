@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { fetchFleetHistory } from "@/lib/firebase/fleet";
-import { downloadText, historyCsv, localDate, vansCsv } from "@/utils/fleetExport";
+import { downloadText, historyCsv, vansCsv } from "@/utils/fleetExport";
+import { localDate } from "@/utils/format";
 import type { Fleet, FleetVehicle } from "@/types/fleet";
 
 /** Download the fleet as CSV: the vans, and every job logged on them. */

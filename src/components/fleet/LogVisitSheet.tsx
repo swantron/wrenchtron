@@ -5,7 +5,7 @@ import type { User } from "firebase/auth";
 import { useBackToClose } from "@/components/fleet/useBackToClose";
 import { PHOTO_KIND_LABELS } from "@/components/fleet/boardData";
 import { useToast } from "@/components/ui/Toast";
-import { logVisit } from "@/lib/firebase/fleet";
+import { logVisit, OfflinePhotosError } from "@/lib/firebase/fleet";
 import type { FleetPhotoKind, FleetSite, FleetVehicle } from "@/types/fleet";
 import type { MaintenanceType } from "@/types/maintenance";
 
@@ -139,7 +139,7 @@ export function LogVisitSheet({
       // Today's visit keeps the time it was logged, so same-day visits stay in order
       if (date === today()) when.setHours(new Date().getHours(), new Date().getMinutes());
       else when.setHours(12);
-      await logVisit(fleetId, van, user, userName, {
+      const { queued } = await logVisit(fleetId, van, user, userName, {
         services: SERVICES.filter((s) => picked.includes(s.key)).map((s) => ({ type: s.type, title: s.title })),
         date: when,
         mileage: miles,
@@ -150,12 +150,20 @@ export function LogVisitSheet({
         status,
       });
       photos.forEach((p) => URL.revokeObjectURL(p.url));
-      showToast(`Logged on ${van.unit}.`, "success");
+      showToast(
+        queued ? `Saved on this phone. ${van.unit} will update for everyone once you have signal.` : `Logged on ${van.unit}.`,
+        queued ? "info" : "success"
+      );
       onSaved(van.id!);
       close();
     } catch (error) {
       console.error("Failed to log visit:", error);
-      showToast("Couldn't save. Check your signal and try again — nothing was lost here.", "error");
+      showToast(
+        error instanceof OfflinePhotosError
+          ? "No signal, so the photos can't upload. Try again when you have signal, or remove the photos to save the job now."
+          : "Couldn't save. Check your signal and try again — nothing was lost here.",
+        "error"
+      );
       setSaving(false);
     }
   };

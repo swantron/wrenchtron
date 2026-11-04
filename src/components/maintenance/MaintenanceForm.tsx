@@ -7,6 +7,7 @@ import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { addMaintenanceLog, updateMaintenanceLog } from "@/lib/firebase/firestore";
 import { tracksMileage } from "@/utils/vehicleUtils";
+import { localDate } from "@/utils/format";
 import { isMaintenanceTypeApplicable } from "@/utils/maintenance";
 import { OilChangeFields } from "./OilChangeFields";
 import { TireFields } from "./TireFields";
@@ -81,7 +82,7 @@ export function MaintenanceForm({
 
   const [maintenanceType, setMaintenanceType] =
     useState<MaintenanceType>(initialData?.maintenanceType ?? initialType ?? "oil_change");
-  const [date, setDate] = useState(initialData?.date ? (initialData.date as Timestamp).toDate().toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(localDate(initialData?.date ? (initialData.date as Timestamp).toDate() : new Date()));
   const [mileage, setMileage] = useState(initialData?.mileage.toString() ?? "");
   const [cost, setCost] = useState(initialData?.cost ? (initialData.cost / 100).toString() : "");
   const [shop, setShop] = useState(initialData?.shop ?? "");

@@ -64,6 +64,9 @@ export function getFirebaseDb() {
 export function getFirebaseStorage() {
   if (!_storage) {
     _storage = getStorage(getFirebaseApp());
+    // The default is 10 minutes of silent retries. On a weak yard signal, say so
+    // within a minute instead; the log sheet keeps everything for another try.
+    _storage.maxUploadRetryTime = 60_000;
     if (useEmulators) connectStorageEmulator(_storage, "127.0.0.1", 9199);
   }
   return _storage;

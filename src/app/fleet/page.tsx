@@ -2,12 +2,13 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useFleet } from "@/components/fleet/FleetProvider";
 import {
   FleetOverview,
   LOG_BUTTON,
+  showBoardView,
   Lightbox,
   summarize,
   VanDetail,
@@ -88,10 +89,10 @@ function FleetHome() {
   const canManage = member.role !== "tech";
   const heading = (
     <>
-      <p className="text-sm text-stone-500 dark:text-stone-400">
-        {fleet.plan ? `${PLAN_LABELS[fleet.plan.status]} plan` : "Not activated yet"}
-      </p>
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
+      {fleet.plan && (
+        <p className="mb-1 text-sm text-stone-500 dark:text-stone-400">{PLAN_LABELS[fleet.plan.status]} plan</p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-white sm:text-3xl">{fleet.name}</h1>
         {canManage && (
           <Link
@@ -150,7 +151,6 @@ function Board({
   vehicles: FleetVehicle[];
   heading: React.ReactNode;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const closeLightbox = useCallback(() => setLightbox(null), []);
@@ -220,7 +220,7 @@ function Board({
     if (site) next.set("site", site);
     if (params.van) next.set("van", params.van);
     const qs = next.toString();
-    router.push(`/fleet${qs ? `?${qs}` : ""}`, { scroll: !!params.van });
+    showBoardView(`/fleet${qs ? `?${qs}` : ""}`, !!params.van);
   };
 
   const closeSheet = useCallback(() => {
@@ -228,9 +228,9 @@ function Board({
     const vanId = afterSheet.current;
     afterSheet.current = null;
     // Show the van the job was logged on, unless that's where we already are
-    if (vanId && vanId !== selectedId) router.push(`/fleet?van=${vanId}`, { scroll: true });
+    if (vanId && vanId !== selectedId) showBoardView(`/fleet?van=${vanId}`, true);
     else if (vanId) window.scrollTo({ top: 0 });
-  }, [router, selectedId]);
+  }, [selectedId]);
 
   return (
     <div className="pb-20 md:pb-0">

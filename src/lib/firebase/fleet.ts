@@ -369,12 +369,37 @@ export async function importFleetVans(fleetId: string, vans: NewFleetVan[]): Pro
 }
 
 /** Any member can mark a van down, at the shop, or back in service. */
-export async function setVanStatus(fleetId: string, vehicleId: string, status: VanStatus, statusNote?: string) {
-  await updateDoc(doc(vehiclesCollection(fleetId), vehicleId), {
-    status,
-    statusNote: status === "in_service" ? deleteField() : statusNote?.trim() || deleteField(),
-    updatedAt: serverTimestamp(),
-  });
+/**
+ * Waits for the server, but not forever. Offline, Firestore has already applied
+ * the write on this phone (the board shows it) and sends it once there's signal,
+ * so there's no reason to hold the screen on "Saving…". Resolves false while the
+ * write is still queued.
+ */
+async function sentOrQueued(write: Promise<void>, label: string, waitMs = 5000): Promise<boolean> {
+  const sent = write.then(() => true);
+  const acked = await Promise.race([sent, new Promise<false>((resolve) => setTimeout(() => resolve(false), waitMs))]);
+  if (!acked) sent.catch((error) => console.error(`Queued ${label} was rejected:`, error));
+  return acked;
+}
+
+/** Thrown before uploading anything: photos can't wait for signal the way the log itself can. */
+export class OfflinePhotosError extends Error {
+  constructor() {
+    super("No connection to upload photos");
+    this.name = "OfflinePhotosError";
+  }
+}
+
+/** Resolves false when the change is saved on this phone but not sent yet. */
+export async function setVanStatus(fleetId: string, vehicleId: string, status: VanStatus, statusNote?: string): Promise<boolean> {
+  return sentOrQueued(
+    updateDoc(doc(vehiclesCollection(fleetId), vehicleId), {
+      status,
+      statusNote: status === "in_service" ? deleteField() : statusNote?.trim() || deleteField(),
+      updatedAt: serverTimestamp(),
+    }),
+    "status change"
+  );
 }
 
 // ---- Logging work ----
@@ -421,7 +446,8 @@ export async function logVisit(
   /** As the fleet knows them (member doc), not the sign-in account's name. */
   userName: string,
   input: VisitInput
-): Promise<string> {
+): Promise<{ visitId: string; queued: boolean }> {
+  if (input.photos.length && typeof navigator !== "undefined" && !navigator.onLine) throw new OfflinePhotosError();
   const logsCollection = collection(vehiclesCollection(fleetId), vehicle.id!, "maintenanceLogs");
   const refs = input.services.map(() => doc(logsCollection));
   const visitId = refs[0].id;
@@ -492,8 +518,8 @@ export async function logVisit(
   }
   batch.update(doc(vehiclesCollection(fleetId), vehicle.id!), vehicleUpdate);
 
-  await batch.commit();
-  return visitId;
+  const sent = await sentOrQueued(batch.commit(), "visit");
+  return { visitId, queued: !sent };
 }
 
 /** Every log on every van, read once (for export). One query per van, run in parallel. */
