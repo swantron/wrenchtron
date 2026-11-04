@@ -90,6 +90,7 @@ export function VanStatusControl({
           <input
             autoFocus
             value={note}
+            maxLength={120}
             onChange={(e) => setNote(e.target.value)}
             placeholder={NOTE_PLACEHOLDER[editing]}
             aria-label="Reason"

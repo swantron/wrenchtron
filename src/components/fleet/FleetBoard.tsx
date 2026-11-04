@@ -81,7 +81,10 @@ function groupVisits(van: FleetVan): Visit[] {
   const visits: Visit[] = [];
   for (const log of van.logs) {
     const prev = visits[visits.length - 1];
-    if (prev && prev.date.toDateString() === log.date.toDateString() && prev.shop === log.shop) {
+    const sameVisit = log.visitId
+      ? prev?.logs[0].visitId === log.visitId
+      : prev && prev.date.toDateString() === log.date.toDateString() && prev.shop === log.shop;
+    if (prev && sameVisit) {
       prev.logs.push(log);
       prev.cost += log.cost;
       if (log.notes) prev.notes.push(log.notes);
@@ -196,8 +199,10 @@ const DOT: Record<ActionItem["status"], string> = {
 };
 
 /** "Rear bumper damage — waiting on part" → "Rear bumper damage" */
+/** The part of a status note before " — ", kept short for a table cell (the full note is the cell's title). */
 function shortReason(note?: string): string | undefined {
-  return note?.split(" — ")[0];
+  const reason = note?.split(" — ")[0];
+  return reason && reason.length > 40 ? `${reason.slice(0, 39)}…` : reason;
 }
 
 const FOCUS_DOT: Record<Focus, string> = {
@@ -273,7 +278,7 @@ export function Lightbox({
         <div className="aspect-[4/3] overflow-hidden rounded-md bg-black">
           <ServicePhoto photo={photo} takenAt={visit.date} showCaption />
         </div>
-        <figcaption className="mt-3 text-sm text-stone-300">
+        <figcaption className="mt-3 text-sm text-stone-300 wrap-anywhere">
           <span className="font-medium text-white">{unit}</span> · {visitTitle(visit)} · {shortDate(visit.date, true)} ·{" "}
           {visit.mileage.toLocaleString()} mi
           <br />
@@ -336,7 +341,7 @@ function RecentWork({
     .slice(0, 8);
 
   return (
-    <section>
+    <section className="wrap-anywhere">
       <h2 className="text-sm font-semibold text-stone-900 dark:text-white">Recent work</h2>
       <p className="text-sm text-stone-500 dark:text-stone-400">{note}</p>
       {recent.length === 0 && <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Nothing logged yet.</p>}
@@ -461,7 +466,7 @@ function FleetTable({
       </table>
 
       {/* Mobile list */}
-      <ul className="divide-y divide-stone-200 dark:divide-stone-800 md:hidden">
+      <ul className="divide-y divide-stone-200 wrap-anywhere dark:divide-stone-800 md:hidden">
         {summaries.map((s) => {
           const { van } = s;
           const status = VAN_STATUS[van.status];
@@ -680,7 +685,7 @@ export function VanDetail({
   const status = VAN_STATUS[van.status];
 
   return (
-    <div>
+    <div className="wrap-anywhere">
       <button onClick={onBack} className="mb-6 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white">
         ← All vans
       </button>
@@ -766,8 +771,8 @@ export function VanDetail({
                   {visit.shop} · logged by {visit.tech}
                   {visitAction && <span className="ml-3">{visitAction(visit)}</span>}
                 </p>
-                {visit.notes.map((note) => (
-                  <p key={note} className="mt-1 text-sm text-stone-700 dark:text-stone-300">
+                {visit.notes.map((note, i) => (
+                  <p key={i} className="mt-1 text-sm text-stone-700 dark:text-stone-300">
                     {note}
                   </p>
                 ))}

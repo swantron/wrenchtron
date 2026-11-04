@@ -30,6 +30,10 @@ export interface FleetPhoto {
 
 export interface FleetLog {
   id: string;
+  /** Logs saved together share one; demo logs have none and group by day and shop. */
+  visitId?: string;
+  /** When it was saved, to order visits logged in the same minute. */
+  loggedAt?: number;
   maintenanceType: MaintenanceType;
   date: Date;
   mileage: number;

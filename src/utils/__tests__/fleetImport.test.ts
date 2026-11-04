@@ -31,6 +31,11 @@ describe("splitCells", () => {
   it("splits CSV with quoted commas", () => {
     expect(splitCells('117,"Bozeman, MT",42,000')).toEqual(["117", "Bozeman, MT", "42", "000"]);
   });
+
+  it("splits semicolon CSV (Excel in some locales), quoted commas included", () => {
+    expect(splitCells('117;"Bozeman, MT";42000')).toEqual(["117", "Bozeman, MT", "42000"]);
+    expect(splitCells("Van 9; plate")).toEqual(["Van 9", "plate"]);
+  });
 });
 
 describe("parseOdometer and formatUnit", () => {

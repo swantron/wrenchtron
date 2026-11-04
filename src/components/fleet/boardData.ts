@@ -33,6 +33,9 @@ function toDate(value: { toDate(): Date } | null | undefined): Date {
 function fromLog(log: FleetLog, sites: FleetSite[]): BoardLog {
   return {
     id: log.id!,
+    visitId: log.visitId,
+    // Pending server time means it was saved moments ago
+    loggedAt: log.createdAt?.toMillis?.() ?? Date.now(),
     maintenanceType: log.maintenanceType,
     title: log.title,
     date: toDate(log.date),
@@ -53,6 +56,7 @@ function fromLastVisit(vehicle: FleetVehicle, sites: FleetSite[]): BoardLog[] {
   if (!visit) return [];
   return visit.types.map((type, i) => ({
     id: `${visit.visitId}-${i}`,
+    visitId: visit.visitId,
     maintenanceType: type,
     title: i === 0 ? visit.title : undefined,
     date: toDate(visit.date),
@@ -114,7 +118,14 @@ export function toBoardVan(vehicle: FleetVehicle, sites: FleetSite[], logs?: Fle
     logs: logs
       ? logs
           .map((l) => fromLog(l, sites))
-          .sort((a, b) => b.date.getTime() - a.date.getTime() || serviceRank(a.maintenanceType) - serviceRank(b.maintenanceType))
+          .sort(
+            (a, b) =>
+              b.date.getTime() - a.date.getTime() ||
+              // Visits logged the same minute: newest saved first, never interleaved
+              (b.loggedAt ?? 0) - (a.loggedAt ?? 0) ||
+              (a.visitId ?? "").localeCompare(b.visitId ?? "") ||
+              serviceRank(a.maintenanceType) - serviceRank(b.maintenanceType)
+          )
       : fromLastVisit(vehicle, sites),
     serviceLogs: logs ? undefined : fromSummary(vehicle),
   };

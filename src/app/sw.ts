@@ -30,6 +30,11 @@ self.addEventListener("fetch", (event) => {
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
+  precacheOptions: {
+    // Query strings carry ids (/fleet?van=…, /vehicles/detail?id=…), not
+    // different pages, so /fleet?van=x is served the precached /fleet.
+    ignoreURLParametersMatching: [/.*/],
+  },
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: false,

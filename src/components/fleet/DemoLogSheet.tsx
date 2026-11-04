@@ -116,7 +116,8 @@ export function DemoLogSheet({
       ),
     };
     let status: DemoLogEntry["status"];
-    if (isDamage && offRoad) status = { status: "down", statusNote: notes.trim() || "Damage reported from the route" };
+    const reason = notes.trim().split("\n")[0].slice(0, 120);
+    if (isDamage && offRoad) status = { status: "down", statusNote: reason || "Damage reported from the route" };
     if (!isDamage && van.status !== "in_service" && backOnRoad) status = { status: "in_service" };
     onSave({ vanId: van.id, log, status });
     close();

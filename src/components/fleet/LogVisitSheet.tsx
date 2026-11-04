@@ -74,7 +74,9 @@ export function LogVisitSheet({
   const [vanId, setVanId] = useState(initialVanId ?? "");
   const van = vehicles.find((v) => v.id === vanId);
   const [picked, setPicked] = useState<string[]>([]);
-  const [mileage, setMileage] = useState(van?.currentMileage ? String(van.currentMileage) : "");
+  // Starts empty: a prefilled last reading gets saved unchanged, and every
+  // due-by-mileage after that is off.
+  const [mileage, setMileage] = useState("");
   const [date, setDate] = useState(today);
   const [shop, setShop] = useState("");
   const [cost, setCost] = useState("");
@@ -92,12 +94,6 @@ export function LogVisitSheet({
       document.body.style.overflow = previous;
     };
   }, []);
-
-  const pickVan = (id: string) => {
-    setVanId(id);
-    const next = vehicles.find((v) => v.id === id);
-    setMileage(next?.currentMileage ? String(next.currentMileage) : "");
-  };
 
   const isDamage = picked.includes("damage");
   const toggle = (key: string) =>
@@ -126,12 +122,24 @@ export function LogVisitSheet({
   const miles = Number(mileage.replace(/[^0-9]/g, ""));
   const cents = Math.round(Number(cost.replace(/[^0-9.]/g, "") || 0) * 100);
   const canSave = !!van && picked.length > 0 && miles > 0 && !!date && !saving;
+  const lastMiles = van?.currentMileage ?? 0;
+  // Catch typos (an extra digit) before they move the van's odometer for good
+  const milesWarning =
+    !lastMiles || !miles
+      ? null
+      : miles < lastMiles && date === today()
+        ? `Lower than the last reading (${lastMiles.toLocaleString()} mi). Check the number.`
+        : miles > lastMiles + 10_000
+          ? `${(miles - lastMiles).toLocaleString()} mi more than the last reading (${lastMiles.toLocaleString()} mi). Check the number.`
+          : null;
 
   const save = async () => {
     if (!van || !canSave) return;
     setSaving(true);
     let status: { status: "down" | "in_service"; statusNote?: string } | undefined;
-    if (isDamage && offRoad) status = { status: "down", statusNote: notes.trim() || "Damage reported" };
+    // The note's first line is the reason the board shows; the whole note stays on the log
+    const reason = notes.trim().split("\n")[0].slice(0, 120);
+    if (isDamage && offRoad) status = { status: "down", statusNote: reason || "Damage reported" };
     if (!isDamage && van.status !== "in_service" && backOnRoad) status = { status: "in_service" };
     try {
       const [y, m, d] = date.split("-").map(Number);
@@ -203,7 +211,7 @@ export function LogVisitSheet({
         <div className="space-y-5">
           <label className="block">
             <span className={labelClass}>Van</span>
-            <select value={vanId} onChange={(e) => pickVan(e.target.value)} className={inputClass}>
+            <select value={vanId} onChange={(e) => setVanId(e.target.value)} className={inputClass}>
               <option value="">Pick a van</option>
               {vansBySite.map(({ site, vans }) => (
                 <optgroup key={site.id || "none"} label={site.name}>
@@ -306,15 +314,27 @@ export function LogVisitSheet({
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
               <span className={labelClass}>Odometer</span>
-              <input inputMode="numeric" value={mileage} onChange={(e) => setMileage(e.target.value)} placeholder="Miles" className={inputClass} />
+              <input
+                inputMode="numeric"
+                value={mileage}
+                onChange={(e) => setMileage(e.target.value)}
+                placeholder={lastMiles ? `Last ${lastMiles.toLocaleString()}` : "Miles"}
+                aria-describedby={milesWarning ? "odometer-warning" : undefined}
+                className={inputClass}
+              />
             </label>
+            {milesWarning && (
+              <p id="odometer-warning" role="status" className="col-span-2 -mt-1 text-sm text-amber-700 dark:text-amber-400">
+                {milesWarning}
+              </p>
+            )}
             <label className="block">
               <span className={labelClass}>Date</span>
               <input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} className={inputClass} />
             </label>
             <label className="block">
               <span className={labelClass}>Shop</span>
-              <input value={shop} onChange={(e) => setShop(e.target.value)} placeholder="In the yard" className={inputClass} />
+              <input value={shop} onChange={(e) => setShop(e.target.value)} maxLength={80} placeholder="In the yard" className={inputClass} />
             </label>
             <label className="block">
               <span className={labelClass}>
@@ -330,6 +350,7 @@ export function LogVisitSheet({
             </span>
             <textarea
               value={notes}
+              maxLength={2000}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder={isDamage ? "What happened?" : "Anything the next person should know"}

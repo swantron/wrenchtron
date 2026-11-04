@@ -34,9 +34,14 @@ const HEADER_PATTERNS: [ImportColumn, RegExp][] = [
   ["unit", /unit|van|\bno\b|number|#|name|asset|fleet/i],
 ];
 
-/** Splits one line on tabs (spreadsheet paste) or commas (CSV), honoring quotes. */
+/**
+ * Splits one line on tabs (spreadsheet paste) or commas (CSV), honoring quotes.
+ * Semicolons count when there's no comma: Excel saves CSV that way in some locales.
+ */
 export function splitCells(line: string): string[] {
   if (line.includes("\t")) return line.split("\t").map((c) => c.trim());
+  const unquoted = line.replace(/"[^"]*"/g, "");
+  const separator = !unquoted.includes(",") && unquoted.includes(";") ? ";" : ",";
   const cells: string[] = [];
   let cell = "";
   let quoted = false;
@@ -49,7 +54,7 @@ export function splitCells(line: string): string[] {
       } else {
         quoted = !quoted;
       }
-    } else if (ch === "," && !quoted) {
+    } else if (ch === separator && !quoted) {
       cells.push(cell.trim());
       cell = "";
     } else {
