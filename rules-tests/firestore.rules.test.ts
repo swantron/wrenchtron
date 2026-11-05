@@ -14,6 +14,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   writeBatch,
   serverTimestamp,
   Timestamp,
@@ -279,6 +280,11 @@ describe("vehicles", () => {
 
   it("techs can record odometer and status", async () => {
     await assertSucceeds(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), { currentMileage: 41000, status: "at_shop", statusNote: "Brakes" }));
+  });
+
+  it("techs mark which visit took a van off the road, and clear it", async () => {
+    await assertSucceeds(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), { status: "down", statusNote: "Bumper", statusVisitId: "x", statusBefore: { status: "in_service" } }));
+    await assertSucceeds(updateDoc(doc(as("tech"), "fleets/f1/vehicles/v1"), { status: "in_service", statusNote: deleteField(), statusVisitId: deleteField(), statusBefore: deleteField() }));
   });
 
   it("techs keep the service summary and last visit in step with their logs", async () => {

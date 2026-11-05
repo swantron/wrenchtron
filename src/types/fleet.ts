@@ -93,6 +93,9 @@ export interface FleetVehicle extends Vehicle {
   scheduleId?: string;
   status: VanStatus;
   statusNote?: string;
+  /** The logged visit that last set the status, and what it replaced, so deleting that visit puts it back. */
+  statusVisitId?: string;
+  statusBefore?: { status: VanStatus; statusNote?: string };
   serviceSummary?: ServiceSummary;
   lastVisit?: LastVisit;
 }

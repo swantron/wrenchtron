@@ -396,6 +396,9 @@ export async function setVanStatus(fleetId: string, vehicleId: string, status: V
     updateDoc(doc(vehiclesCollection(fleetId), vehicleId), {
       status,
       statusNote: status === "in_service" ? deleteField() : statusNote?.trim() || deleteField(),
+      // Set by hand now, so no logged visit owns it
+      statusVisitId: deleteField(),
+      statusBefore: deleteField(),
       updatedAt: serverTimestamp(),
     }),
     "status change"
@@ -515,6 +518,9 @@ export async function logVisit(
     vehicleUpdate.status = input.status.status;
     vehicleUpdate.statusNote =
       input.status.status === "in_service" ? deleteField() : input.status.statusNote?.trim() || deleteField();
+    // Remember what this visit replaced, so deleting the visit puts it back
+    vehicleUpdate.statusVisitId = visitId;
+    vehicleUpdate.statusBefore = { status: vehicle.status, ...(vehicle.statusNote && { statusNote: vehicle.statusNote }) };
   }
   batch.update(doc(vehiclesCollection(fleetId), vehicle.id!), vehicleUpdate);
 
@@ -538,9 +544,10 @@ export async function fetchFleetHistory(
 
 /**
  * Deletes logged work (a visit's logs) and recomputes the van's service summary
- * and last visit from what's left, in one batch. Managers also remove the
+ * and last visit from what's left, in one batch. If the visit is what last set
+ * the van's status, the status it replaced comes back. Managers also remove the
  * photos; an author taking back a same-day mistake leaves them (Storage only
- * lets managers delete the proof).
+ * lets managers delete the proof). Resolves to the restored status, if any.
  */
 export async function deleteLogs(
   fleetId: string,
@@ -548,16 +555,26 @@ export async function deleteLogs(
   allLogs: FleetLog[],
   logIds: string[],
   removePhotos: boolean
-): Promise<void> {
+): Promise<VanStatus | null> {
   const doomed = allLogs.filter((l) => logIds.includes(l.id!));
   const { serviceSummary, lastVisit } = summarizeLogs(allLogs.filter((l) => !logIds.includes(l.id!)));
 
   const batch = writeBatch(getFirebaseDb());
   const logsCollection = collection(vehiclesCollection(fleetId), vehicle.id!, "maintenanceLogs");
   for (const log of doomed) batch.delete(doc(logsCollection, log.id!));
+  const restore =
+    vehicle.statusVisitId && doomed.some((l) => l.visitId === vehicle.statusVisitId)
+      ? (vehicle.statusBefore ?? { status: "in_service" as const })
+      : null;
   batch.update(doc(vehiclesCollection(fleetId), vehicle.id!), {
     serviceSummary,
     lastVisit: lastVisit ?? deleteField(),
+    ...(restore && {
+      status: restore.status,
+      statusNote: restore.status === "in_service" ? deleteField() : restore.statusNote || deleteField(),
+      statusVisitId: deleteField(),
+      statusBefore: deleteField(),
+    }),
     updatedAt: serverTimestamp(),
   });
   await batch.commit();
@@ -567,6 +584,7 @@ export async function deleteLogs(
     // Best effort: the record is already gone, an orphaned file is harmless
     await Promise.all(paths.map((path) => deleteObject(ref(getFirebaseStorage(), path)).catch(() => {})));
   }
+  return restore && restore.status !== vehicle.status ? restore.status : null;
 }
 
 export interface VanEdit {

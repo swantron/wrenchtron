@@ -194,7 +194,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm rounded-[2rem] border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-900 sm:p-10">
         <div className="mb-8 text-center">
-          <p className="text-lg font-bold text-gray-900 dark:text-white">Sign In</p>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Sign In</h1>
           <p className="mt-1 text-balance text-sm text-gray-500 dark:text-gray-400">
             {joining
               ? "Use the email address your invite was sent to"

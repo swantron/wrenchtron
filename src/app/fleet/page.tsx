@@ -206,8 +206,11 @@ function Board({
     setDoomed(null);
     if (!visit || !selectedVehicle || !vanLogs) return;
     try {
-      await deleteLogs(fleetId, selectedVehicle, vanLogs, visit.logs.map((l) => l.id), isManager);
-      showToast("Deleted.", "success");
+      const restored = await deleteLogs(fleetId, selectedVehicle, vanLogs, visit.logs.map((l) => l.id), isManager);
+      showToast(
+        restored === "in_service" ? "Deleted. Van is back in service." : restored ? "Deleted. Van status put back." : "Deleted.",
+        "success"
+      );
     } catch (error) {
       console.error("Failed to delete visit:", error);
       showToast("Couldn't delete it. Please try again.", "error");
