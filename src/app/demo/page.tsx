@@ -407,7 +407,17 @@ function DemoContent() {
 
 export default function DemoPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#fafafa] dark:bg-gray-950 px-4 py-8">Loading...</div>}>
+    <Suspense fallback={
+      <main className="mx-auto max-w-xl px-6 py-16">
+        <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">
+          A maintenance log for the garage
+        </h1>
+        <p className="mt-6 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+          Oil, tires, and the seasonal jobs, for the truck and the mower. The overdue work comes first.
+          The sample garage loads here. Start your own with no call.
+        </p>
+      </main>
+    }>
       <DemoContent />
     </Suspense>
   );

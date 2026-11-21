@@ -6,7 +6,8 @@ export const metadata: Metadata = {
   // Lets link previews resolve relative image paths
   metadataBase: new URL("https://wrenchtron.com"),
   title: "Wrenchtron",
-  description: "Vehicle maintenance tracker",
+  description:
+    "A maintenance log for your vehicles and a small fleet. See what's due, try the demo, and start on your own.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

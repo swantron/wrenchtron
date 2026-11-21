@@ -1,13 +1,16 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { FleetDemo } from "@/components/fleet/FleetDemo";
+import { FleetPitch } from "@/components/fleet/FleetPitch";
 
-const TITLE = "Wrenchtron for delivery fleets";
-const DESCRIPTION = "Know what was done to every van, and see the proof: photo-verified maintenance across every site.";
+const TITLE = "Van maintenance log with photo proof — Wrenchtron";
+const DESCRIPTION =
+  "Know what was done to every van, and see the proof: photo-verified maintenance across every site. Try the sample fleet, or start your own.";
 
 export const metadata: Metadata = {
-  title: "Fleet demo — Wrenchtron",
+  title: { absolute: TITLE },
   description: DESCRIPTION,
+  alternates: { canonical: "https://wrenchtron.com/demo/fleet" },
   // What shows when the link is texted or posted
   openGraph: {
     title: TITLE,
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
 
 export default function FleetDemoPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#fafafa] dark:bg-gray-950 px-4 py-8">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-stone-50 dark:bg-stone-950"><FleetPitch standalone /></div>}>
       <FleetDemo />
     </Suspense>
   );

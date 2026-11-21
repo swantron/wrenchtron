@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { DemoLogSheet, type DemoLogEntry } from "@/components/fleet/DemoLogSheet";
 import {
@@ -16,6 +15,7 @@ import {
   VanDetail,
   type LightboxState,
 } from "@/components/fleet/FleetBoard";
+import { FleetPitch } from "@/components/fleet/FleetPitch";
 import { track } from "@/lib/demoBeacon";
 import { generateFleet, FLEET_LOCATIONS, type FleetLocation, type FleetVan } from "@/data/fleetDemoData";
 
@@ -46,33 +46,20 @@ function FleetHeader({ onLog }: { onLog: () => void }) {
   );
 }
 
-const DEMO_INTRO = (
-  <div className="mb-5 max-w-2xl sm:mb-8">
-    <p className="text-sm text-stone-500 dark:text-stone-400">Demo Delivery Co. — sample vans, drawn photos</p>
-    <h1 className="mt-1 text-xl font-semibold tracking-tight text-stone-900 dark:text-white sm:text-3xl">
-      Know what was done to every van, and see the proof.
-    </h1>
-    <p className="mt-3 hidden text-stone-600 dark:text-stone-300 sm:block">
-      Whoever does the work snaps the odometer, the part, and the invoice. You see it from Bozeman, whether the van
-      was serviced in the yard, at a partner shop in Billings, or by a mobile tech in Helena.
-    </p>
-  </div>
-);
+const DEMO_INTRO = <FleetPitch />;
 
 const DEMO_FOOTER = (
   <div className="mt-16 border-t border-stone-200 pt-8 dark:border-stone-800">
     <h2 className="text-lg font-semibold text-stone-900 dark:text-white">Want this for your fleet?</h2>
     <p className="mt-1 max-w-xl text-stone-600 dark:text-stone-300">
-      Send a list of VINs and I&apos;ll load your vans with the right service schedule. Your team starts logging
-      with photos from their phones on day one.
+      Paste your vans and the schedule comes from the VIN. Your team logs the work, with photos, from their phones.
     </p>
-    <a
-      href={CONTACT_HREF}
-      onClick={() => track("contact")}
-      className="mt-4 inline-block rounded bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
+    <Link
+      href="/login?next=/fleet/new"
+      className="mt-4 inline-flex min-h-11 items-center rounded bg-stone-900 px-4 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
     >
-      Get in touch
-    </a>
+      Start a fleet
+    </Link>
   </div>
 );
 
@@ -161,9 +148,7 @@ export function FleetDemo() {
       <FleetHeader onLog={() => openSheet(selected?.van.id)} />
       <main className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6 sm:pt-10">
         {!isClient ? (
-          <div className="flex justify-center py-24">
-            <LoadingSpinner />
-          </div>
+          <FleetPitch />
         ) : (
           <>
             {selected && (
