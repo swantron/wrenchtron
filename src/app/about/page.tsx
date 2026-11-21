@@ -5,30 +5,33 @@ import { AppShell } from "@/components/layout/AppShell";
 export default function AboutPage() {
     return (
         <AppShell>
-            <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
-                <div className="space-y-20">
-                    {/* Legend section */}
+            <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8">
+                <div className="space-y-12">
                     <section>
-                        <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white sm:text-6xl">
-                            About <span className="text-blue-600">Wrenchtron</span>
+                        <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">
+                            About Wrenchtron
                         </h1>
-                        <p className="mt-8 text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
-                            Wrenchtron tracks service history and tells you what&apos;s due next,
-                            for a household garage or a delivery fleet. It runs on Google Cloud:
-                            you sign in with Google, and your records, photos, and receipts are
-                            stored on Google&apos;s infrastructure and encrypted in transit and at
-                            rest. Only you, or the members of your fleet, can see them.
-                        </p>
+                        <div className="mt-6 max-w-xl space-y-4 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+                            <p>
+                                Wrenchtron keeps the service history for everything you own,
+                                and tells you what&apos;s due. One app covers a household garage
+                                and a delivery fleet.
+                            </p>
+                            <p>
+                                You sign in with Google. Records, photos, and receipts stay
+                                on Google&apos;s infrastructure, encrypted in transit and at rest.
+                                A garage is visible only to you. A fleet is visible only to its members.
+                            </p>
+                        </div>
                     </section>
 
-                    {/* PWA Guide */}
-                    <section className="rounded-2xl bg-blue-50 p-8 dark:bg-blue-900/20">
+                    <section className="rounded-2xl bg-blue-50 p-6 dark:bg-blue-900/20 sm:p-8">
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            Use it on your phone
+                            Add it to your home screen
                         </h2>
                         <p className="mt-2 text-gray-600 dark:text-gray-400">
-                            Wrenchtron is a Progressive Web App (PWA). You can install it on
-                            your home screen and use it just like a native app.
+                            Open wrenchtron.com in Safari or Chrome, then add it to your
+                            home screen. It opens like an app.
                         </p>
                         <div className="mt-6 grid gap-8 sm:grid-cols-2">
                             <div>
@@ -54,55 +57,39 @@ export default function AboutPage() {
                         </div>
                     </section>
 
-                    {/* Contact Section */}
                     <section>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                             Get in touch
                         </h2>
-                        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
-                            <div>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Created by
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Joseph Swanson
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Email
-                                </p>
-                                <a
-                                    href="mailto:joe@swantron.com"
-                                    className="text-lg font-semibold text-blue-600 hover:underline dark:text-blue-400"
-                                >
-                                    joe@swantron.com
-                                </a>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Websites
-                                </p>
-                                <div className="flex gap-4">
-                                    <a
-                                        href="https://swantron.com"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-lg font-semibold text-blue-600 hover:underline dark:text-blue-400"
-                                    >
-                                        swantron.com
-                                    </a>
-                                    <a
-                                        href="https://tronswan.com"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-lg font-semibold text-blue-600 hover:underline dark:text-blue-400"
-                                    >
-                                        tronswan.com
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <p className="mt-3 text-lg text-gray-900 dark:text-white">
+                            Joseph Swanson
+                        </p>
+                        <p className="mt-1">
+                            <a
+                                href="mailto:joe@swantron.com"
+                                className="inline-flex min-h-11 items-center text-lg font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                            >
+                                joe@swantron.com
+                            </a>
+                        </p>
+                        <p className="mt-1 flex flex-wrap gap-x-4">
+                            <a
+                                href="https://swantron.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex min-h-11 items-center text-lg font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                            >
+                                swantron.com
+                            </a>
+                            <a
+                                href="https://tronswan.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex min-h-11 items-center text-lg font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                            >
+                                tronswan.com
+                            </a>
+                        </p>
                     </section>
                 </div>
             </div>
