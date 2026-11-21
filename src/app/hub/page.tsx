@@ -29,23 +29,17 @@ export default function HubPage() {
                 <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">
                   Maintenance Hub
                 </h1>
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                  Upcoming Schedule
+                <p className="text-sm font-bold uppercase tracking-widest text-gray-400">
+                  What&apos;s due
                 </p>
               </div>
-              <Link
-                href="/vehicles/new"
-                className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95"
-              >
-                Add to Garage
-              </Link>
             </div>
 
             {/* Tabs */}
             <div className="mb-8 flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/50 sm:w-fit">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+                className={`inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-bold transition-all ${
                   activeTab === "overview"
                     ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
@@ -55,7 +49,7 @@ export default function HubPage() {
               </button>
               <button
                 onClick={() => setActiveTab("timeline")}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+                className={`inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-bold transition-all ${
                   activeTab === "timeline"
                     ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
@@ -70,6 +64,13 @@ export default function HubPage() {
             ) : (
               <TimelineView items={actionItems} />
             )}
+
+            <Link
+              href="/vehicles/new"
+              className="mt-10 inline-flex min-h-11 items-center rounded-2xl border border-gray-200 px-6 text-sm font-bold text-gray-700 hover:border-blue-200 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:text-white"
+            >
+              Add to Garage
+            </Link>
           </div>
         </AppShell>
       )}

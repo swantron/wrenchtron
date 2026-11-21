@@ -22,7 +22,7 @@ const subscribeNoop = () => () => {};
 const inputClass =
   "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white";
 const submitClass =
-  "w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200";
+  "min-h-11 w-full rounded-lg bg-gray-900 px-4 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200";
 
 function linkErrorMessage(error: unknown): string {
   const code = (error as { code?: string })?.code;
@@ -40,6 +40,11 @@ export default function LoginPage() {
   // Client-only facts about the URL; the static prerender sees neither.
   const isLink = useSyncExternalStore(subscribeNoop, () => isEmailSignInLink(window.location.href), () => false);
   const joining = useSyncExternalStore(subscribeNoop, () => readNext().startsWith("/fleet/join"), () => false);
+  const fleetDest = useSyncExternalStore(
+    subscribeNoop,
+    () => readNext().startsWith("/fleet") || readNext().startsWith("/demo/fleet"),
+    () => false
+  );
 
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -194,11 +199,15 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm rounded-[2rem] border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-900 sm:p-10">
         <div className="mb-8 text-center">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Sign In</h1>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+            {joining ? "Join your fleet" : fleetDest ? "Sign in to your fleet" : "Sign in to your garage"}
+          </h1>
           <p className="mt-1 text-balance text-sm text-gray-500 dark:text-gray-400">
             {joining
               ? "Use the email address your invite was sent to"
-              : "Your vehicles, service history, and what’s due next"}
+              : fleetDest
+              ? "See every van, and the proof of the work."
+              : "See what’s due across the vehicles you own."}
           </p>
         </div>
         {body}

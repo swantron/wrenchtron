@@ -21,7 +21,7 @@ function LandingPage() {
             <ThemeToggle />
             <Link
               href="/login"
-              className="rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+              className="inline-flex min-h-11 items-center rounded-xl bg-blue-600 px-6 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
             >
               Sign In
             </Link>
@@ -47,13 +47,13 @@ function LandingPage() {
           </svg>
         </div>
         <h2 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white sm:text-7xl">
-          Vehicle intelligence,
+          Know what&apos;s due
           <br />
-          <span className="text-blue-600">reimagined.</span>
+          <span className="text-blue-600">on everything you own.</span>
         </h2>
         <p className="mt-8 max-w-xl text-xl font-medium leading-relaxed text-gray-500 dark:text-gray-400">
-          Keep track of every oil change, tire rotation, and brake job.
-          Know exactly when your next service is due.
+          Oil, tires, and the seasonal jobs, for the truck in the driveway
+          and the mower in the shed. The overdue work comes first.
         </p>
         <div className="mt-12 flex flex-col gap-4 sm:flex-row">
           <Link
@@ -71,9 +71,9 @@ function LandingPage() {
         </div>
         <Link
           href="/demo/fleet"
-          className="mt-8 text-sm font-semibold text-gray-500 underline-offset-4 hover:text-gray-900 hover:underline dark:text-gray-400 dark:hover:text-white"
+          className="mt-8 inline-flex min-h-11 items-center text-sm font-semibold text-gray-700 underline-offset-4 hover:text-gray-900 hover:underline dark:text-gray-200 dark:hover:text-white"
         >
-          Running a delivery fleet? See the fleet demo →
+          Running vans? See what was done to every one of them →
         </Link>
 
         {/* Decorative Grid Background */}

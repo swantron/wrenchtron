@@ -20,7 +20,7 @@ export function NavBar({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActive
   const demoTab = demoActiveTab ?? "garage";
 
   return (
-    <nav className="sticky top-0 z-50 hidden border-b border-gray-100 bg-white/80 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80 md:block">
+    <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-12">
@@ -30,7 +30,7 @@ export function NavBar({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActive
             >
               Wrenchtron
             </Link>
-            <div className="flex gap-1">
+            <div className="hidden gap-1 md:flex">
               {navLinks.map((link) => {
                 const href = isDemo
                   ? link.href === "/vehicles"
@@ -72,7 +72,7 @@ export function NavBar({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActive
             {user && (
               <Link
                 href={isDemo ? "/login" : "/vehicles/new"}
-                className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                className="hidden items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 md:flex"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -81,7 +81,7 @@ export function NavBar({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActive
               </Link>
             )}
             {user && (
-              <div className="flex items-center gap-6 border-l border-gray-100 pl-4 dark:border-gray-800">
+              <div className="hidden items-center gap-6 border-l border-gray-100 pl-4 dark:border-gray-800 md:flex">
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
                   {user.displayName || user.email}
                 </span>

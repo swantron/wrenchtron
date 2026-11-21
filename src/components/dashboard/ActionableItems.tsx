@@ -87,7 +87,7 @@ export function ActionableItems({ items, readOnly = false }: ActionableItemsProp
                         <div className="mt-4 flex justify-end">
                             <Link
                                 href={`/maintenance/new?vehicleId=${item.vehicleId}&type=${item.targetMaintenanceType ?? item.serviceName.toLowerCase().replace(/ /g, "_")}`}
-                                className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${item.status === "overdue"
+                                className={`inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-bold uppercase tracking-wide transition-colors ${item.status === "overdue"
                                     ? "bg-red-600 text-white hover:bg-red-700"
                                     : item.status === "due_soon"
                                         ? "bg-yellow-600 text-white hover:bg-yellow-700"

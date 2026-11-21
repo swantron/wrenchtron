@@ -297,9 +297,9 @@ function DemoContent() {
               </div>
               <Link
                 href="/demo/fleet"
-                className="text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                className="inline-flex min-h-11 items-center text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
               >
-                Running a delivery fleet? See the fleet demo →
+                Running vans? See what was done to every one of them →
               </Link>
             </div>
 
@@ -307,7 +307,7 @@ function DemoContent() {
             <div className="mb-8 flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/50 sm:w-fit">
               <button
                 onClick={() => handleTabChange("garage")}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "garage"
+                className={`inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-bold transition-all ${activeTab === "garage"
                   ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
                   : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                   }`}
@@ -316,7 +316,7 @@ function DemoContent() {
               </button>
               <button
                 onClick={() => handleTabChange("hub")}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "hub"
+                className={`inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-bold transition-all ${activeTab === "hub"
                   ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
                   : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                   }`}
@@ -325,7 +325,7 @@ function DemoContent() {
               </button>
               <button
                 onClick={() => handleTabChange("timeline")}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${activeTab === "timeline"
+                className={`inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-bold transition-all ${activeTab === "timeline"
                   ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
                   : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                   }`}

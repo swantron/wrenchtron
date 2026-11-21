@@ -320,7 +320,7 @@ function Thumbs({
 // ---- Views ----
 
 export const LOG_BUTTON =
-  "rounded bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200";
+  "inline-flex min-h-11 items-center rounded bg-stone-900 px-3 text-sm font-medium text-white hover:bg-stone-700 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200";
 
 function RecentWork({
   summaries,
@@ -538,7 +538,7 @@ export function FleetOverview({
   const visible = scoped
     .filter((s) => !attentionOnly || needsAttention(s))
     .filter((s) => !focus || FOCUS_FILTERS[focus](s))
-    .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.vin} ${s.van.make} ${s.van.model}`.toLowerCase().includes(q))
+    .filter((s) => !q || `${s.van.unit} ${s.van.plate} ${s.van.vin} ${s.van.make} ${s.van.model} ${s.van.location}`.toLowerCase().includes(q))
     .sort((a, b) => {
       const byUnit = a.van.unit.localeCompare(b.van.unit, undefined, { numeric: true });
       if (sort !== "due") return byUnit;
@@ -593,7 +593,7 @@ export function FleetOverview({
               onClick={() => setFocus(active ? null : key)}
               aria-pressed={active}
               title={active ? "Show all vans" : `Show only vans ${label}`}
-              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 sm:px-3 ${active
+              className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 ${active
                 ? "border-stone-900 bg-stone-900 dark:border-white dark:bg-white [&_*]:!text-white dark:[&_*]:!text-stone-900"
                 : "border-stone-300 hover:border-stone-500 dark:border-stone-700 dark:hover:border-stone-500"
                 }`}
@@ -617,7 +617,7 @@ export function FleetOverview({
                   <button
                     key={loc ?? "all"}
                     onClick={() => onLocation(loc)}
-                    className={`border-b-2 pb-1 ${active
+                    className={`min-h-11 border-b-2 pb-1 ${active
                       ? "border-stone-900 font-medium text-stone-900 dark:border-white dark:text-white"
                       : "border-transparent text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                       }`}
@@ -627,13 +627,13 @@ export function FleetOverview({
                 );
               })}
             </nav>
-            <div className="flex w-full items-center gap-3 sm:w-auto">
-              <label className="flex shrink-0 items-center gap-1.5 text-sm text-stone-600 dark:text-stone-300">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <label className="flex min-h-11 shrink-0 items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
                 <input
                   type="checkbox"
                   checked={attentionOnly}
                   onChange={(e) => setAttentionOnly(e.target.checked)}
-                  className="h-3.5 w-3.5 accent-stone-900 dark:accent-white"
+                  className="h-5 w-5 accent-stone-900 dark:accent-white"
                 />
                 Needs attention ({attentionCount})
               </label>
@@ -641,9 +641,9 @@ export function FleetOverview({
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Unit, plate, VIN, model"
+                placeholder="Unit, plate, VIN, model, site"
                 aria-label="Search vans"
-                className="w-full min-w-0 rounded border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-900 placeholder-stone-400 focus:border-stone-900 focus:outline-none dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-stone-300 sm:w-44"
+                className="min-h-11 w-full rounded border border-stone-300 bg-white px-3 text-base text-stone-900 placeholder-stone-400 focus:border-stone-900 focus:outline-none dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-stone-300 sm:w-56"
               />
             </div>
           </div>

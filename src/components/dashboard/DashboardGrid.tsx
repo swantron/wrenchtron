@@ -4,7 +4,7 @@ import { useVehicles } from "@/hooks/useVehicles";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import Link from "next/link";
-import type { ActionItem } from "@/utils/maintenance";
+import { vehicleUrgency, type ActionItem } from "@/utils/maintenance";
 import type { Vehicle } from "@/types/firestore";
 
 export function DashboardGrid({
@@ -65,9 +65,15 @@ export function DashboardGrid({
     );
   }
 
+  const ordered = [...vehicles].sort(
+    (a, b) =>
+      vehicleUrgency(actionItems.filter((i) => i.vehicleId === a.id)) -
+      vehicleUrgency(actionItems.filter((i) => i.vehicleId === b.id))
+  );
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {vehicles.map((vehicle) => (
+      {ordered.map((vehicle) => (
         <VehicleCard
           key={vehicle.id}
           vehicle={vehicle}

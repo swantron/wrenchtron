@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
@@ -94,10 +93,6 @@ export function MobileNav({ isDemo, demoActiveTab }: { isDemo?: boolean; demoAct
             {item.label}
           </Link>
         ))}
-        <div className="flex flex-1 flex-col items-center justify-center py-2">
-          <ThemeToggle />
-          <span className="mt-1 text-[10px] font-black uppercase tracking-widest text-gray-400">Theme</span>
-        </div>
       </div>
     </nav>
   );

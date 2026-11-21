@@ -72,6 +72,19 @@ export interface ActionItem {
     };
 }
 
+const STATUS_RANK = { overdue: 0, due_soon: 1, upcoming: 2 };
+
+/** Lower sorts first: overdue vehicles, then the soonest item, then ones with nothing due. */
+export function vehicleUrgency(items: ActionItem[]): number {
+    if (items.length === 0) return STATUS_RANK.upcoming * 100_000 + 50_000;
+    let best = items[0];
+    for (const item of items) {
+        if (STATUS_RANK[item.status] < STATUS_RANK[best.status]) best = item;
+        else if (STATUS_RANK[item.status] === STATUS_RANK[best.status] && (item.remainingDays ?? 9999) < (best.remainingDays ?? 9999)) best = item;
+    }
+    return STATUS_RANK[best.status] * 100_000 + (best.remainingDays ?? 9999);
+}
+
 /** When an item is next due: whichever comes first of the calendar date and the mileage projection. */
 export function nextDueDate(item: Pick<ActionItem, "dueDate" | "projectedDate">): Date | undefined {
     const { dueDate, projectedDate } = item;

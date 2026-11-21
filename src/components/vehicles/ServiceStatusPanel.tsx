@@ -45,7 +45,14 @@ export function ServiceStatusPanel({ vehicle, logs }: ServiceStatusPanelProps) {
               ? "bg-gray-300 dark:bg-gray-600"
               : "bg-green-500";
 
-            const nextLabel = nextDate
+            // A past date is overdue, in those words. A schedule with no log
+            // says so, instead of inventing a "next" month and also asking
+            // you to log the last one.
+            const nextLabel = item.status === "overdue"
+              ? item.reason
+              : !item.lastLog
+              ? "No record yet"
+              : nextDate
               ? `Next ~${nextDate.toLocaleDateString("default", { month: "short", year: "numeric" })}`
               : unknown
               ? "No record yet"
@@ -64,7 +71,7 @@ export function ServiceStatusPanel({ vehicle, logs }: ServiceStatusPanelProps) {
                       {item.serviceName}
                     </span>
                   </div>
-                  <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                  <span className={`shrink-0 text-right text-xs ${item.status === "overdue" ? "font-medium text-red-600 dark:text-red-400" : "text-gray-500 dark:text-gray-400"}`}>
                     {nextLabel}
                   </span>
                 </div>

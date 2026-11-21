@@ -24,22 +24,22 @@ const CONTACT_HREF = "mailto:joe@swantron.com?subject=Wrenchtron%20for%20our%20f
 function FleetHeader({ onLog }: { onLog: () => void }) {
   return (
     <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2 sm:px-6">
         <div className="flex items-baseline gap-3">
           {/* Stays in the demo: the home page is the household product */}
           <Link href="/demo/fleet" className="font-semibold tracking-tight text-stone-900 dark:text-white">
             Wrenchtron
           </Link>
-          <span className="text-sm text-stone-500 dark:text-stone-400">Fleet demo</span>
+          <span className="hidden text-sm text-stone-500 sm:inline dark:text-stone-400">Fleet demo</span>
         </div>
-        <div className="flex items-center gap-4">
-          <button onClick={onLog} className={`hidden md:block ${LOG_BUTTON}`}>
+        <div className="flex items-center gap-3">
+          <button onClick={onLog} className={LOG_BUTTON}>
             Log a job
           </button>
-          <a href={CONTACT_HREF} onClick={() => track("contact")} className="text-sm font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white">
+          <a href={CONTACT_HREF} onClick={() => track("contact")} className="inline-flex min-h-11 items-center text-sm font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white">
             Get in touch
           </a>
-          <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-900 dark:hover:text-white" />
+          <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-900 dark:hover:text-white" />
         </div>
       </div>
     </header>
@@ -159,7 +159,7 @@ export function FleetDemo() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
       <FleetHeader onLog={() => openSheet(selected?.van.id)} />
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 sm:pt-10 md:pb-10">
+      <main className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6 sm:pt-10">
         {!isClient ? (
           <div className="flex justify-center py-24">
             <LoadingSpinner />
@@ -192,18 +192,6 @@ export function FleetDemo() {
           </>
         )}
       </main>
-      {isClient && !sheet && (
-        <button
-          onClick={() => openSheet(selected?.van.id)}
-          className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white shadow-lg dark:bg-white dark:text-stone-900 md:hidden"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5A1.5 1.5 0 014.5 7h2.3l1.4-2h7.6l1.4 2h2.3A1.5 1.5 0 0121 8.5v10a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 18.5v-10z" />
-            <circle cx="12" cy="13" r="3.5" />
-          </svg>
-          Log a job
-        </button>
-      )}
       {sheet && (
         <DemoLogSheet
           vans={vans}

@@ -3,6 +3,7 @@
 import { useVehicles } from "@/hooks/useVehicles";
 import { useActionableItems } from "@/hooks/useActionableItems";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { vehicleUrgency } from "@/utils/maintenance";
 import { VehicleCard } from "./VehicleCard";
 import Link from "next/link";
 
@@ -52,9 +53,17 @@ export function VehicleList({ archived = false }: { archived?: boolean }) {
     );
   }
 
+  const ordered = archived
+    ? vehicles
+    : [...vehicles].sort(
+        (a, b) =>
+          vehicleUrgency(actionItems.filter((i) => i.vehicleId === a.id)) -
+          vehicleUrgency(actionItems.filter((i) => i.vehicleId === b.id))
+      );
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {vehicles.map((vehicle) => (
+      {ordered.map((vehicle) => (
         <VehicleCard
           key={vehicle.id}
           vehicle={vehicle}

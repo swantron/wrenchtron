@@ -220,8 +220,8 @@ export function VehicleDetailView({
   return (
     <>
     <div className="px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {vehicle.name}
           </h1>
@@ -239,53 +239,42 @@ export function VehicleDetailView({
           {onBack ? (
             <button
               onClick={onBack}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Back to Garage
             </button>
           ) : vehicle.isArchived ? (
             <Link
               href="/vehicles/archived"
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Back to Archived
             </Link>
           ) : null}
-          {!onBack && (
+          {!onBack && !vehicle.isArchived && (
             <>
-              {!vehicle.isArchived && (
               <Link
                 href={`/vehicles/edit?id=${vehicleId}`}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Edit
               </Link>
-              )}
-              {vehicle.isArchived ? (
-                <button
-                  onClick={() => setUnarchiveConfirmOpen(true)}
-                  disabled={unarchiving}
-                  className="rounded-lg border border-green-300 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
-                >
-                  {unarchiving ? "Restoring…" : "Restore to Garage"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setArchiveConfirmOpen(true)}
-                  disabled={archiving}
-                  className="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
-                >
-                  {archiving ? "Archiving…" : "Archive"}
-                </button>
-              )}
-              <button
-                onClick={() => setConfirmOpen(true)}
-                disabled={deleting}
-                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+              <Link
+                href={`/maintenance/new?vehicleId=${vehicleId}`}
+                className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700"
               >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
+                Log Service
+              </Link>
             </>
+          )}
+          {!onBack && vehicle.isArchived && (
+            <button
+              onClick={() => setUnarchiveConfirmOpen(true)}
+              disabled={unarchiving}
+              className="inline-flex min-h-11 items-center rounded-lg border border-green-300 px-4 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+            >
+              {unarchiving ? "Restoring…" : "Restore to Garage"}
+            </button>
           )}
         </div>
       </div>
@@ -353,7 +342,7 @@ export function VehicleDetailView({
               {!vehicle.isArchived && !readOnly && (
                 <Link
                   href={`/maintenance/new?vehicleId=${vehicleId}`}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+                  className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
                 >
                   Log Service
                 </Link>
@@ -374,6 +363,25 @@ export function VehicleDetailView({
               setVehicle((v) => v ? { ...v, serviceIntervals: intervals } : v)
             }
           />
+        </div>
+      )}
+
+      {!onBack && !readOnly && !vehicle.isArchived && (
+        <div className="mt-12 flex flex-wrap gap-3 border-t border-gray-100 pt-8 dark:border-gray-800">
+          <button
+            onClick={() => setArchiveConfirmOpen(true)}
+            disabled={archiving}
+            className="inline-flex min-h-11 items-center rounded-lg border border-amber-300 px-4 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+          >
+            {archiving ? "Archiving…" : "Archive"}
+          </button>
+          <button
+            onClick={() => setConfirmOpen(true)}
+            disabled={deleting}
+            className="inline-flex min-h-11 items-center rounded-lg border border-red-300 px-4 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { deleteVehicleWithLogs, archiveVehicle, unarchiveVehicle } from "@/lib/firebase/firestore";
+import { unarchiveVehicle } from "@/lib/firebase/firestore";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getReceiptURL } from "@/lib/firebase/storage";
 import type { Vehicle } from "@/types/firestore";
@@ -77,12 +77,12 @@ function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
           : item.status === "due_soon" ? "bg-amber-500"
           : "bg-green-500";
         return (
-          <div key={item.id} className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
+          <div key={item.id} className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
               <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
-              <span className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">{item.serviceName}</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{item.serviceName}</span>
             </div>
-            <span className="shrink-0 text-xs text-gray-600 dark:text-gray-300">{item.reason}</span>
+            <span className="max-w-[58%] text-right text-xs leading-snug text-gray-600 dark:text-gray-300">{item.reason}</span>
           </div>
         );
       })}
@@ -94,14 +94,9 @@ function ServiceStatusStrip({ items }: { items: ActionItem[] }) {
 }
 
 export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, showUnarchive }: VehicleCardProps) {
-  const { user } = useAuth();
   const [photoUrl, setPhotoUrl] = useState<string | null>(
     vehicle.photoPath?.startsWith("/") ? vehicle.photoPath : null
   );
-  const [deleting, setDeleting] = useState(false);
-  const [archiving, setArchiving] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (vehicle.photoPath?.startsWith("/")) return; // static asset, already set
@@ -127,40 +122,6 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, sho
     : items[0]?.status === "due_soon"
     ? "border-amber-300 dark:border-amber-600"
     : "border-gray-200 dark:border-gray-700";
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setConfirmOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!user || !vehicle.id) return;
-    setConfirmOpen(false);
-    setDeleting(true);
-    try {
-      await deleteVehicleWithLogs(user.uid, vehicle.id);
-    } catch {
-      setDeleting(false);
-    }
-  };
-
-  const handleArchiveClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setArchiveConfirmOpen(true);
-  };
-
-  const handleArchiveConfirm = async () => {
-    if (!user || !vehicle.id) return;
-    setArchiveConfirmOpen(false);
-    setArchiving(true);
-    try {
-      await archiveVehicle(user.uid, vehicle.id);
-    } catch {
-      setArchiving(false);
-    }
-  };
 
   const CardWrapper = onClick ? "button" : Link;
   const wrapperProps = onClick
@@ -223,7 +184,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, sho
             <>
               <Link
                 href={`/vehicles/detail?id=${vehicle.id}`}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
               >
                 View
               </Link>
@@ -235,37 +196,13 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, sho
             <>
               <Link
                 href={isDemo ? "/login" : `/vehicles/edit?id=${vehicle.id}`}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-gray-500 transition-all hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 {isDemo ? "Sign In" : "Edit"}
               </Link>
-              {!isDemo && (
-                <button
-                  onClick={handleArchiveClick}
-                  disabled={archiving}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                  </svg>
-                  {archiving ? "Archiving…" : "Archive"}
-                </button>
-              )}
-              {!isDemo && (
-                <button
-                  onClick={handleDeleteClick}
-                  disabled={deleting}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  {deleting ? "Deleting…" : "Delete"}
-                </button>
-              )}
             </>
           )}
         </div>
@@ -274,7 +211,7 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, sho
       {/* Quick log button */}
       <Link
         href={isDemo ? "/login" : `/maintenance/new?vehicleId=${vehicle.id}`}
-        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 hover:bg-blue-700 active:scale-95"
+        className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 hover:bg-blue-700 active:scale-95"
         aria-label={isDemo ? "Sign in to log service" : "Quick log maintenance"}
         title={isDemo ? "Sign in to log service" : "Quick Log"}
       >
@@ -284,23 +221,6 @@ export function VehicleCard({ vehicle, items, layout, onClick, href, isDemo, sho
       </Link>
 
     </div>
-    <ConfirmDialog
-      open={confirmOpen}
-      title={`Delete ${vehicle.name}?`}
-      description="This will permanently delete this vehicle and all its maintenance logs. This cannot be undone."
-      confirmLabel="Delete"
-      destructive
-      onConfirm={handleDeleteConfirm}
-      onCancel={() => setConfirmOpen(false)}
-    />
-    <ConfirmDialog
-      open={archiveConfirmOpen}
-      title={`Archive ${vehicle.name}?`}
-      description="This will move the vehicle to your archive. You can view and restore it later. Maintenance history is preserved."
-      confirmLabel="Archive"
-      onConfirm={handleArchiveConfirm}
-      onCancel={() => setArchiveConfirmOpen(false)}
-    />
     </>
   );
 }

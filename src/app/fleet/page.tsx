@@ -296,7 +296,7 @@ function Board({
           intro={
             <div className="mb-5 sm:mb-8">
               {heading}
-              <button onClick={() => setSheet({})} className={`mt-4 hidden md:inline-block ${LOG_BUTTON}`}>
+              <button onClick={() => setSheet({})} className={`mt-4 inline-flex min-h-11 items-center ${LOG_BUTTON}`}>
                 Log a job
               </button>
             </div>
@@ -307,18 +307,6 @@ function Board({
         />
       </div>
 
-      {!sheet && (
-        <button
-          onClick={() => setSheet({ vanId: selectedVehicle?.id })}
-          className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white shadow-lg dark:bg-white dark:text-stone-900 md:hidden"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5A1.5 1.5 0 014.5 7h2.3l1.4-2h7.6l1.4 2h2.3A1.5 1.5 0 0121 8.5v10a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 18.5v-10z" />
-            <circle cx="12" cy="13" r="3.5" />
-          </svg>
-          Log a job
-        </button>
-      )}
       {sheet && (
         <LogVisitSheet
           fleetId={fleetId}
