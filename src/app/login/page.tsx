@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/brand/Logo";
 import { LoginButton } from "@/components/auth/LoginButton";
 import { useAuth } from "@/hooks/useAuth";
 import { completeEmailLinkSignIn, isEmailSignInLink, sendSignInLink, storedSignInEmail } from "@/lib/firebase/auth";
@@ -190,9 +191,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] p-6 dark:bg-gray-950">
-      <div className="relative mb-12 flex flex-col items-center text-center">
-        <div className="absolute -inset-4 rounded-full bg-blue-500/10 blur-2xl" />
-        <Link href="/" className="relative text-5xl font-black tracking-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 transition-colors sm:text-7xl">
+      <div className="mb-12 flex flex-col items-center text-center">
+        <Link href="/" className="flex flex-col items-center gap-4 text-5xl font-black tracking-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 transition-colors sm:text-7xl">
+          <Logo className="h-24 w-24" />
           Wrenchtron
         </Link>
       </div>

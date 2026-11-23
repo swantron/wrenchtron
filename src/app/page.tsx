@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { HomeRedirect } from "@/components/home/HomeRedirect";
 
@@ -26,7 +27,8 @@ export default function HomePage() {
       <HomeRedirect />
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 px-8 py-4 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link href="/" className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white">
+          <Link href="/" className="flex items-center gap-2.5 text-2xl font-black tracking-tighter text-gray-900 dark:text-white">
+            <Logo className="h-9 w-9" />
             Wrenchtron
           </Link>
           <div className="flex items-center gap-4">
@@ -42,23 +44,7 @@ export default function HomePage() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
-        <div className="relative mb-12">
-          <div className="absolute -inset-4 rounded-full bg-blue-500/10 blur-2xl" />
-          <svg
-            className="relative h-24 w-24 text-blue-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.049.58.025 1.194-.14 1.743"
-            />
-          </svg>
-        </div>
+        <Logo className="mb-12 h-28 w-28" />
         <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white sm:text-7xl">
           Know what&apos;s due
           <br />

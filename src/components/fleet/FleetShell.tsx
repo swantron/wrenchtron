@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/brand/Logo";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { rememberArea } from "@/lib/homeArea";
@@ -24,7 +25,8 @@ export function FleetShell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/fleet" className="font-semibold tracking-tight text-stone-900 dark:text-white">
+            <Link href="/fleet" className="flex items-center gap-2 font-semibold tracking-tight text-stone-900 dark:text-white">
+              <Logo className="h-8 w-8" />
               Wrenchtron
             </Link>
             {memberships.length > 1 ? (

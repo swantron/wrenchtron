@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "@/lib/firebase/auth";
 import { usePathname } from "next/navigation";
@@ -26,8 +27,9 @@ export function NavBar({ isDemo, demoActiveTab }: { isDemo?: boolean; demoActive
           <div className="flex items-center gap-12">
             <Link
               href={user ? "/vehicles" : "/"}
-              className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white"
+              className="flex items-center gap-2.5 text-2xl font-black tracking-tighter text-gray-900 dark:text-white"
             >
+              <Logo className="h-9 w-9" />
               Wrenchtron
             </Link>
             <div className="hidden gap-1 md:flex">

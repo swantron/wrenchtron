@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1d4ed8"/>
+  <g transform="translate(256 256) scale(0.86) translate(-256 -256)">
+    <g transform="translate(256 256) rotate(-42) translate(-48 0)">
+      <mask id="jaw" maskContentUnits="userSpaceOnUse">
+        <rect x="-150" y="-150" width="300" height="300" fill="#fff"/>
+        <circle cx="0" cy="0" r="36" fill="#000"/>
+        <rect x="-124" y="-30" width="132" height="60" fill="#000"/>
+      </mask>
+      <circle cx="0" cy="0" r="78" fill="#fff" mask="url(#jaw)"/>
+      <rect x="40" y="-22" width="158" height="44" rx="22" fill="#fff"/>
+    </g>
+  </g>
+</svg>
