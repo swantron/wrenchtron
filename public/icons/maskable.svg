@@ -1,6 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#1d4ed8"/>
   <g transform="translate(256 256) scale(0.9) translate(-256 -256)">
-    <path fill="#fff" fill-rule="evenodd" d="M256 78 L398 160 L398 352 L256 434 L114 352 L114 160 Z M256 188 A68 68 0 1 0 256 324 A68 68 0 1 0 256 188 Z"/>
+    
+  <circle cx="256" cy="268" r="198" fill="#f7f8fa"/>
+  <g stroke="#1d4ed8" stroke-width="16" stroke-linecap="round">
+    <line x1="256" y1="88" x2="256" y2="116"/>
+    <line x1="256" y1="420" x2="256" y2="448"/>
+  </g>
+  <polyline points="178,356 256,250 334,356" fill="none" stroke="#1d4ed8" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="none" stroke="#1d4ed8" stroke-width="50" stroke-linecap="butt">
+    <path d="M 173.2 347.4 L 118 248"/>
+    <path d="M 338.8 347.4 L 394 248"/>
+  </g>
+  <g fill="none" stroke="#f7f8fa" stroke-width="16" stroke-linecap="butt">
+    <path d="M 152.8 310.6 L 114.1 241.0"/>
+    <path d="M 359.2 310.6 L 397.9 241.0"/>
+  </g>
+  <circle cx="256" cy="254" r="11" fill="#1d4ed8"/>
+  <circle cx="256" cy="254" r="4.5" fill="#f7f8fa"/>
   </g>
 </svg>
