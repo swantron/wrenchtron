@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { HomeRedirect } from "@/components/home/HomeRedirect";
+import { GuideFooter } from "@/components/marketing/GuidePage";
 
 const TITLE = "Maintenance log for your vehicles and a small fleet — Wrenchtron";
 const DESCRIPTION =
@@ -82,6 +83,7 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,#3b82f610,transparent)]" />
         </div>
       </main>
+      <GuideFooter />
     </div>
   );
 }
